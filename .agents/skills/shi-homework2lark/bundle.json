@@ -1,0 +1,184 @@
+{
+  "schemaVersion": "shi-skill-bundle-v1",
+  "name": "shi-homework2lark",
+  "version": "2.1.2",
+  "entrySkill": "shi-homework2lark",
+  "architecture": "single-entry-progressive-disclosure",
+  "description": "小学数学错题收集、错情分组、飞书 Base、题生变式、精准练习与再练反馈整包。",
+  "dependencies": {
+    "requiredCommands": [
+      "python",
+      "lark-cli"
+    ],
+    "requiredPythonModules": [
+      "docx"
+    ],
+    "requiredSkills": [
+      "lark-base"
+    ],
+    "recommendedSkills": [
+      "shi-shared",
+      "shi-ocr"
+    ],
+    "optionalSkills": [
+      "shi-mineru",
+      "shi-paddleocr",
+      "shi-kescan",
+      "wumu-jihe-html"
+    ]
+  },
+  "stages": [
+    {
+      "id": "intake",
+      "label": "收集入库",
+      "references": [
+        "references/collection-modes.md",
+        "references/source-routing.md",
+        "references/question-asset-contract.md",
+        "references/intake-contract.md"
+      ],
+      "requiredSkills": [],
+      "recommendedSkills": [
+        "shi-ocr"
+      ],
+      "optionalSkills": [
+        "shi-mineru",
+        "shi-paddleocr",
+        "shi-kescan"
+      ],
+      "requiredCommands": [
+        "python"
+      ],
+      "requiredPythonModules": []
+    },
+    {
+      "id": "mistakes",
+      "label": "错情整理",
+      "references": [
+        "references/intake-contract.md",
+        "references/staged-intake.md",
+        "references/base-contract.md"
+      ],
+      "requiredSkills": [
+        "lark-base"
+      ],
+      "recommendedSkills": [
+        "shi-ocr"
+      ],
+      "optionalSkills": [
+        "shi-paddleocr",
+        "shi-kescan"
+      ],
+      "requiredCommands": [
+        "python",
+        "lark-cli"
+      ],
+      "requiredPythonModules": []
+    },
+    {
+      "id": "variants",
+      "label": "题生变式",
+      "references": [
+        "references/base-contract.md",
+        "references/variant-generation-prompt.md",
+        "references/diagram-contract.md"
+      ],
+      "requiredSkills": [
+        "lark-base"
+      ],
+      "recommendedSkills": [],
+      "optionalSkills": [
+        "wumu-jihe-html"
+      ],
+      "requiredCommands": [
+        "python",
+        "lark-cli"
+      ],
+      "requiredPythonModules": []
+    },
+    {
+      "id": "practice",
+      "label": "精准练习",
+      "references": [
+        "references/learning-loop.md",
+        "references/practice-sheet-template.md",
+        "references/personal-practice.md"
+      ],
+      "requiredSkills": [
+        "lark-base"
+      ],
+      "recommendedSkills": [],
+      "optionalSkills": [],
+      "requiredCommands": [
+        "python",
+        "lark-cli"
+      ],
+      "requiredPythonModules": [
+        "docx"
+      ]
+    },
+    {
+      "id": "feedback",
+      "label": "再练反馈",
+      "references": [
+        "references/learning-loop.md",
+        "references/retry-feedback.md",
+        "references/base-contract.md"
+      ],
+      "requiredSkills": [
+        "lark-base"
+      ],
+      "recommendedSkills": [
+        "shi-ocr"
+      ],
+      "optionalSkills": [
+        "shi-paddleocr",
+        "shi-kescan"
+      ],
+      "requiredCommands": [
+        "python",
+        "lark-cli"
+      ],
+      "requiredPythonModules": []
+    }
+  ],
+  "resources": {
+    "requiredFiles": [
+      "SKILL.md",
+      "bundle.json",
+      "agents/openai.yaml",
+      "evals/evals.json",
+      "references/orchestration-and-handoffs.md",
+      "references/collection-modes.md",
+      "references/retry-feedback.md",
+      "scripts/workflow.py",
+      "scripts/retry_batch.py",
+      "scripts/doctor.py",
+      "scripts/package_bundle.py",
+      "scripts/publish_bundle.py"
+    ],
+    "includeDirectories": [
+      "agents",
+      "evals",
+      "references",
+      "scripts",
+      "tests"
+    ],
+    "excludeNames": [
+      "__pycache__",
+      ".pytest_cache",
+      ".mypy_cache",
+      ".ruff_cache",
+      ".git",
+      ".env",
+      "tmp",
+      "artifacts"
+    ],
+    "excludeSuffixes": [
+      ".pyc",
+      ".pyo",
+      ".log",
+      ".tmp"
+    ]
+  }
+}

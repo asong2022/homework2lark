@@ -1,0 +1,22 @@
+{
+  "name": "elementary-math-mistake-notebook",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/web"
+  ],
+  "scripts": {
+    "contracts:export": "uv run --directory apps/api python scripts/export_openapi.py",
+    "contracts:generate": "npm run contracts:generate --workspace @mistake-notebook/web",
+    "contracts": "npm run contracts:export && npm run contracts:generate",
+    "dev:web": "npm run dev --workspace @mistake-notebook/web",
+    "lint:web": "npm run lint --workspace @mistake-notebook/web",
+    "typecheck:web": "npm run typecheck --workspace @mistake-notebook/web",
+    "test:web": "npm run test --workspace @mistake-notebook/web",
+    "test:e2e": "npm run test:e2e --workspace @mistake-notebook/web",
+    "build:web": "npm run build --workspace @mistake-notebook/web"
+  },
+  "engines": {
+    "node": ">=20.9.0"
+  }
+}

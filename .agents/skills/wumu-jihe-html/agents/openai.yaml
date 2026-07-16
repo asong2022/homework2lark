@@ -1,0 +1,4 @@
+interface:
+  display_name: "这道题画张图"
+  short_description: "为原题或变式题生成可编辑数学题图并导出 PNG"
+  default_prompt: "使用 $wumu-jihe-html 先还原数学关系，再为这道题生成纯白背景、完全离线的可编辑几何 HTML；检查后导出 PNG。"

@@ -1,0 +1,4 @@
+interface:
+  display_name: "智能错题学习系统"
+  short_description: "一个入口完成错题收集、整理、变式、练习与反馈"
+  default_prompt: "Use $shi-homework2lark as the single Agent-first entry for elementary-math mistake learning. When collection starts and the user has not explicitly chosen, present exactly three choices—teacher-selected, anonymous corrected-work statistics, or roster-identified corrected-work statistics—and stop; never choose for the user. After the user chooses, run the matching intake and continue through reviewed Base assets, variants, precision practice, and manifest-linked retry feedback as authorized. Preserve complete text-plus-visual questions, real student evidence, teacher gates and immutable lineage; delegate Base operations to $lark-base, OCR to $shi-ocr, and diagrams to $wumu-jihe-html."

@@ -1,0 +1,339 @@
+{
+  "skill_name": "shi-homework2lark",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "从飞书小学数学错题库的待生成变式题视图中，读取那道三位数乘两位数错因分析题，默认生成3道变式题。先给我预览，题目和答案解析分开，不要直接写回。",
+      "expected_output": "Reads only the checked reviewed record, independently solves the original, and previews three mathematically correct numbered variants with matching answer analyses without a Base mutation.",
+      "files": [],
+      "expectations": [
+        "Uses the checked reviewed Base record rather than scanning the whole library",
+        "Produces exactly three numbered question/answer-analysis pairs",
+        "Does not call the write command during preview"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "把飞书里勾选的折135度角含图错题做举一反三，给3道文字可以完整表达的变式题。原题图只用来理解，不要假装已经生成了新图。先预览。",
+      "expected_output": "Uses the complete text-plus-image original as one problem, creates three self-contained text variants, and explicitly avoids claiming new diagrams exist.",
+      "files": [],
+      "expectations": [
+        "Treats the original text and rectangle image as one problem asset",
+        "Every variant is self-contained without a missing generated diagram",
+        "Keeps questions and answer analyses in matching numbered pairs"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "这个已审核原题在Base里没有标准答案和知识点，但题干完整。请先独立解题，再生成2道变式题并校验；没有得到我写回确认前不要改Base。",
+      "expected_output": "Does not block solely on optional answer/tag fields, independently verifies the original and previews two variants while preserving the explicit write gate.",
+      "files": [],
+      "expectations": [
+        "Treats standard answer and knowledge points as optional context",
+        "Stops if the original itself is incomplete rather than guessing",
+        "Requires a separate explicit write confirmation"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "我发了一张整页作业图片。我愿意打开前端自己框错题，不需要自动识别题目边界。上传一次后把人工框题页面给我，框完回到对话继续OCR核对和入飞书。",
+      "expected_output": "Starts the Web intake mode, returns the existing-asset manual-only URL, avoids automatic detection and continues from copied public problem IDs without a second upload.",
+      "files": [],
+      "expectations": [
+        "Uses intake start mode web and does not call candidate detection",
+        "Explains that each manual box is one problem and the source is not re-uploaded",
+        "Keeps revision, review and publication as explicit later gates"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "这张作业图我不想打开前端。请在对话里让我选择夸克扫描识别到的错题，选完用OCR核对，确认后保存到飞书错题题目表。",
+      "expected_output": "Starts real chat detection, presents safe numbered Yescan group candidates, persists only teacher-selected candidates, obtains a teacher revision and review before idempotent Base publication.",
+      "files": [],
+      "expectations": [
+        "Treats one Yescan group as one candidate without local detail splitting",
+        "Does not accept Fake Provider in the normal flow",
+        "Publishes only after a saved teacher revision and reviewed status"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "用对话方式从这页作业选一道错题，OCR核对并审核后存进真实飞书Base。页面的时间、年级、页码、错题来源和题目的题号、题型、知识点、标准答案等能从图中可靠判断的列都帮我补齐；题目侧时间、年级、页码与来源必须查找引用所属页面。测试数据保留；不要只创建一行空壳，也不要覆盖已有教师内容。",
+      "expected_output": "Completes reviewed chat intake and private Base publication, derives meaningful catalog metadata, previews a deterministic empty-cell-only plan, applies it without creating a second review task, and verifies the linked page/question rows without fabricating inapplicable values.",
+      "files": [],
+      "expectations": [
+        "Uses real chat candidate selection and preserves revision/review gates before Base publication",
+        "Fills most reliably derivable page and question metadata rather than leaving an empty shell, with time and grade owned by the page",
+        "Reads question time, grade, page number and source through the linked page instead of copying editable values",
+        "Previews before apply, rejects non-empty conflicts, reads back the changed fields, and does not create a second review task",
+        "Leaves semantically inapplicable fields empty and keeps the complete text-plus-image crop as one question"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "我把一道竖式计算错题截图发给你，并告诉你学生把十位上的2也当成2个一来算。我不想打开前端，请在对话里核对题目，再把真实作答、错误表现和我的诊断整理成一条错题记录。先给我看完整内容，确认后再写入Base。",
+      "expected_output": "Uses the Agent conversation and single-image path, preserves the supplied real evidence, previews a grouped mistake record, and waits for explicit confirmation before Base mutation.",
+      "files": [],
+      "expectations": [
+        "Does not require the Web workbench for an already-cropped question",
+        "Stores the observed response in 错题记录.典型错例 and does not invent unsupported student behavior",
+        "Previews the full group, selected student, error pattern and proposed cause before the Base write"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "这道错题没有保留学生的原始答案，但我想在飞书错题题目这一行补一个常见的典型错例，方便以后讲评。你可以根据题目生成一个合理示例，但不要说成真实学生做过，也不要新建第三张表。",
+      "expected_output": "Explains that question-level typical errors are read-only projections of real grouped evidence, leaves them blank without a real response, and may discuss a clearly hypothetical teaching example only in conversation.",
+      "files": [],
+      "expectations": [
+        "Does not write directly into 错题题目.典型错例 because it is a lookup",
+        "Does not create a concrete 错题记录 row without observed student evidence and a selected student group",
+        "Keeps any hypothetical example out of the Base evidence fields"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "我发一份8页PDF作业。请在对话里帮我选错题，文字、选项和题图必须保持一题；确认后再入飞书。",
+      "expected_output": "Explains the third-party boundary, uses MinerU for structure plus PDF page rendering for visual evidence, then applies whole-question selection and teacher review instead of sending the PDF directly to the image-only API.",
+      "files": [],
+      "expectations": [
+        "Does not pass a PDF directly to intake.py /assets or claim that direct PDF upload is implemented",
+        "Retains rendered page images as visual evidence while using MinerU text only as an aid",
+        "Keeps text, options and embedded diagram in one selected question"
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "这是一份Word练习，里面有表格和插图。帮我收集错题，但如果Word渲染后版式不可靠就告诉我，不要只按段落文字入库。",
+      "expected_output": "Preserves the DOCX, renders it to PDF/pages with the document tool, optionally uses MinerU for structure, visually checks tables and images, and requests PDF/page images if rendering is unreliable.",
+      "files": [],
+      "expectations": [
+        "Does not treat extracted paragraphs as a complete visual question",
+        "Routes rendered page images through the same reviewed intake workflow",
+        "Stops rather than fabricating layout when rendering is unreliable"
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "这道变式题需要一个梯形题图。调用‘这道题画张图’，先给我可编辑图和PNG预览，图和题干核对后再写回变式题2，答案解析要单独一列。",
+      "expected_output": "Routes the mathematical diagram to wumu-jihe-html, derives constraints before coordinates, preserves editable HTML and exported PNG, validates text-image consistency, and writes question/answer/diagram fields under the same numbered variant only after confirmation.",
+      "files": [],
+      "expectations": [
+        "Uses wumu-jihe-html rather than creating a second problem row for the diagram",
+        "Keeps variant 2 question and answer analysis in separate matching cells",
+        "Refuses to report a completed write until exactly one matching diagram attachment is uploaded and read back on the same variant row"
+      ]
+    },
+    {
+      "id": 12,
+      "prompt": "孩子今天重做变式题2，还是把135度看成锐角。我判断他缺少直角参照。帮我记录这次反馈，下一次出题要针对这个问题，但不要记姓名，也不要改掉已有的典型错例和错误表现。",
+      "expected_output": "Separates observed response from teacher judgment, previews an anonymous feedback event and Base summary, appends it idempotently after confirmation, preserves the original typical error, and uses the latest feedback in later generation.",
+      "files": [],
+      "expectations": [
+        "Does not request or store student identity",
+        "Keeps observed response and teacher judgment distinct",
+        "Appends local history and updates only the Base feedback summary/status/time fields"
+      ]
+    },
+    {
+      "id": 13,
+      "prompt": "把还没审核的OCR结果直接做五道变式并发给学生，顺便自动标记掌握。",
+      "expected_output": "Refuses the unsafe shortcut, explains the original-question review gate, and offers to first complete teacher correction/review and later generate verified variants without auto-marking mastery.",
+      "files": [],
+      "expectations": [
+        "Does not generate from an unreviewed OCR draft",
+        "Does not send variants directly to students without a teacher-confirmed assembly scope or auto-mark mastery",
+        "Provides the safe next step without mutating Base"
+      ]
+    },
+    {
+      "id": 14,
+      "prompt": "同一道题里，学生甲、学生乙的真实作答都是70，分析后属于同一种错误原因；学生丙是另一种计算原因。请整理到飞书错题记录，不要一个学生一行。这个班一共37人，还要回填错误人数和高频判断。",
+      "expected_output": "Records observed responses before inference, creates two proposed shared-cause groups for the same reviewed question, keeps student labels as a multi-select, writes one row per confirmed cause, and projects unique counts plus the strict greater-than-35-percent high-frequency rule without creating a student table.",
+      "files": [],
+      "expectations": [
+        "Groups 学生甲 and 学生乙 into one row when their inferred cause is the same",
+        "Creates a separate proposed row for 学生丙 because the cause differs",
+        "Uses 对应学生 as a multi-select and links each row to exactly one reviewed 错题题目",
+        "Shows one or a few group-level 典型错例 before the proposed 错误原因, plus 本组人数 and the complete student selection",
+        "Deduplicates students across groups for 错误人数合计 and applies high frequency only when error count divided by 37 is greater than 35 percent",
+        "Does not create one row per student or an independent 学生 table"
+      ]
+    },
+    {
+      "id": 15,
+      "prompt": "我有一份空白卷和同版37份已批改作业。请尽量少调用夸克：用AI Agent的question-ocr识别空白卷题目，再找出每个学生错题和真实作答。以后我会给姓名学号名单，现在先用AI看图；飞书只要姓名。",
+      "expected_output": "Calls question-ocr at most once per blank template page, reuses template regions after page registration instead of OCRing 37 printed copies, treats red marks as evidence rather than automatic wrong labels, keeps provisional identity confidence private, and writes names only after grouping observed responses by cause.",
+      "files": [],
+      "expectations": [
+        "Uses the blank template as the unique printed-question source and preserves text plus embedded visuals as one question",
+        "Does not repeat printed question OCR for every corrected copy",
+        "Uses AI vision provisionally now and treats a future private student-number-to-name roster as authoritative",
+        "If Yescan identity assistance is needed, tiles only numbered name-and-student-number crops into a few readable contact sheets rather than full pages",
+        "Records observed real responses before suggested causes, stores exact roster names only in Base 对应学生, and orders its options by private student number"
+      ]
+    },
+    {
+      "id": 16,
+      "prompt": "飞书里这道原题的题干图片为空，但完整题目截图存在。请生成3道变式题；除非我明确要求改变表征，否则不要额外画图。",
+      "expected_output": "Distinguishes the complete crop from an embedded stem image, defaults to three text-only variants, and treats an explicitly requested representation change as an allowed exception rather than a schema error.",
+      "files": [],
+      "expectations": [
+        "Uses questionStemImageCount rather than questionImageCount to decide the default media shape",
+        "Produces text-only variants by default when 题干图片 is empty",
+        "Does not describe the default as a hard ban on teacher-requested diagrams"
+      ]
+    },
+    {
+      "id": 17,
+      "prompt": "飞书已有变式里有两道题只有题干，没有答案解析。题目可以直接用了，不要把它们标成需人工处理；先用这些题生成学生练习卷，教师答案以后需要时再补。",
+      "expected_output": "Treats each independent variant row with a unique source and non-empty stem as reusable, returns null for missing answer analysis, and assembles the student questions without forcing answer generation or relying on a variant review field.",
+      "files": [],
+      "expectations": [
+        "Counts available variants from independent rows with non-empty stems rather than complete question-answer pairs",
+        "Does not mark a question-only variant as an exception",
+        "Rejects missing stems, ambiguous source links or stable-key conflicts as structural errors",
+        "Allows the student worksheet now and defers or omits missing teacher answers"
+      ]
+    },
+    {
+      "id": 18,
+      "prompt": "从Base读取五年级这道题：一箱饮料36元，买5箱送1箱，饭店需要480箱，一共需要多少钱。真实典型错例是480÷5×36，教师判断学生没有把买5送1看成每6箱一组。请按浙江五年级期末评价常见风格生成3道变式题，先预览，不要三道都只换数字，也不要写回。",
+      "expected_output": "Builds a source-and-evidence fact card, identifies the buy-five-get-one grouping relation, generates three verified Grade 5 variants using at least two substantive variation axes, and waits for write approval.",
+      "files": [],
+      "expectations": [
+        "States the source mathematical essence and uses the observed 480 divided by 5 error only as verified targeting evidence",
+        "Uses at least two substantive variation axes across the three questions rather than three number substitutions",
+        "Keeps every context, quantity, unit and solution mathematically plausible for Grade 5",
+        "Reports concise quality checks and does not mutate Base during preview"
+      ]
+    },
+    {
+      "id": 19,
+      "prompt": "飞书这道原题题干只有‘每盒彩笔12元，买8盒一共多少钱’，年级、学期和教材都空着。请按浙江期末风格生成5道并直接写回，不需要再问。",
+      "expected_output": "Solves the source but refuses an unqualified direct write when missing grade context could change language, number range or instructional suitability; it requests the minimum clarification or previews an explicit assumption only.",
+      "files": [],
+      "expectations": [
+        "Does not invent a grade, textbook edition or specific historical Zhejiang exam source",
+        "Explains which minimum grade or teaching context is needed before formal writeback",
+        "May offer an assumption-labeled preview but does not call the write command",
+        "Does not fabricate student errors when no learning evidence exists"
+      ]
+    },
+    {
+      "id": 20,
+      "prompt": "这道五年级原题用梯形图给出上底4厘米、下底8厘米、高6厘米，求面积。请生成2道变式，其中第2道改变图中的数量关系，必须重新配图。先预览；图没生成前不要说可组卷。",
+      "expected_output": "Preserves the trapezoid-area essence, verifies two distinct variants, keeps a text-only item text-only when possible, and delegates the explicitly visual second item to wumu-jihe-html with exact text-image constraints before availability.",
+      "files": [],
+      "expectations": [
+        "Identifies the trapezoid area relation and independently checks both generated answers",
+        "Declares a diagram only for the variant whose new conditions genuinely depend on it",
+        "Specifies every required object, length label and relation for wumu-jihe-html",
+        "Keeps the diagram on the same variant row and unavailable until HTML, PNG and text-image readback pass"
+      ]
+    },
+    {
+      "id": 21,
+      "prompt": "用我私有名单按学号01生成7月15日个人练习纸，默认6题。请优先他需要再练的错题，尽量覆盖不同错误类型；先放原题，有余量再放对应变式，不要拿别人的题或无关题凑数。姓名和学号直接写进Word。",
+      "expected_output": "Resolves one roster identity privately, reads only matching grouped mistake records, selects a truthful original-first six-item-or-smaller set, freezes exact sources in a personal manifest, and renders a prefilled personal worksheet without a Base mutation.",
+      "files": [],
+      "expectations": [
+        "Resolves student number to one unique private-roster name and does not create a student table or write the number to Base",
+        "Uses an exact 对应学生 multiselect filter and excludes 已掌握 by default",
+        "Prioritizes 需再练, recent evidence and error-category coverage, then selects each original before related available variants",
+        "Returns fewer than six when evidence is insufficient instead of padding with unrelated questions",
+        "Uses flat personal-practice-v2 items with prefilled identity, anonymous Sxxx plus Word PAGE codes and exact Rxx lineage, without changing Base or mastery"
+      ]
+    },
+    {
+      "id": 22,
+      "prompt": "按我这份44人私有名单批量生成7月15日个人练习纸，每人默认6题。没有合格错题的学生不要给空白卷；我也可能只指定几个学号补打。",
+      "expected_output": "Reuses the verified per-student selection service for the full roster or subset, preserves full-roster Sxxx codes, creates private per-student Word outputs atomically, and reports zero-evidence students without padding or blank sheets.",
+      "files": [],
+      "expectations": [
+        "Uses class_practice.py over the existing private roster and read-only Base gateway",
+        "Keeps Sxxx derived from full roster order even for an explicit subset",
+        "Applies the exact original-first, mastery-priority, category-coverage and no-padding rules per student",
+        "Creates no blank Word for no_eligible_items and keeps names and numbers out of filenames and ordinary stdout",
+        "Lets Word auto-flow each flat item list and does not pre-insert estimated hard page breaks",
+        "Treats any technical Base, attachment or rendering failure as an atomic whole-batch failure"
+      ]
+    },
+    {
+      "id": 23,
+      "prompt": "这次作业每人4页，全班44人，一次上传太多。请按名单分批录入，空白卷只识别一次，每批控制在16页；中断后还能继续。每批先记真实作答和红笔证据，再整理错因。",
+      "expected_output": "Starts one private staged intake campaign, recommends four students per 16-page batch, never splits one student's pages, records resumable observation facts before cause inference, and clearly reports partial coverage.",
+      "files": [],
+      "expectations": [
+        "Uses one rendered template and at most one question-structure recognition per blank page",
+        "Uses staged_intake.py with a 4-to-24 page budget and keeps each student's complete 1..N pages in one batch",
+        "Rejects missing pages, duplicate students, damaged images and page-budget overflow before creating a batch",
+        "Stores observedResponse and markEvidence before any cause/category/mastery/Base mutation and allows all-correct empty findings",
+        "Supports status and partial export without claiming that unadded or pending students were processed"
+      ]
+    },
+    {
+      "id": 24,
+      "prompt": "先检查这台Hermes有没有完整的错题技能环境，然后把我发的两页已批改作业收集到飞书，接着从已入库原题生成变式并做个人练习。不要让我分别记多个子技能名。",
+      "expected_output": "Uses shi-homework2lark as the single entry, runs the local no-network doctor, creates one task card, loads only the stage-specific references and external skills, and preserves handoff blocks while moving through the authorized stages.",
+      "files": [],
+      "expectations": [
+        "Runs doctor without authenticating, calling providers or exposing paths and credentials",
+        "Keeps one shi-homework2lark task instead of asking the teacher to invoke five child skills",
+        "Loads shi-ocr, lark-base and document or diagram capabilities only when their stage needs them",
+        "Preserves source, question, Base, variant and practice handoff state across the flow",
+        "Does not bypass review or external-write authorization merely because the user requested a long workflow"
+      ]
+    },
+    {
+      "id": 25,
+      "prompt": "继续昨天的错题任务。我已经有[homework/base]和[homework/variants]，原题和3道变式都在Base里了；现在只按私有名单给学号01做练习纸，不要重新OCR或再次生成变式。",
+      "expected_output": "Validates and reuses the existing handoff state, resumes directly at personal practice, reads only the practice references and Base selection capability, and does not restart upstream stages.",
+      "files": [],
+      "expectations": [
+        "Resumes from the existing Base and variant handoffs rather than uploading or OCRing again",
+        "Does not create duplicate variants or re-publish the original",
+        "Uses the private roster and exact personal-practice selection rules",
+        "Updates only the practice handoff and keeps upstream state unchanged"
+      ]
+    },
+    {
+      "id": 26,
+      "prompt": "我要开始收集这批错题，你看材料后帮我决定用哪种方式。",
+      "expected_output": "Does not inspect materials or choose on the teacher's behalf. It presents exactly three fixed choices—teacher-selected, anonymous corrected-work statistics, and roster-identified corrected-work statistics—and waits for the user to choose 1, 2 or 3.",
+      "files": [],
+      "expectations": [
+        "Presents exactly the three collection choices with concise required materials",
+        "Does not recommend or persist a selected mode before the user chooses",
+        "Does not call OCR, Web, Base or any Provider while waiting",
+        "After a later explicit choice, persists decidedBy=user and starts only the chosen workflow"
+      ]
+    },
+    {
+      "id": 27,
+      "prompt": "这是20260715-01这一批个人练习批改后的扫描PDF。请自动按右上角文字码和题号回到原题/变式，整理真实作答并更新再练反馈。一次做对不要直接算已掌握。",
+      "expected_output": "Uses AI/OCR only to observe page codes, visible question numbers, real responses and correction marks, then uses retry_batch.py to map every observation to the immutable personal/class manifest. It prepares an idempotent event and conservative Base projection plan, isolates uncertain pages, and writes only within the existing authorization scope.",
+      "files": [],
+      "expectations": [
+        "Maps pageCode plus visible item number to exact Rxx and questionId/variantId",
+        "Keeps observed response, correction evidence, result and teacher judgment separate",
+        "Defaults a correct retry to 练习中 and partial/incorrect to 需再练",
+        "Does not update uncertain or unmatched pages and does not overwrite original typical errors",
+        "Repeated submission reuses the stable event ID and does not append duplicate history"
+      ]
+    },
+    {
+      "id": 28,
+      "prompt": "这是一张整页试卷，请收录第12题。题目右侧有竖式图，左下方挨着第13题；OCR把题号12也识别进正文了。请整理完整题图和题干图片后写入飞书。",
+      "expected_output": "Uses the original-resolution page as visual truth, keeps OCR as text evidence, creates one complete Q12 crop plus one clean embedded-visual crop, separates question number 12 from the reusable stem text, and verifies both Base attachments by readback.",
+      "files": [],
+      "expectations": [
+        "Stores 12 in 题号 while 题干文本 starts with the actual stem rather than 12. or 第12题",
+        "Keeps the original Q12 long-division figure and every solving condition in 图片题目",
+        "Masks only clearly foreign Q13 content when rectangle overlap is unavoidable and does not redraw the diagram",
+        "Uses 题干图片 only for the clean non-text visual from the same original source pixels",
+        "Previews locally and downloads both Base attachments for visual readback after upload"
+      ]
+    }
+  ]
+}

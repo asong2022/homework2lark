@@ -1,0 +1,57 @@
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+
+# Node / Next / Playwright
+node_modules/
+.next/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+
+# Runtime data (keep directory guards)
+data/*
+!data/.gitignore
+apps/api/data/*
+!apps/api/data/.gitignore
+storage/sources/*
+!storage/sources/.gitkeep
+storage/crops/*
+!storage/crops/.gitkeep
+storage/provider-evidence/*
+!storage/provider-evidence/.gitkeep
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+*.swp
+
+# Private teacher inputs and generated outputs
+.codex-remote-attachments/
+.playwright-cli/
+.agents/skills/*-workspace/
+artifacts/auth/
+artifacts/class-*-practice-*/
+artifacts/daily-practice-*/
+artifacts/personal-practice-*/
+output/
+tmp/
+private-inputs/
+snapshot.tar
+
+# Local Trellis execution history is intentionally not published
+.trellis/tasks/
+.trellis/workspace/

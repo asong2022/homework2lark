@@ -1,0 +1,102 @@
+import type { NormalizedProblemRecord } from "@/lib/contracts";
+
+const timestamp = "2026-07-12T08:00:00Z";
+
+export function problemRecordFixture(
+  overrides: Partial<NormalizedProblemRecord> = {},
+): NormalizedProblemRecord {
+  const record: NormalizedProblemRecord = {
+    problemId: "problem_test",
+    status: "needs_review",
+    futureReuseEligible: false,
+    source: {
+      assetId: "asset_test",
+      fileName: "worksheet.png",
+      mediaType: "image/png",
+      storageKey: "sources/asset_test/original.png",
+      fileHash: "hash_test",
+      width: 1000,
+      height: 800,
+      fileSize: 2048,
+      contentUrl: "/api/v1/assets/asset_test/content",
+      duplicateOfAssetId: null,
+      createdAt: timestamp,
+    },
+    region: {
+      regionId: "region_test",
+      pageNumber: 1,
+      bbox: { x: 100, y: 120, width: 600, height: 320 },
+      coordinateSystem: "pixel_top_left",
+      croppedAssetKey: "crops/region_test/problem.png",
+      cropContentUrl: "/api/v1/regions/region_test/crop",
+      selectionSource: "manual",
+      detectionCandidateId: null,
+      detectionCandidateIds: [],
+      createdAt: timestamp,
+    },
+    ocr: {
+      runId: "ocr_test",
+      provider: "fake",
+      model: "fake-deterministic-v1",
+      providerVersion: "1",
+      text: "原始 OCR 文本",
+      confidence: 0.98,
+      blocks: [],
+      rawResponse: { text: "原始 OCR 文本" },
+      warnings: [],
+      status: "succeeded",
+      errorCode: null,
+      processingTimeMs: 1,
+      startedAt: timestamp,
+      finishedAt: timestamp,
+    },
+    latestOcrRun: {
+      runId: "ocr_test",
+      provider: "fake",
+      model: "fake-deterministic-v1",
+      providerVersion: "1",
+      text: "原始 OCR 文本",
+      confidence: 0.98,
+      blocks: [],
+      rawResponse: { text: "原始 OCR 文本" },
+      warnings: [],
+      status: "succeeded",
+      errorCode: null,
+      processingTimeMs: 1,
+      startedAt: timestamp,
+      finishedAt: timestamp,
+    },
+    humanRevision: null,
+    review: {
+      status: "needs_review",
+      reviewedAt: null,
+      statusHistory: [
+        {
+          eventId: "event_test",
+          fromStatus: "draft",
+          toStatus: "needs_review",
+          reason: "ocr_succeeded",
+          ocrRunId: "ocr_test",
+          revisionId: null,
+          createdAt: timestamp,
+        },
+      ],
+    },
+    lineage: {
+      sourceAssetId: "asset_test",
+      problemRegionId: "region_test",
+      detectionCandidateId: null,
+      detectionCandidateIds: [],
+      ocrRunId: "ocr_test",
+      revisionId: null,
+    },
+    history: {
+      ocrRuns: [],
+      revisions: [],
+    },
+    publication: null,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  };
+  return { ...record, ...overrides };
+}

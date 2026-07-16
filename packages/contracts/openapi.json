@@ -1,0 +1,2574 @@
+{
+  "components": {
+    "schemas": {
+      "AssetProblemCollectionResponse": {
+        "properties": {
+          "assetId": {
+            "title": "Assetid",
+            "type": "string"
+          },
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/NormalizedProblemResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "assetId",
+          "count",
+          "items"
+        ],
+        "title": "AssetProblemCollectionResponse",
+        "type": "object"
+      },
+      "BatchRegionCreateRequest": {
+        "properties": {
+          "coordinateSystem": {
+            "const": "normalized_top_left",
+            "title": "Coordinatesystem",
+            "type": "string"
+          },
+          "regions": {
+            "items": {
+              "$ref": "#/components/schemas/RegionSelectionRequest"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Regions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "coordinateSystem",
+          "regions"
+        ],
+        "title": "BatchRegionCreateRequest",
+        "type": "object"
+      },
+      "BatchRegionCreateResponse": {
+        "properties": {
+          "createdCount": {
+            "title": "Createdcount",
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RegionCreateResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "createdCount",
+          "items"
+        ],
+        "title": "BatchRegionCreateResponse",
+        "type": "object"
+      },
+      "Body_upload_asset_api_v1_assets_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "description": "JPG、JPEG 或 PNG 图片",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_asset_api_v1_assets_post",
+        "type": "object"
+      },
+      "ErrorBody": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "details": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "title": "Details",
+            "type": "object"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "requestId": {
+            "title": "Requestid",
+            "type": "string"
+          },
+          "retryable": {
+            "title": "Retryable",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "details",
+          "requestId",
+          "retryable"
+        ],
+        "title": "ErrorBody",
+        "type": "object"
+      },
+      "ErrorEnvelope": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorBody"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "ErrorEnvelope",
+        "type": "object"
+      },
+      "HealthResponse": {
+        "properties": {
+          "database": {
+            "const": "ok",
+            "title": "Database",
+            "type": "string"
+          },
+          "ocrProvider": {
+            "title": "Ocrprovider",
+            "type": "string"
+          },
+          "regionDetectionProvider": {
+            "title": "Regiondetectionprovider",
+            "type": "string"
+          },
+          "status": {
+            "const": "ok",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "database",
+          "ocrProvider",
+          "regionDetectionProvider"
+        ],
+        "title": "HealthResponse",
+        "type": "object"
+      },
+      "HistoryResponse": {
+        "properties": {
+          "ocrRuns": {
+            "items": {
+              "$ref": "#/components/schemas/OCRRunResponse"
+            },
+            "title": "Ocrruns",
+            "type": "array"
+          },
+          "revisions": {
+            "items": {
+              "$ref": "#/components/schemas/ProblemRevisionResponse"
+            },
+            "title": "Revisions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ocrRuns",
+          "revisions"
+        ],
+        "title": "HistoryResponse",
+        "type": "object"
+      },
+      "JsonValue": {},
+      "LineageResponse": {
+        "properties": {
+          "detectionCandidateId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detectioncandidateid"
+          },
+          "detectionCandidateIds": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Detectioncandidateids",
+            "type": "array"
+          },
+          "ocrRunId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ocrrunid"
+          },
+          "problemRegionId": {
+            "title": "Problemregionid",
+            "type": "string"
+          },
+          "revisionId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revisionid"
+          },
+          "sourceAssetId": {
+            "title": "Sourceassetid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sourceAssetId",
+          "problemRegionId",
+          "detectionCandidateId",
+          "detectionCandidateIds",
+          "ocrRunId",
+          "revisionId"
+        ],
+        "title": "LineageResponse",
+        "type": "object"
+      },
+      "NormalizedBBoxRequest": {
+        "properties": {
+          "height": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 1.0,
+            "title": "Height",
+            "type": "number"
+          },
+          "width": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 1.0,
+            "title": "Width",
+            "type": "number"
+          },
+          "x": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "X",
+            "type": "number"
+          },
+          "y": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Y",
+            "type": "number"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "width",
+          "height"
+        ],
+        "title": "NormalizedBBoxRequest",
+        "type": "object"
+      },
+      "NormalizedBBoxResponse": {
+        "properties": {
+          "height": {
+            "title": "Height",
+            "type": "number"
+          },
+          "width": {
+            "title": "Width",
+            "type": "number"
+          },
+          "x": {
+            "title": "X",
+            "type": "number"
+          },
+          "y": {
+            "title": "Y",
+            "type": "number"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "width",
+          "height"
+        ],
+        "title": "NormalizedBBoxResponse",
+        "type": "object"
+      },
+      "NormalizedProblemResponse": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "futureReuseEligible": {
+            "title": "Futurereuseeligible",
+            "type": "boolean"
+          },
+          "history": {
+            "$ref": "#/components/schemas/HistoryResponse"
+          },
+          "humanRevision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProblemRevisionResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "latestOcrRun": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OCRRunResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lineage": {
+            "$ref": "#/components/schemas/LineageResponse"
+          },
+          "ocr": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OCRRunResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "problemId": {
+            "title": "Problemid",
+            "type": "string"
+          },
+          "publication": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProblemPublicationResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "region": {
+            "$ref": "#/components/schemas/ProblemRegionResponse"
+          },
+          "review": {
+            "$ref": "#/components/schemas/ReviewResponse"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceAssetResponse"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReviewStatus"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "title": "Updatedat",
+            "type": "string"
+          }
+        },
+        "required": [
+          "problemId",
+          "status",
+          "futureReuseEligible",
+          "source",
+          "region",
+          "ocr",
+          "latestOcrRun",
+          "humanRevision",
+          "review",
+          "lineage",
+          "history",
+          "publication",
+          "createdAt",
+          "updatedAt"
+        ],
+        "title": "NormalizedProblemResponse",
+        "type": "object"
+      },
+      "OCRBlockResponse": {
+        "properties": {
+          "bbox": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PixelBBoxResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "title": "Metadata",
+            "type": "object"
+          },
+          "readingOrder": {
+            "title": "Readingorder",
+            "type": "integer"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/OCRBlockType"
+          }
+        },
+        "required": [
+          "type",
+          "text",
+          "bbox",
+          "confidence",
+          "readingOrder",
+          "metadata"
+        ],
+        "title": "OCRBlockResponse",
+        "type": "object"
+      },
+      "OCRBlockType": {
+        "enum": [
+          "text",
+          "formula",
+          "table",
+          "diagram",
+          "unknown"
+        ],
+        "title": "OCRBlockType",
+        "type": "string"
+      },
+      "OCRRunResponse": {
+        "properties": {
+          "blocks": {
+            "items": {
+              "$ref": "#/components/schemas/OCRBlockResponse"
+            },
+            "title": "Blocks",
+            "type": "array"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "errorCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errorcode"
+          },
+          "finishedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finishedat"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "processingTimeMs": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Processingtimems"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "providerVersion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Providerversion"
+          },
+          "rawResponse": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JsonValue"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "runId": {
+            "title": "Runid",
+            "type": "string"
+          },
+          "startedAt": {
+            "format": "date-time",
+            "title": "Startedat",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/OCRRunStatus"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "runId",
+          "provider",
+          "model",
+          "providerVersion",
+          "text",
+          "confidence",
+          "status",
+          "errorCode",
+          "blocks",
+          "rawResponse",
+          "warnings",
+          "startedAt",
+          "finishedAt",
+          "processingTimeMs"
+        ],
+        "title": "OCRRunResponse",
+        "type": "object"
+      },
+      "OCRRunStatus": {
+        "enum": [
+          "running",
+          "succeeded",
+          "failed"
+        ],
+        "title": "OCRRunStatus",
+        "type": "string"
+      },
+      "PixelBBoxResponse": {
+        "properties": {
+          "height": {
+            "title": "Height",
+            "type": "integer"
+          },
+          "width": {
+            "title": "Width",
+            "type": "integer"
+          },
+          "x": {
+            "title": "X",
+            "type": "integer"
+          },
+          "y": {
+            "title": "Y",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "width",
+          "height"
+        ],
+        "title": "PixelBBoxResponse",
+        "type": "object"
+      },
+      "ProblemPublicationResponse": {
+        "properties": {
+          "baseName": {
+            "title": "Basename",
+            "type": "string"
+          },
+          "errorCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errorcode"
+          },
+          "finishedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finishedat"
+          },
+          "pageRecordId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pagerecordid"
+          },
+          "pagesTableId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pagestableid"
+          },
+          "publicationId": {
+            "title": "Publicationid",
+            "type": "string"
+          },
+          "publishedRevisionId": {
+            "title": "Publishedrevisionid",
+            "type": "string"
+          },
+          "publisher": {
+            "title": "Publisher",
+            "type": "string"
+          },
+          "questionRecordId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questionrecordid"
+          },
+          "questionsTableId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questionstableid"
+          },
+          "retryable": {
+            "title": "Retryable",
+            "type": "boolean"
+          },
+          "startedAt": {
+            "format": "date-time",
+            "title": "Startedat",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PublicationStatus"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "title": "Updatedat",
+            "type": "string"
+          }
+        },
+        "required": [
+          "publicationId",
+          "publisher",
+          "status",
+          "publishedRevisionId",
+          "baseName",
+          "pagesTableId",
+          "questionsTableId",
+          "pageRecordId",
+          "questionRecordId",
+          "errorCode",
+          "retryable",
+          "startedAt",
+          "finishedAt",
+          "updatedAt"
+        ],
+        "title": "ProblemPublicationResponse",
+        "type": "object"
+      },
+      "ProblemRegionResponse": {
+        "properties": {
+          "bbox": {
+            "$ref": "#/components/schemas/PixelBBoxResponse"
+          },
+          "coordinateSystem": {
+            "title": "Coordinatesystem",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "cropContentUrl": {
+            "title": "Cropcontenturl",
+            "type": "string"
+          },
+          "croppedAssetKey": {
+            "title": "Croppedassetkey",
+            "type": "string"
+          },
+          "detectionCandidateId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detectioncandidateid"
+          },
+          "detectionCandidateIds": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Detectioncandidateids",
+            "type": "array"
+          },
+          "pageNumber": {
+            "title": "Pagenumber",
+            "type": "integer"
+          },
+          "regionId": {
+            "title": "Regionid",
+            "type": "string"
+          },
+          "selectionSource": {
+            "$ref": "#/components/schemas/RegionSelectionSource"
+          }
+        },
+        "required": [
+          "regionId",
+          "pageNumber",
+          "coordinateSystem",
+          "bbox",
+          "croppedAssetKey",
+          "cropContentUrl",
+          "selectionSource",
+          "detectionCandidateId",
+          "detectionCandidateIds",
+          "createdAt"
+        ],
+        "title": "ProblemRegionResponse",
+        "type": "object"
+      },
+      "ProblemRevisionResponse": {
+        "properties": {
+          "basedOnOcrRunId": {
+            "title": "Basedonocrrunid",
+            "type": "string"
+          },
+          "correctedText": {
+            "title": "Correctedtext",
+            "type": "string"
+          },
+          "correctionNote": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correctionnote"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "revisionId": {
+            "title": "Revisionid",
+            "type": "string"
+          },
+          "revisionNumber": {
+            "title": "Revisionnumber",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "revisionId",
+          "basedOnOcrRunId",
+          "revisionNumber",
+          "correctedText",
+          "correctionNote",
+          "createdAt"
+        ],
+        "title": "ProblemRevisionResponse",
+        "type": "object"
+      },
+      "PublicationStatus": {
+        "enum": [
+          "pending",
+          "succeeded",
+          "failed"
+        ],
+        "title": "PublicationStatus",
+        "type": "string"
+      },
+      "RegionCandidateResponse": {
+        "properties": {
+          "bbox": {
+            "$ref": "#/components/schemas/PixelBBoxResponse"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "coordinateSystem": {
+            "title": "Coordinatesystem",
+            "type": "string"
+          },
+          "detectionCandidateId": {
+            "title": "Detectioncandidateid",
+            "type": "string"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "title": "Metadata",
+            "type": "object"
+          },
+          "normalizedBbox": {
+            "$ref": "#/components/schemas/NormalizedBBoxResponse"
+          },
+          "providerCandidateId": {
+            "title": "Providercandidateid",
+            "type": "string"
+          },
+          "readingOrder": {
+            "title": "Readingorder",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "detectionCandidateId",
+          "providerCandidateId",
+          "coordinateSystem",
+          "bbox",
+          "normalizedBbox",
+          "confidence",
+          "readingOrder",
+          "metadata"
+        ],
+        "title": "RegionCandidateResponse",
+        "type": "object"
+      },
+      "RegionCreateRequest": {
+        "properties": {
+          "bbox": {
+            "$ref": "#/components/schemas/NormalizedBBoxRequest"
+          },
+          "coordinateSystem": {
+            "const": "normalized_top_left",
+            "title": "Coordinatesystem",
+            "type": "string"
+          }
+        },
+        "required": [
+          "coordinateSystem",
+          "bbox"
+        ],
+        "title": "RegionCreateRequest",
+        "type": "object"
+      },
+      "RegionCreateResponse": {
+        "properties": {
+          "bbox": {
+            "$ref": "#/components/schemas/PixelBBoxResponse"
+          },
+          "coordinateSystem": {
+            "title": "Coordinatesystem",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "cropContentUrl": {
+            "title": "Cropcontenturl",
+            "type": "string"
+          },
+          "detectionCandidateId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detectioncandidateid"
+          },
+          "detectionCandidateIds": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Detectioncandidateids",
+            "type": "array"
+          },
+          "problemId": {
+            "title": "Problemid",
+            "type": "string"
+          },
+          "regionId": {
+            "title": "Regionid",
+            "type": "string"
+          },
+          "selectionSource": {
+            "$ref": "#/components/schemas/RegionSelectionSource"
+          }
+        },
+        "required": [
+          "regionId",
+          "problemId",
+          "coordinateSystem",
+          "bbox",
+          "cropContentUrl",
+          "selectionSource",
+          "detectionCandidateId",
+          "detectionCandidateIds",
+          "createdAt"
+        ],
+        "title": "RegionCreateResponse",
+        "type": "object"
+      },
+      "RegionDetectionRunResponse": {
+        "properties": {
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/RegionCandidateResponse"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "errorCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errorcode"
+          },
+          "finishedAt": {
+            "format": "date-time",
+            "title": "Finishedat",
+            "type": "string"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "processingTimeMs": {
+            "title": "Processingtimems",
+            "type": "integer"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "providerVersion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Providerversion"
+          },
+          "runId": {
+            "title": "Runid",
+            "type": "string"
+          },
+          "startedAt": {
+            "format": "date-time",
+            "title": "Startedat",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RegionDetectionRunStatus"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "runId",
+          "provider",
+          "model",
+          "providerVersion",
+          "status",
+          "errorCode",
+          "candidates",
+          "warnings",
+          "startedAt",
+          "finishedAt",
+          "processingTimeMs"
+        ],
+        "title": "RegionDetectionRunResponse",
+        "type": "object"
+      },
+      "RegionDetectionRunStatus": {
+        "enum": [
+          "succeeded",
+          "failed"
+        ],
+        "title": "RegionDetectionRunStatus",
+        "type": "string"
+      },
+      "RegionSelectionRequest": {
+        "properties": {
+          "bbox": {
+            "$ref": "#/components/schemas/NormalizedBBoxRequest"
+          },
+          "detectionCandidateIds": {
+            "items": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Detectioncandidateids",
+            "type": "array"
+          },
+          "selectionSource": {
+            "$ref": "#/components/schemas/RegionSelectionSource"
+          }
+        },
+        "required": [
+          "selectionSource",
+          "bbox"
+        ],
+        "title": "RegionSelectionRequest",
+        "type": "object"
+      },
+      "RegionSelectionSource": {
+        "enum": [
+          "manual",
+          "detected"
+        ],
+        "title": "RegionSelectionSource",
+        "type": "string"
+      },
+      "ReviewRequest": {
+        "properties": {
+          "revisionId": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Revisionid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "revisionId"
+        ],
+        "title": "ReviewRequest",
+        "type": "object"
+      },
+      "ReviewResponse": {
+        "properties": {
+          "reviewedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewedat"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReviewStatus"
+          },
+          "statusHistory": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewStatusEventResponse"
+            },
+            "title": "Statushistory",
+            "type": "array"
+          }
+        },
+        "required": [
+          "status",
+          "reviewedAt",
+          "statusHistory"
+        ],
+        "title": "ReviewResponse",
+        "type": "object"
+      },
+      "ReviewStatus": {
+        "enum": [
+          "draft",
+          "ocr_completed",
+          "needs_review",
+          "reviewed"
+        ],
+        "title": "ReviewStatus",
+        "type": "string"
+      },
+      "ReviewStatusEventResponse": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "eventId": {
+            "title": "Eventid",
+            "type": "string"
+          },
+          "fromStatus": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReviewStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ocrRunId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ocrrunid"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "revisionId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revisionid"
+          },
+          "toStatus": {
+            "$ref": "#/components/schemas/ReviewStatus"
+          }
+        },
+        "required": [
+          "eventId",
+          "fromStatus",
+          "toStatus",
+          "reason",
+          "ocrRunId",
+          "revisionId",
+          "createdAt"
+        ],
+        "title": "ReviewStatusEventResponse",
+        "type": "object"
+      },
+      "RevisionCreateRequest": {
+        "properties": {
+          "basedOnOcrRunId": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Basedonocrrunid",
+            "type": "string"
+          },
+          "correctedText": {
+            "maxLength": 50000,
+            "minLength": 1,
+            "title": "Correctedtext",
+            "type": "string"
+          },
+          "correctionNote": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correctionnote"
+          }
+        },
+        "required": [
+          "basedOnOcrRunId",
+          "correctedText"
+        ],
+        "title": "RevisionCreateRequest",
+        "type": "object"
+      },
+      "SourceAssetResponse": {
+        "properties": {
+          "assetId": {
+            "title": "Assetid",
+            "type": "string"
+          },
+          "contentUrl": {
+            "title": "Contenturl",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "duplicateOfAssetId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duplicateofassetid"
+          },
+          "fileHash": {
+            "title": "Filehash",
+            "type": "string"
+          },
+          "fileName": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "fileSize": {
+            "title": "Filesize",
+            "type": "integer"
+          },
+          "height": {
+            "title": "Height",
+            "type": "integer"
+          },
+          "mediaType": {
+            "title": "Mediatype",
+            "type": "string"
+          },
+          "storageKey": {
+            "title": "Storagekey",
+            "type": "string"
+          },
+          "width": {
+            "title": "Width",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "assetId",
+          "fileName",
+          "mediaType",
+          "storageKey",
+          "fileHash",
+          "width",
+          "height",
+          "fileSize",
+          "contentUrl",
+          "createdAt"
+        ],
+        "title": "SourceAssetResponse",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "这是提供给 AI 与开发者的配置接口，不是教师日常操作页面。当前支持：上传单页图片、教师框题、OCR、人工修订、审核、来源追溯和发布飞书 Base。",
+    "title": "小学数学错题学习系统 API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/assets": {
+      "post": {
+        "operationId": "upload_asset_api_v1_assets_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_asset_api_v1_assets_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceAssetResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "HTTP 请求或上传表单格式错误。"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "上传图片超过系统允许的大小。"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "上传文件不是支持的图片格式。"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "请求内容没有通过校验。"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "系统内部或本地文件存储发生错误。"
+          }
+        },
+        "summary": "上传一张作业或试卷图片",
+        "tags": [
+          "来源图片"
+        ]
+      }
+    },
+    "/api/v1/assets/{asset_id}": {
+      "get": {
+        "operationId": "get_asset_api_v1_assets__asset_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "title": "Asset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceAssetResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "HTTP 请求或上传表单格式错误。"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "找不到请求的来源材料或题目记录。"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "请求内容没有通过校验。"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "系统内部或本地文件存储发生错误。"
+          }
+        },
+        "summary": "读取来源图片元数据",
+        "tags": [
+          "来源图片"
+        ]
+      }
+    },
+    "/api/v1/assets/{asset_id}/content": {
+      "get": {
+        "operationId": "get_asset_content_api_v1_assets__asset_id__content_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "title": "Asset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "HTTP 请求或上传表单格式错误。"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "找不到请求的来源材料或题目记录。"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "请求内容没有通过校验。"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "系统内部或本地文件存储发生错误。"
+          }
+        },
+        "summary": "读取来源图片内容",
+        "tags": [
+          "来源图片"
+        ]
+      }
+    },
+    "/api/v1/assets/{asset_id}/detection-runs": {
+      "post": {
+        "operationId": "create_detection_run_api_v1_assets__asset_id__detection_runs_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "title": "Asset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegionDetectionRunResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "HTTP 请求或上传表单格式错误。"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "找不到请求的来源材料或题目记录。"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "请求内容没有通过校验。"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "系统内部或本地文件存储发生错误。"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "外部识别服务返回了无法解析的结果。"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "识别或发布服务暂时不可用，或尚未正确配置。"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "外部识别服务运行超时。"
+          }
+        },
+        "summary": "可选：自动检测题目候选框",
+        "tags": [
+          "题目录入"
+        ]
+      }
+    },
+    "/api/v1/assets/{asset_id}/problems": {
+      "get": {
+        "operationId": "list_asset_problems_api_v1_assets__asset_id__problems_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "title": "Asset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetProblemCollectionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "HTTP 请求或上传表单格式错误。"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "找不到请求的来源材料或题目记录。"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "请求内容没有通过校验。"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "系统内部或本地文件存储发生错误。"
+          }
+        },
+        "summary": "读取这张来源页中的全部错题",
+        "tags": [
+          "题目审核"
+        ]
+      }
+    },
+    "/api/v1/assets/{asset_id}/regions": {
+      "post": {
+        "operationId": "create_region_api_v1_assets__asset_id__regions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "title": "Asset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegionCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegionCreateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "HTTP 请求或上传表单格式错误。"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "找不到请求的来源材料或题目记录。"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "请求内容没有通过校验。"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "系统内部或本地文件存储发生错误。"
+          }
+        },
+        "summary": "保存一个人工题目框",
+        "tags": [
+          "题目录入"
+        ]
+      }
+    },
+    "/api/v1/assets/{asset_id}/regions/batch": {
+      "post": {
+        "operationId": "create_regions_batch_api_v1_assets__asset_id__regions_batch_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "title": "Asset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchRegionCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchRegionCreateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "HTTP 请求或上传表单格式错误。"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "找不到请求的来源材料或题目记录。"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "当前状态不允许执行这个操作。"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "请求内容没有通过校验。"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "系统内部或本地文件存储发生错误。"
+          }
+        },
+        "summary": "批量保存教师确认的题目框",
+        "tags": [
+          "题目录入"
+        ]
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "operationId": "health_api_v1_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "HTTP 请求或上传表单格式错误。"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "请求内容没有通过校验。"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "系统内部或本地文件存储发生错误。"
+          }
+        },
+        "summary": "检查系统与 Provider 状态",
+        "tags": [
+          "系统状态"
+        ]
+      }
+    },
+    "/api/v1/problems/{problem_id}": {
+      "get": {
+        "operationId": "get_problem_api_v1_problems__problem_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "problem_id",
+            "required": true,
+            "schema": {
+              "title": "Problem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NormalizedProblemResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "HTTP 请求或上传表单格式错误。"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "找不到请求的来源材料或题目记录。"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "请求内容没有通过校验。"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "系统内部或本地文件存储发生错误。"
+          }
+        },
+        "summary": "读取一条完整的规范化题目记录",
+        "tags": [
+          "题目审核"
+        ]
+      }
+    },
+    "/api/v1/problems/{problem_id}/publications/lark": {
+      "post": {
+        "operationId": "publish_problem_api_v1_problems__problem_id__publications_lark_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "problem_id",
+            "required": true,
+            "schema": {
+              "title": "Problem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemPublicationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "HTTP 请求或上传表单格式错误。"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "找不到请求的来源材料或题目记录。"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "当前状态不允许执行这个操作。"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "请求内容没有通过校验。"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "系统内部或本地文件存储发生错误。"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "外部识别服务返回了无法解析的结果。"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "识别或发布服务暂时不可用，或尚未正确配置。"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "外部识别服务运行超时。"
+          }
+        },
+        "summary": "把已审核题目发布到飞书 Base",
+        "tags": [
+          "飞书 Base"
+        ]
+      }
+    },
+    "/api/v1/problems/{problem_id}/review": {
+      "post": {
+        "operationId": "review_problem_api_v1_problems__problem_id__review_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "problem_id",
+            "required": true,
+            "schema": {
+              "title": "Problem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NormalizedProblemResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "HTTP 请求或上传表单格式错误。"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "找不到请求的来源材料或题目记录。"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "当前状态不允许执行这个操作。"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "请求内容没有通过校验。"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "系统内部或本地文件存储发生错误。"
+          }
+        },
+        "summary": "确认一个教师修订为已审核题目",
+        "tags": [
+          "题目审核"
+        ]
+      }
+    },
+    "/api/v1/regions/{region_id}/crop": {
+      "get": {
+        "operationId": "get_region_crop_api_v1_regions__region_id__crop_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "region_id",
+            "required": true,
+            "schema": {
+              "title": "Region Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "HTTP 请求或上传表单格式错误。"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "找不到请求的来源材料或题目记录。"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "请求内容没有通过校验。"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "系统内部或本地文件存储发生错误。"
+          }
+        },
+        "summary": "读取题目裁图",
+        "tags": [
+          "题目录入"
+        ]
+      }
+    },
+    "/api/v1/regions/{region_id}/ocr-runs": {
+      "post": {
+        "operationId": "create_ocr_run_api_v1_regions__region_id__ocr_runs_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "region_id",
+            "required": true,
+            "schema": {
+              "title": "Region Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OCRRunResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "HTTP 请求或上传表单格式错误。"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "找不到请求的来源材料或题目记录。"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "请求内容没有通过校验。"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "系统内部或本地文件存储发生错误。"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "外部识别服务返回了无法解析的结果。"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "识别或发布服务暂时不可用，或尚未正确配置。"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "外部识别服务运行超时。"
+          }
+        },
+        "summary": "新增一次 OCR 识别",
+        "tags": [
+          "OCR 与修订"
+        ]
+      }
+    },
+    "/api/v1/regions/{region_id}/revisions": {
+      "post": {
+        "operationId": "create_revision_api_v1_regions__region_id__revisions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "region_id",
+            "required": true,
+            "schema": {
+              "title": "Region Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevisionCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemRevisionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "HTTP 请求或上传表单格式错误。"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "找不到请求的来源材料或题目记录。"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "请求内容没有通过校验。"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "系统内部或本地文件存储发生错误。"
+          }
+        },
+        "summary": "保存一个新的教师修订版本",
+        "tags": [
+          "OCR 与修订"
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "description": "保存和读取不可覆盖的原始作业图片。",
+      "name": "来源图片"
+    },
+    {
+      "description": "保存教师确认的题目区域与裁图。",
+      "name": "题目录入"
+    },
+    {
+      "description": "保留机器识别证据并追加教师修订版本。",
+      "name": "OCR 与修订"
+    },
+    {
+      "description": "读取来源页题目并执行教师审核门槛。",
+      "name": "题目审核"
+    },
+    {
+      "description": "显式发布已经审核的题目资产。",
+      "name": "飞书 Base"
+    },
+    {
+      "description": "供 AI 或开发者诊断本地服务。",
+      "name": "系统状态"
+    }
+  ]
+}

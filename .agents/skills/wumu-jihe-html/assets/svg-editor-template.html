@@ -1,0 +1,1308 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,">
+<title>五木几何</title>
+<style>
+:root{color-scheme:light;--ink:#263445;--muted:#738096;--line:#e3e8ef;--soft:#f5f7fa;--green:#2f9b72;--green-soft:#eaf7f1;--white:#fff;font-family:"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif}*{box-sizing:border-box}body{margin:0;height:100vh;overflow:hidden;background:#fff;color:var(--ink)}button,input{font:inherit}.app{display:grid;grid-template-columns:272px minmax(520px,1fr);height:100vh}.toolbox{border-right:1px solid var(--line);background:#fbfcfd;overflow:auto;padding:20px 16px 28px}.brand{display:flex;align-items:center;gap:10px;margin:0 6px 22px}.brand-mark{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--green);color:#fff;font-weight:700}.brand h1{font-size:17px;margin:0}.brand p{font-size:11px;color:var(--muted);margin:2px 0 0}.group{margin:0 0 22px}.group-title{margin:0 6px 9px;font-size:13px;font-weight:700;color:#3e4a5b}.tool-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.tool{min-height:70px;border:1px solid transparent;border-radius:10px;background:transparent;color:var(--ink);padding:8px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;transition:.15s}.tool:hover{background:#fff;border-color:var(--line)}.tool.active{background:var(--green-soft);border-color:#bce3d2;color:#147653}.icon{width:28px;height:24px;display:grid;place-items:center;font-size:22px;line-height:1}.tool span:last-child{font-size:12px}.workspace{position:relative;overflow:hidden;background:#fff}.topbar{position:absolute;z-index:3;top:16px;left:18px;right:18px;height:46px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.96);display:flex;align-items:center;justify-content:space-between;padding:0 10px 0 15px;box-shadow:0 5px 18px rgba(35,49,66,.07)}.title{font-size:14px;font-weight:650}.top-actions{display:flex;gap:6px}.action{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;padding:7px 11px;cursor:pointer}.action:hover{border-color:#bdc8d5}.action.primary{background:var(--green);border-color:var(--green);color:#fff}.stage{position:absolute;inset:0;padding-top:70px}.stage svg{width:100%;height:100%;display:block;background:#fff;touch-action:none}.object{cursor:move;vector-effect:non-scaling-stroke}.object.hidden-object{opacity:.14}.object.selected{stroke:#ff7300!important;animation:breathe 1.5s infinite ease-in-out}.status{position:absolute;left:18px;bottom:16px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--muted);font-size:12px;padding:8px 11px;box-shadow:0 4px 14px rgba(35,49,66,.06)}.floating{position:absolute;z-index:8;display:none;min-width:350px}.floating.show{display:block}.object-name{display:inline-block;margin:0 0 6px;padding:7px 11px;border-radius:9px;background:#f2f2f2;color:#555;font-size:13px}.float-bar{display:flex;align-items:center;gap:3px;padding:7px;border:1px solid #edf0f3;border-radius:13px;background:#fff;box-shadow:0 9px 28px rgba(31,43,57,.16)}.float-btn{width:45px;height:43px;border:0;border-radius:9px;background:#fff;color:#334052;font-size:20px;cursor:pointer}.float-btn:hover,.float-btn.open{background:#f2f5f7}.float-btn.active{background:#fff0e0;color:#ff7300}.float-btn.danger{color:#b84a4a}.popover{position:absolute;top:102px;left:0;display:none;width:310px;padding:16px;border:1px solid #edf0f3;border-radius:13px;background:#fff;box-shadow:0 12px 30px rgba(31,43,57,.18)}.popover.show{display:block}.popover.more{left:auto;right:0;width:230px}.popover h3{font-size:13px;margin:0 0 12px}.palette{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}.swatch{height:32px;border:2px solid #fff;border-radius:8px;box-shadow:0 0 0 1px #dce1e7;cursor:pointer}.range-row{margin-top:14px}.range-row label,.mini-row label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}.range-row input{width:100%;accent-color:var(--green)}.line-types{display:flex;align-items:center;gap:7px}.line-type{flex:1;display:flex;align-items:center;justify-content:center;border:1px solid #dce1e7;border-radius:9px;background:#fff;padding:8px 0;cursor:pointer}.line-type.active{border-color:var(--green);color:var(--green);background:var(--green-soft)}.line-type svg{width:22px;height:22px}.v-divider{width:1px;height:24px;background:#dce1e7;margin:0 4px}.quick-colors{margin-bottom:14px;grid-template-columns:repeat(8,1fr)}.mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.mini-row input{width:100%;height:34px;border:1px solid #d8dee6;border-radius:7px;padding:5px 8px}.menu-btn{width:100%;border:0;background:#fff;border-radius:8px;padding:10px;text-align:left;cursor:pointer}.menu-btn:hover{background:#f5f7f8}@media(max-width:850px){.app{grid-template-columns:220px 1fr}.toolbox{padding-left:10px;padding-right:10px}}@media(max-width:680px){.app{grid-template-columns:92px 1fr}.brand h1,.brand p,.group-title,.tool span:last-child{display:none}.tool-grid{grid-template-columns:1fr}.toolbox{padding:14px 10px}.brand{justify-content:center}.tool{min-height:48px}.floating{min-width:310px}}
+.tool .icon{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.tool .icon circle[fill]:not([fill="none"]),.tool .icon path[fill]:not([fill="none"]){fill:currentColor}.app,.toolbox,.workspace,.floating,.float-bar,.popover,.object-name,.tool,svg text{user-select:none;-webkit-user-select:none}.stage{padding-top:0}.status{top:16px;bottom:auto;left:18px;right:auto;width:auto;max-width:calc(100% - 36px);min-height:46px;display:flex;align-items:center;z-index:4;background:rgba(255,255,255,.97);font-size:16px;font-weight:650;padding:10px 16px}.floating{width:max-content;max-width:calc(100vw - 24px)}.float-bar{width:max-content;min-height:58px;justify-content:space-between;padding:7px 8px;gap:8px}.float-btn{width:42px;height:42px;display:grid;place-items:center;flex:0 0 42px}.float-btn svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.object-name{max-width:252px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.object:is(polygon,rect,circle,ellipse,path){pointer-events:all}.object.group-selected{filter:drop-shadow(0 0 1px rgba(255,115,0,.45));stroke:#ffb366!important}.preview{stroke:#2f9b72;fill:rgba(47,155,114,.08);stroke-width:2.5;stroke-dasharray:8 6;vector-effect:non-scaling-stroke}.preview-point{fill:#2f9b72;stroke:#fff;stroke-width:2}.drawing-cursor{cursor:crosshair}.resize-handle{fill:#fff;stroke:#ff7300;stroke-width:2.5;cursor:grab;vector-effect:non-scaling-stroke}.resize-handle:hover{fill:#fff0e0}.rotation-center{fill:#fff;stroke:#ff7300;stroke-width:2.5;cursor:move}.rotation-handle{fill:#ff7300;stroke:#fff;stroke-width:2.5;cursor:grab}.rotation-guide{stroke:#ff7300;stroke-width:1.5;stroke-dasharray:5 5;pointer-events:none}.handle-guide{stroke:#ff7300;stroke-width:1.5;stroke-dasharray:4 4;fill:none;pointer-events:none}@keyframes shadePulse{0%,100%{fill:rgba(217,217,217,.18);filter:drop-shadow(0 0 0 rgba(47,155,114,0))}50%{fill:rgba(217,217,217,.58);filter:drop-shadow(0 0 5px rgba(47,155,114,.35))}}.shade-candidate{animation:shadePulse 1.15s ease-in-out infinite;stroke:#2f9b72!important}.labels-hidden text.object{display:none}.points-hidden circle.object[data-kind="点"],.points-hidden circle.object[data-kind="中点"]{display:none}
+.rotation-center-mark{stroke:#ff7300;stroke-width:2;pointer-events:none}
+.rotate-mask{cursor:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23ff7300" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>') 12 12,grab}
+.rotate-mask:active{cursor:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23ff7300" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>') 12 12,grabbing}
+@keyframes breathe{0%{opacity:1}50%{opacity:0.4}100%{opacity:1}}
+text.selected, text.group-selected { fill: #ff7300 !important; stroke: none !important; filter: none !important; }
+circle.point-auto.selected, circle.point-auto.group-selected { fill: #ff7300 !important; stroke: #ff7300 !important; filter: none !important; }
+
+/* Bottom Toolbar */
+.bottom-toolbar { position: absolute; z-index: 10; bottom: 24px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; padding: 6px 10px; background: #fff; border-radius: 14px; box-shadow: 0 6px 20px rgba(0,0,0,0.12); border: 1px solid #edf0f3; }
+.bottom-tool { width: 34px; height: 34px; border-radius: 8px; border: none; background: transparent; cursor: pointer; display: grid; place-items: center; color: #4a5568; transition: 0.15s; }
+.bottom-tool:hover { background: #f2f5f7; }
+.bottom-tool.active { background: #eaf7f1; color: #2f9b72; }
+.bottom-tool svg { width: 20px; height: 20px; }
+.bottom-popover { position: absolute; z-index: 9; display: none; padding: 12px 14px; background: #fff; border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,0.1); border: 1px solid #edf0f3; align-items: stretch; gap: 14px; }
+.bottom-popover.show { display: flex; }
+.stroke-sizes-col { display: flex; flex-direction: column; gap: 10px; justify-content: space-between; margin: 2px 0; }
+.size-btn-col { width: 22px; height: 22px; border-radius: 50%; border: 1px solid transparent; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; transition: 0.15s; }
+.size-btn-col::after { content: ''; width: var(--s); height: var(--s); border-radius: 50%; border: 1.5px solid #1a1a1a; transition: 0.15s; }
+.size-btn-col:hover { background: #f2f5f7; }
+.size-btn-col:hover::after { border-color: #2f9b72; }
+.size-btn-col.active { border-color: #d1e8de; background: #eaf7f1; }
+.size-btn-col.active::after { border-color: #2f9b72; background: #2f9b72; }
+.pop-divider-vert { width: 1px; background: #edf0f3; margin: 0; }
+.pen-palette-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.pen-color-rect { width: 36px; height: 36px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.06); cursor: pointer; padding: 0; position: relative; transition: 0.15s; }
+.pen-color-rect:hover { transform: scale(1.05); }
+.pen-color-rect.active::after { content: ''; position: absolute; inset: -4px; border-radius: 10px; border: 2px solid var(--c); }
+.clear-btn-large { display: flex; align-items: center; justify-content: center; gap: 8px; height: 100%; padding: 0 16px; border-radius: 6px; border: 1px solid #dce1e7; background: #fff; cursor: pointer; color: #1a1a1a; font-size: 15px; font-weight: 500; transition: 0.15s; white-space: nowrap; }
+.clear-btn-large:hover { background: #f8f9fa; border-color: #cbd5e1; }
+.clear-btn-large svg { width: 20px; height: 20px; stroke-width: 2.2; stroke: #334052; }
+
+.fullscreen-btn { position: absolute; z-index: 5; top: 16px; right: 16px; width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,0.9); cursor: pointer; display: grid; place-items: center; color: var(--ink); box-shadow: 0 4px 12px rgba(0,0,0,0.08); transition: 0.15s; }
+.fullscreen-btn:hover { background: #fff; transform: scale(1.05); }
+.export-float { position: absolute; z-index: 5; bottom: 16px; right: 16px; width: 52px; height: 52px; border: none; border-radius: 26px; background: var(--green); cursor: pointer; display: grid; place-items: center; color: #fff; box-shadow: 0 6px 20px rgba(47,155,114,0.35); transition: 0.15s; }
+.export-float:hover { background: #147653; transform: translateY(-2px); }
+</style></head>
+<body><main class="app">
+<aside class="toolbox" aria-label="几何工具">
+ <div class="brand"><div class="brand-mark">五</div><div><h1>五木几何</h1><p>纯本地编辑</p></div></div>
+ <section class="group"><h2 class="group-title">基础工具</h2><div class="tool-grid">
+  <button class="tool active" data-tool="select"><svg class="icon" viewBox="0 0 24 24"><path d="M5 3l12 9-6 1 3 6-2 1-3-6-4 4z"/></svg><span>移动</span></button><button class="tool" data-tool="point"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/></svg><span>点</span></button><button class="tool" data-tool="segment"><svg class="icon" viewBox="0 0 24 24"><circle cx="4" cy="12" r="2.5"/><path d="M6.5 12h11"/><circle cx="20" cy="12" r="2.5"/></svg><span>线段</span></button><button class="tool" data-tool="line"><svg class="icon" viewBox="0 0 24 24"><path d="M3 12h18"/></svg><span>直线</span></button><button class="tool" data-tool="arrow"><svg class="icon" viewBox="0 0 24 24"><path d="M4 12h16M16 8l4 4-4 4M8 8l-4 4 4 4" fill="none" stroke="currentColor" stroke-width="2"/></svg><span>箭头线</span></button><button class="tool" data-tool="text"><svg class="icon" viewBox="0 0 24 24"><path d="M5 20L12 4l7 16M8 14h8"/></svg><span>文本</span></button><button class="tool" data-tool="shade"><svg class="icon" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 8l4-4M4 12l8-8M4 16l12-12M4 20l16-16M8 20l12-12M12 20l8-8M16 20l4-4" stroke="currentColor" stroke-width="1"/></svg><span>阴影</span></button>
+ </div></section>
+ <section class="group"><h2 class="group-title">尺规与图形</h2><div class="tool-grid">
+  <button class="tool" data-tool="circle"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11"/><circle cx="12" cy="12" r="2"/></svg><span>圆</span></button><button class="tool" data-tool="semicircle"><svg class="icon" viewBox="0 0 24 24"><path d="M4 17a8 8 0 0 1 16 0M4 17h16"/></svg><span>半圆</span></button><button class="tool" data-tool="polygon"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3l8 6-3 10H7L4 9z"/></svg><span>多边形</span></button><button class="tool" data-tool="rectangle"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12"/></svg><span>长方形</span></button><button class="tool" data-tool="rightangle"><svg class="icon" viewBox="0 0 24 24"><path d="M4 20h16M4 4v16M4 16h4v4"/></svg><span>直角</span></button><button class="tool" data-tool="angle"><svg class="icon" viewBox="0 0 24 24"><path d="M4 20L20 4M4 20h16M14 20a10 10 0 0 0-2.93-7.07"/></svg><span>角</span></button><button class="tool" data-tool="arc"><svg class="icon" viewBox="0 0 24 24"><path d="M5 19A14 14 0 0 1 19 5" fill="none" stroke="currentColor" stroke-width="2"/></svg><span>弧线</span></button><button class="tool" data-tool="ellipse"><svg class="icon" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="9" ry="6"/></svg><span>椭圆</span></button><button class="tool" data-tool="cylinder"><svg class="icon" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 6v12a7 3 0 0 0 14 0V6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 18a7 3 0 0 1 14 0" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="2 2"/></svg><span>圆柱</span></button><button class="tool" data-tool="cone"><svg class="icon" viewBox="0 0 24 24"><path d="M4 18L12 4l8 14" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 18a8 3 0 0 0 16 0" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 18a8 3 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="2 2"/></svg><span>圆锥</span></button><button class="tool" data-tool="cube"><svg class="icon" viewBox="0 0 24 24"><path d="M6 10h8v8H6z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M6 10l4-4h8l-4 4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M14 10l4-4v8l-4 4" fill="none" stroke="currentColor" stroke-width="2"/></svg><span>正方体</span></button><button class="tool" data-tool="cuboid"><svg class="icon" viewBox="0 0 24 24"><path d="M4 11h10v6H4z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 11l4-4h10l-4 4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M14 11l4-4v6l-4 4" fill="none" stroke="currentColor" stroke-width="2"/></svg><span>长方体</span></button><button class="tool" data-tool="midpoint"><svg class="icon" viewBox="0 0 24 24"><circle cx="4" cy="12" r="2"/><path d="M6 12h12"/><circle cx="12" cy="12" r="2.5"/><circle cx="20" cy="12" r="2"/></svg><span>中点</span></button>
+ </div></section>
+ <section class="group"><h2 class="group-title">编辑</h2><div class="tool-grid">
+  <button class="tool" id="toggleLabels"><svg class="icon" viewBox="0 0 24 24"><path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/><path d="M9 15l3-7 3 7M10 13h4"/></svg><span>显隐标签</span></button><button class="tool" id="togglePoints"><svg class="icon" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2.5"/><path d="M7.5 12h9"/><circle cx="19" cy="12" r="2.5"/></svg><span>显隐端点</span></button><button class="tool" id="undo"><svg class="icon" viewBox="0 0 24 24"><path d="M9 7H4v-5M4 7c3-4 10-5 14-1s3 11-1 14"/></svg><span>撤销</span></button><button class="tool" id="redo"><svg class="icon" viewBox="0 0 24 24"><path d="M15 7h5v-5M20 7c-3-4-10-5-14-1s-3 11 1 14"/></svg><span>恢复</span></button><button class="tool" id="clearAll"><svg class="icon" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 14h8l1-14M10 11v6M14 11v6"/></svg><span>清空</span></button>
+ </div></section>
+</aside>
+<section class="workspace"><button class="fullscreen-btn" id="fsBtn" title="全屏"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button><button class="export-float" id="exportBtn" title="导出 PNG"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button><div class="stage"><svg id="drawing" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720"><defs><pattern id="hatch-pattern" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="10" stroke="#999" stroke-width="1.5"/></pattern><marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 1 L 10 5 L 0 9 z" fill="context-stroke"/></marker></defs><g id="viewport"><!-- SVG_OBJECTS --><g id="previewLayer" pointer-events="none"></g><g id="handleLayer"></g></g></svg></div><div class="status" id="status">选择对象后显示浮动工具条</div>
+<div class="floating" id="floating"><div class="object-name" id="objectName">对象</div><div class="float-bar"><button class="float-btn" id="rotateBtn" title="旋转"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button><button class="float-btn" id="colorBtn" title="填充/边框颜色"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m19 11-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2c.8.8 2 .8 2.8 0L19 11Z"/><path d="m5 2 5 5"/><path d="M2 13h15"/><path d="M22 20a2 2 0 1 1-4 0c0-1.6 1.7-2.4 2-4 .3 1.6 2 2.4 2 4Z"/></svg></button><button class="float-btn" id="lineBtn" title="线型"><svg viewBox="0 0 24 24"><path d="M3 12h18"/></svg></button><button class="float-btn" id="labelBtn" title="标签"><svg viewBox="0 0 24 24"><path d="M5 20L12 4l7 16M8 14h8"/></svg></button><button class="float-btn" id="unlockBtn" title="解散组合" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg></button><button class="float-btn danger" id="remove2" title="删除"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 14h8l1-14"/></svg></button><button class="float-btn" id="tickBtn" title="切换刻度线" style="display:none;"><svg viewBox="0 0 24 24"><path d="M4 12h16M4 6v12M20 6v12" stroke="currentColor" stroke-width="2" fill="none"/></svg></button><button class="float-btn" id="angleBtn" title="显示角度" style="display:none;"><svg viewBox="0 0 24 24"><path d="M4 20L20 4M4 20h16M14 20a10 10 0 0 0-6.3-9" stroke="currentColor" stroke-width="2" fill="none"/><text x="14" y="14" font-size="6" fill="currentColor">θ</text></svg></button><button class="float-btn" id="moreBtn" title="更多"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg></button></div>
+ <div class="popover" id="colorPop"><h3>颜色</h3><div class="palette" id="palette"></div><div class="range-row"><label>填充透明度</label><input id="opacity" type="range" min="0" max="1" step="0.05" value="1"></div><input id="stroke" type="color" value="#000000" hidden><input id="fill" type="color" value="#ffffff" hidden></div>
+ <div class="popover" id="linePop"><h3>线条颜色</h3><div class="palette quick-colors" id="lineColors"></div><h3>线宽</h3><div class="range-row"><input id="width" type="range" min="1" max="12" step="1" value="3"></div><h3 style="margin-top:14px">线条样式</h3><div class="line-types"><button class="line-type active" data-dash="" title="实线"><svg viewBox="0 0 24 24"><line x1="2" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2"/></svg></button><button class="line-type" data-dash="12 8" title="虚线"><svg viewBox="0 0 24 24"><line x1="2" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2" stroke-dasharray="6 4"/></svg></button><button class="line-type" data-dash="3 7" title="点线"><svg viewBox="0 0 24 24"><line x1="2" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2" stroke-dasharray="2 4"/></svg></button><div class="v-divider"></div><button class="line-type arrow-toggle" id="arrowToggleBtn" title="箭头"><svg viewBox="0 0 24 24"><path d="M2 12h18M14 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2"/></svg></button></div></div>
+ <div class="popover more" id="morePop"><button class="menu-btn" id="bringFront">⬆　置于顶层</button><button class="menu-btn" id="sendBack">⬇　置于底层</button><button class="menu-btn" id="duplicate">▣　克隆对象</button><button class="menu-btn" id="visible">◉　显示 / 隐藏</button><div class="mini-grid"><div class="mini-row"><label>位置 X</label><input id="x" type="number"></div><div class="mini-row"><label>位置 Y</label><input id="y" type="number"></div></div><input id="label" hidden></div>
+</div>
+<div class="bottom-toolbar">
+    <button class="bottom-tool active" data-tool="select" title="移动/选择"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l7.07 17 2.51-7.39L21 11.07z"/><path d="m13 13 6 6"/></svg></button>
+    <button class="bottom-tool" data-tool="pen" title="画笔"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>
+    <button class="bottom-tool" data-tool="eraser" title="橡皮擦"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m13.3 9 5.3 5.3"/></svg></button>
+</div>
+<div class="bottom-popover" id="penPopover">
+    <div class="stroke-sizes-col" id="penSizes">
+        <button class="size-btn-col" data-size="2" style="--s: 4px;"></button>
+        <button class="size-btn-col active" data-size="4" style="--s: 8px;"></button>
+        <button class="size-btn-col" data-size="8" style="--s: 14px;"></button>
+    </div>
+    <div class="pop-divider-vert"></div>
+    <div class="pen-palette-grid" id="penPalette">
+        <button class="pen-color-rect active" data-color="#ea4335" style="background: #ea4335; --c: #ea4335;"></button>
+        <button class="pen-color-rect" data-color="#1a1a1a" style="background: #1a1a1a; --c: #1a1a1a;"></button>
+        <button class="pen-color-rect" data-color="#f97316" style="background: #f97316; --c: #f97316;"></button>
+        <button class="pen-color-rect" data-color="#3b82f6" style="background: #3b82f6; --c: #3b82f6;"></button>
+        <button class="pen-color-rect" data-color="#22c55e" style="background: #22c55e; --c: #22c55e;"></button>
+        <button class="pen-color-rect" data-color="#ffffff" style="background: #ffffff; --c: #dce1e7;"></button>
+    </div>
+</div>
+<div class="bottom-popover" id="eraserPopover">
+    <div class="stroke-sizes-col" id="eraserSizes">
+        <button class="size-btn-col" data-size="10" style="--s: 4px;"></button>
+        <button class="size-btn-col active" data-size="20" style="--s: 8px;"></button>
+        <button class="size-btn-col" data-size="40" style="--s: 14px;"></button>
+    </div>
+    <div class="pop-divider-vert"></div>
+    <button id="clearStrokesBtn" class="clear-btn-large"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.5 5.5-4-4L6 13l4 4 11.5-11.5zM6 13L2 17v4h4l4-4M10 17l-4-4"/><path d="M14 13l-4-4"/></svg><span>清除所有笔迹</span></button>
+</div>
+</section>
+</main>
+<script>
+
+const svg = document.querySelector('#drawing'), status = document.querySelector('#status');
+let tool = 'select', selected = null, drag = null, handleDrag = null, anchor = null, poly = [], shadeCandidate = null;
+const history = [], future = [], $ = id => document.getElementById(id), say = s => { status.textContent = s; status.style.display = s ? 'flex' : 'none'; };
+let scale = 1, panX = 0, panY = 0, isPanning = false, spaceDown = false;
+let nextLabelCode = 65; // 'A'
+let penSize = 4, eraserSize = 20, isDrawingFreehand = false, isErasing = false, penPoints = [], currentPenId = null, penColor = '#ea4335';
+
+function nextLabel() { const l = String.fromCharCode(nextLabelCode); nextLabelCode++; if(nextLabelCode>90) nextLabelCode=65; return l; }
+
+function capture() {
+    const clone = $('viewport').cloneNode(true);
+    clone.querySelectorAll('.selected,.group-selected,.shade-candidate').forEach(e => e.classList.remove('selected', 'group-selected', 'shade-candidate'));
+    clone.querySelectorAll('#previewLayer,#handleLayer,#snapLayer').forEach(e => e.remove());
+    return clone.innerHTML;
+}
+function restore(markup) {
+    $('viewport').innerHTML = markup + '<g id="previewLayer" pointer-events="none"></g><g id="handleLayer"></g><g id="snapLayer" pointer-events="none"></g>';
+    selected = null; shadeCandidate = null; $('floating').classList.remove('show');
+}
+function snap() {
+    history.push(capture());
+    if (history.length > 40) history.shift();
+    future.length = 0;
+}
+
+function getSnapPoint(p, excludeNodes = []) {
+    const threshold = 20 / scale;
+    let closest = null, minDist = threshold;
+    if (tool === 'polygon' && poly.length >= 3) {
+        const d = Math.hypot(p.x - poly[0].x, p.y - poly[0].y);
+        if (d < minDist) { minDist = d; closest = { x: poly[0].x, y: poly[0].y }; }
+    }
+    document.querySelectorAll('.object:not(.hidden-object)').forEach(el => {
+        if (excludeNodes.includes(el)) return;
+        const pts = [];
+        const tag = el.tagName.toLowerCase();
+        if (tag === 'circle' || tag === 'ellipse') pts.push([+(el.getAttribute('cx') || 0), +(el.getAttribute('cy') || 0)]);
+        if (tag === 'line') {
+            const x1 = +(el.getAttribute('x1') || 0), y1 = +(el.getAttribute('y1') || 0), x2 = +(el.getAttribute('x2') || 0), y2 = +(el.getAttribute('y2') || 0);
+            pts.push([x1, y1], [x2, y2], [(x1 + x2) / 2, (y1 + y2) / 2]);
+        }
+        if (tag === 'polygon' || tag === 'polyline') {
+            (el.getAttribute('points') || '').trim().split(/\s+/).forEach(pt => {
+                if (!pt) return;
+                const [x, y] = pt.split(',').map(Number);
+                pts.push([x, y]);
+            });
+        }
+        if (tag === 'rect') {
+            const x = +(el.getAttribute('x') || 0), y = +(el.getAttribute('y') || 0), w = +(el.getAttribute('width') || 0), h = +(el.getAttribute('height') || 0);
+            pts.push([x, y], [x + w, y], [x, y + h], [x + w, y + h], [x + w / 2, y + h / 2]);
+        }
+        if (pts.length === 0) return;
+        const ctm = el.getCTM();
+        pts.forEach(([lx, ly]) => {
+            const pt = svg.createSVGPoint(); pt.x = lx; pt.y = ly;
+            const gp = pt.matrixTransform(ctm);
+            const vpMatrix = $('viewport').getScreenCTM().inverse();
+            const localGp = gp.matrixTransform(vpMatrix);
+
+            const dist = Math.hypot(localGp.x - p.x, localGp.y - p.y);
+            if (dist < minDist) { minDist = dist; closest = { x: localGp.x, y: localGp.y }; }
+        });
+    });
+    return closest;
+}
+function showSnap(p) {
+    let layer = $('snapLayer');
+    if (!layer) {
+        layer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        layer.id = 'snapLayer'; layer.setAttribute('pointer-events', 'none');
+        $('viewport').append(layer);
+    }
+    if (p) layer.innerHTML = `<circle cx="${p.x}" cy="${p.y}" r="${12/scale}" fill="none" stroke="#2f9b72" stroke-width="${2/scale}"/><circle cx="${p.x}" cy="${p.y}" r="${4/scale}" fill="#2f9b72"/>`;
+    else layer.innerHTML = '';
+}
+function openInlineEdit(el) {
+    let input = $('inlineEditor');
+    if (!input) {
+        input = document.createElement('input'); input.id = 'inlineEditor'; input.type = 'text';
+        input.style.cssText = 'position:absolute;z-index:99;padding:4px 8px;border:2px solid #2f9b72;border-radius:6px;font-size:16px;box-shadow:0 4px 12px rgba(0,0,0,0.15);outline:none;';
+        document.querySelector('.workspace').append(input);
+    }
+    const box = el.getBoundingClientRect(), work = document.querySelector('.workspace').getBoundingClientRect();
+    input.style.left = (box.left - work.left) + 'px';
+    input.style.top = (box.top - work.top + box.height / 2 - 16) + 'px';
+    input.value = el.tagName === 'text' ? el.textContent : (el.dataset.label || '');
+    input.style.display = 'block'; input.focus(); input.select();
+    const save = () => {
+        if (input.style.display === 'none') return;
+        snap();
+        const v = input.value;
+        if (el.tagName === 'text') el.textContent = safe(v);
+        else el.dataset.label = safe(v);
+        $('objectName').textContent = (el.dataset.kind || el.tagName) + (v ? ' ' + v : '');
+        input.style.display = 'none';
+        choose(el);
+    };
+    input.onblur = save;
+    input.onkeydown = e => {
+        if (e.key === 'Enter') { e.preventDefault(); save(); }
+        if (e.key === 'Escape') { input.style.display = 'none'; }
+    };
+}
+
+function previewLayer() {
+    let layer = $('previewLayer');
+    if (!layer) {
+        layer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        layer.id = 'previewLayer'; layer.setAttribute('pointer-events', 'none');
+        $('viewport').append(layer);
+    }
+    return layer;
+}
+function clearPreview() { previewLayer().innerHTML = ''; }
+function previewAt(p) {
+    const layer = previewLayer();
+    if (tool === 'polygon' && poly.length) {
+        const pts = poly.map(pt => pt.x + ',' + pt.y).join(' ');
+        layer.innerHTML = `<polyline points="${pts} ${p.x},${p.y}" stroke="#000" fill="none" stroke-width="${3/scale}" stroke-dasharray="5,5"/>` + poly.map(pt => `<circle cx="${pt.x}" cy="${pt.y}" r="${3/scale}" fill="#000"/>`).join('');
+        return;
+    }
+    if (!anchor) { layer.innerHTML = ''; return; }
+    const x = Math.min(anchor.x, p.x), y = Math.min(anchor.y, p.y), w = Math.abs(p.x - anchor.x), h = Math.abs(p.y - anchor.y), cx = (anchor.x + p.x) / 2, cy = (anchor.y + p.y) / 2, r = Math.hypot(p.x - anchor.x, p.y - anchor.y);
+    let shape = '';
+    if (tool === 'segment' || tool === 'line') shape = `<line class="preview" x1="${anchor.x}" y1="${anchor.y}" x2="${p.x}" y2="${p.y}" stroke-width="${3/scale}"/>`;
+    if (tool === 'circle') shape = `<circle class="preview" cx="${anchor.x}" cy="${anchor.y}" r="${r}" stroke-width="${3/scale}"/>`;
+    if (tool === 'rectangle') shape = `<rect class="preview" x="${x}" y="${y}" width="${w}" height="${h}" stroke-width="${3/scale}"/>`;
+    if (tool === 'ellipse' || tool === 'shade') shape = `<ellipse class="preview" cx="${cx}" cy="${cy}" rx="${w / 2}" ry="${h / 2}" stroke-width="${3/scale}"/>`;
+    if (tool === 'semicircle') { const sx = 2 * anchor.x - p.x, sy = 2 * anchor.y - p.y; shape = `<path class="preview" d="M ${p.x} ${p.y} A ${r} ${r} 0 0 0 ${sx} ${sy} Z" stroke-width="${3/scale}" fill="none"/>`; }
+    if (tool === 'midpoint') shape = `<line class="preview" x1="${anchor.x}" y1="${anchor.y}" x2="${p.x}" y2="${p.y}" stroke-width="${3/scale}"/><circle class="preview-point" cx="${cx}" cy="${cy}" r="${6/scale}"/>`;
+    if (tool === 'rightangle') { const mx = anchor.x + Math.sign(p.x - anchor.x) * 15, my = anchor.y + Math.sign(p.y - anchor.y) * 15; shape = `<path class="preview" d="M ${p.x} ${anchor.y} L ${anchor.x} ${anchor.y} L ${anchor.x} ${p.y} M ${mx} ${anchor.y} L ${mx} ${my} L ${anchor.x} ${my}" stroke-width="${3/scale}" fill="none"/>`; }
+    if (tool === 'angle') { const sx = Math.sign(p.x - anchor.x) || 1; const hx = anchor.x + sx * r; shape = `<path class="preview" d="${drawAnglePath(anchor.x, anchor.y, hx, anchor.y, p.x, p.y)}" stroke-width="${3/scale}" fill="none"/>`; }
+    if (tool === 'arc') { const dx = p.x - anchor.x, dy = p.y - anchor.y; const nx = -dy * 0.3, ny = dx * 0.3; shape = `<path class="preview" d="M ${anchor.x} ${anchor.y} Q ${anchor.x + dx/2 + nx} ${anchor.y + dy/2 + ny} ${p.x} ${p.y}" stroke-width="${3/scale}" fill="none"/>`; }
+    if (tool === 'arrow') shape = `<path class="preview" d="${drawArrowPath(anchor.x, anchor.y, p.x, p.y, true)}" stroke-width="${3/scale}" fill="none"/>`;
+    if (tool === 'cylinder') {
+        const cx = (anchor.x + p.x)/2, rx = Math.abs(p.x - anchor.x)/2, ry = Math.max(4, rx * 0.3);
+        const y1 = Math.min(anchor.y, p.y), y2 = Math.max(anchor.y, p.y);
+        shape = `<ellipse class="preview" cx="${cx}" cy="${y1}" rx="${rx}" ry="${ry}" stroke-width="${3/scale}" fill="none"/><path class="preview" d="M ${cx-rx} ${y1} L ${cx-rx} ${y2} M ${cx+rx} ${y1} L ${cx+rx} ${y2} M ${cx-rx} ${y2} A ${rx} ${ry} 0 0 0 ${cx+rx} ${y2} M ${cx-rx} ${y2} A ${rx} ${ry} 0 0 1 ${cx+rx} ${y2}" stroke-width="${3/scale}" fill="none"/>`;
+    }
+    if (tool === 'cone') {
+        const cx = (anchor.x + p.x)/2, rx = Math.abs(p.x - anchor.x)/2, ry = Math.max(4, rx * 0.3);
+        const y1 = Math.min(anchor.y, p.y), y2 = Math.max(anchor.y, p.y);
+        shape = `<path class="preview" d="M ${cx} ${y1} L ${cx-rx} ${y2} M ${cx} ${y1} L ${cx+rx} ${y2} M ${cx-rx} ${y2} A ${rx} ${ry} 0 0 0 ${cx+rx} ${y2} M ${cx-rx} ${y2} A ${rx} ${ry} 0 0 1 ${cx+rx} ${y2}" stroke-width="${3/scale}" fill="none"/>`;
+    }
+    if (tool === 'cube' || tool === 'cuboid') {
+        let cw = w, ch = h;
+        if (tool === 'cube') { const size = Math.max(cw, ch); cw = size; ch = size; }
+        const cox = cw * 0.35, coy = -ch * 0.35;
+        const fx = cx - cw/2, fy = cy - ch/2;
+        const paths = getCubePaths(fx, fy, cw, ch, cox, coy);
+        shape = `<path class="preview" d="${paths.shapeFront}" stroke-width="${3/scale}" fill="none"/>`;
+    }
+
+    layer.innerHTML = shape + `<circle class="preview-point" cx="${anchor.x}" cy="${anchor.y}" r="${3/scale}"/>`;
+}
+function eraseAt(e) {
+    const p = point(e);
+    previewLayer().innerHTML = `<circle cx="${p.x}" cy="${p.y}" r="${eraserSize/scale}" fill="rgba(220,53,69,0.2)" stroke="#dc3545" stroke-width="${2/scale}" pointer-events="none"/>`;
+    const r = eraserSize;
+    const pts = [ {x: e.clientX, y: e.clientY}, {x: e.clientX - r/2, y: e.clientY}, {x: e.clientX + r/2, y: e.clientY}, {x: e.clientX, y: e.clientY - r/2}, {x: e.clientX, y: e.clientY + r/2} ];
+    pts.forEach(pt => {
+        document.elementsFromPoint(pt.x, pt.y).forEach(el => {
+            if (el.classList && el.classList.contains('object')) { groupMembers(el).forEach(m => m.remove()); }
+        });
+    });
+}
+function point(e) {
+    const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY;
+    return p.matrixTransform($('viewport').getScreenCTM().inverse());
+}
+function rawScreenPoint(e) { return { x: e.clientX, y: e.clientY }; }
+function trans(el) { const m = (el.getAttribute('transform') || '').match(/translate\(([-\d.]+)[ ,]([-\d.]+)\)/); return m ? [+m[1], +m[2]] : [0, 0]; }
+function rotation(el) { const m = (el.getAttribute('transform') || '').match(/rotate\(([-\d.]+)[ ,]([-\d.]+)[ ,]([-\d.]+)\)/), box = el.getBBox(); return { angle: m ? +m[1] : (+el.dataset.angle || 0), cx: m ? +m[2] : (Number.isFinite(+el.dataset.rcx) ? +el.dataset.rcx : box.x + box.width / 2), cy: m ? +m[3] : (Number.isFinite(+el.dataset.rcy) ? +el.dataset.rcy : box.y + box.height / 2) }; }
+function setPose(el, tx, ty, angle, cx, cy) {
+    el.dataset.angle = angle; el.dataset.rcx = cx; el.dataset.rcy = cy;
+    let t = `translate(${tx} ${ty}) rotate(${angle} ${cx} ${cy})`;
+    if (el.classList.contains('label-auto')) {
+        const px = +el.getAttribute('x'), py = +el.getAttribute('y');
+        t += ` rotate(${-angle} ${px} ${py})`;
+    }
+    el.setAttribute('transform', t);
+}
+function setRotationCenter(el, cx, cy) { const [tx, ty] = trans(el), r = rotation(el), a = r.angle * Math.PI / 180, dx = r.cx - cx, dy = r.cy - cy, rx = dx * Math.cos(a) - dy * Math.sin(a), ry = dx * Math.sin(a) + dy * Math.cos(a); setPose(el, tx + dx - rx, ty + dy - ry, r.angle, cx, cy); }
+function localPoint(el, p) {
+    const [tx, ty] = trans(el);
+    const r = rotation(el);
+    const mTrans = svg.createSVGMatrix().translate(tx, ty);
+    const mRot = svg.createSVGMatrix().translate(r.cx, r.cy).rotate(r.angle).translate(-r.cx, -r.cy);
+    const m = mTrans.multiply(mRot);
+    const q = svg.createSVGPoint(); q.x = p.x; q.y = p.y;
+    return q.matrixTransform(m.inverse());
+}
+function hex(v, f = '#000000') { return /^#[0-9a-f]{6}$/i.test(v || '') ? v : f; }
+function safe(v) { return String(v).replace(/[<&]/g, ''); }
+
+function handleLayer() { let layer = $('handleLayer'); if (!layer) { layer = document.createElementNS('http://www.w3.org/2000/svg', 'g'); layer.id = 'handleLayer'; $('viewport').append(layer); } return layer; }
+function clearHandles() { handleLayer().innerHTML = ''; }
+function handle(x, y, role, index = '') { return `<circle class="resize-handle" data-role="${role}" data-index="${index}" cx="${x}" cy="${y}" r="${9/scale}"/>`; }
+function canRotate(el) { const tag = el.tagName.toLowerCase(); return ['line', 'polygon', 'polyline', 'rect', 'ellipse', 'g', 'path'].includes(tag) || (tag === 'text' && !el.classList.contains('label-auto')); }
+function showHandles(el) {
+    clearHandles(); if (!el) return;
+    const tag = el.tagName.toLowerCase(), pose = el.getAttribute('transform') || '', box = el.getBBox();
+    let marks = '', unrotatedMarks = '';
+    if (tool === 'select') {
+        if (tag === 'line') marks = handle(+el.getAttribute('x1'), +el.getAttribute('y1'), 'line-start') + handle(+el.getAttribute('x2'), +el.getAttribute('y2'), 'line-end');
+        if (tag === 'circle') {
+            const cx = +el.getAttribute('cx'), cy = +el.getAttribute('cy'), r = +el.getAttribute('r');
+            marks = handle(cx, cy, 'circle-center');
+            if (el.dataset.kind !== '点') marks += `<line class="handle-guide" x1="${cx}" y1="${cy}" x2="${cx + r}" y2="${cy}" stroke-width="${1.5/scale}"/>` + handle(cx + r, cy, 'circle-radius');
+        }
+        if (tag === 'ellipse') { const cx = +el.getAttribute('cx'), cy = +el.getAttribute('cy'), rx = +el.getAttribute('rx'), ry = +el.getAttribute('ry'); marks = handle(cx + rx, cy, 'ellipse-x') + handle(cx, cy + ry, 'ellipse-y'); }
+        if (tag === 'rect') { const ax = +el.getAttribute('x'), ay = +el.getAttribute('y'), w = +el.getAttribute('width'), h = +el.getAttribute('height'); marks = handle(ax, ay, 'rect-start') + handle(ax + w, ay + h, 'rect-end'); }
+        if (tag === 'text' && (!el.classList.contains('label-auto') || el.classList.contains('angle-value'))) { marks = handle(box.x, box.y, 'text-start') + handle(box.x + box.width, box.y + box.height, 'text-end') + handle(box.x + box.width/2, box.y + box.height/2, 'text-move'); }
+        if (tag === 'polygon' || tag === 'polyline') { const pts = (el.getAttribute('points') || '').trim().split(/\s+/); marks = pts.map((v, i) => { const [a, b] = v.split(',').map(Number); return handle(a, b, 'vertex', i); }).join(''); }
+        if (tag === 'path' && el.dataset.kind === '半圆') { marks = handle(+el.dataset.cx, +el.dataset.cy, 'semicircle-center') + handle(+el.dataset.rx, +el.dataset.ry, 'semicircle-radius'); }
+        if (tag === 'path' && el.dataset.kind === '角') { marks = handle(+el.dataset.cx, +el.dataset.cy, 'angle-center') + handle(+el.dataset.ax, +el.dataset.ay, 'angle-a') + handle(+el.dataset.bx, +el.dataset.by, 'angle-b'); }
+        if (tag === 'path' && el.dataset.kind === '弧线') {
+            const p1x = +el.dataset.p1x, p1y = +el.dataset.p1y, p2x = +el.dataset.p2x, p2y = +el.dataset.p2y, cpx = +el.dataset.cpx, cpy = +el.dataset.cpy;
+            marks = handle(p1x, p1y, 'arc-p1') + handle(p2x, p2y, 'arc-p2') + handle((p1x/4) + (p2x/4) + (cpx/2), (p1y/4) + (p2y/4) + (cpy/2), 'arc-m');
+        }
+        if (tag === 'path' && el.dataset.kind === '箭头线') { marks = handle(+el.dataset.x1, +el.dataset.y1, 'arrow-start') + handle(+el.dataset.x2, +el.dataset.y2, 'arrow-end'); }
+        if (tag === 'g' && el.dataset.kind === '圆柱') { const cx = +el.dataset.cx, y1 = +el.dataset.cy1, y2 = +el.dataset.cy2, rx = +el.dataset.rx, ry = +el.dataset.ry; marks = handle(cx, y1, 'cyl-top') + handle(cx, y2, 'cyl-bottom') + handle(cx+rx, (y1+y2)/2, 'cyl-rx') + handle(cx, y2+ry, 'cyl-ry'); }
+        if (tag === 'g' && el.dataset.kind === '圆锥') { const cx = +el.dataset.cx, y1 = +el.dataset.cy1, y2 = +el.dataset.cy2, rx = +el.dataset.rx, ry = +el.dataset.ry; marks = handle(cx, y1, 'cone-top') + handle(cx, y2, 'cone-bottom') + handle(cx+rx, y2, 'cone-rx') + handle(cx, y2+ry, 'cone-ry'); }
+        if (tag === 'g' && ['正方体', '长方体'].includes(el.dataset.kind)) {
+            const ccx = +el.dataset.cx, ccy = +el.dataset.cy, cw = +el.dataset.w, ch = +el.dataset.h, cox = +el.dataset.ox, coy = +el.dataset.oy;
+            marks = handle(ccx, ccy, 'cuboid-center') + handle(ccx+cw/2, ccy, 'cuboid-w') + handle(ccx, ccy+ch/2, 'cuboid-h') + handle(ccx+cw/2+cox, ccy-ch/2+coy, 'cuboid-depth');
+        }
+    }
+    if (canRotate(el) && tool === 'rotate') {
+        const r = rotation(el);
+        const box = el.getBBox();
+        marks += `<rect class="rotate-mask" data-role="rotation-mask" x="${box.x - 24}" y="${box.y - 24}" width="${box.width + 48}" height="${box.height + 48}" fill="transparent" stroke="none" />`;
+        marks += `<g class="rotation-marks"><circle class="rotation-center" data-role="rotation-center" cx="${r.cx}" cy="${r.cy}" r="${9/scale}"/><path class="rotation-center-mark" d="M ${r.cx - 4/scale} ${r.cy}h${8/scale}M ${r.cx} ${r.cy - 4/scale}v${8/scale}" stroke-width="${2/scale}"/></g>`;
+    }
+    handleLayer().innerHTML = `<g transform="${pose}">${marks}</g>`;
+}
+function closePops() { document.querySelectorAll('.popover,.float-btn').forEach(e => e.classList.remove('show', 'open')); }
+function placeFloat() {
+    if (!selected) return;
+    const float = $('floating');
+    if (float.dataset.moved === 'true') return;
+    const box = selected.getBoundingClientRect(), work = document.querySelector('.workspace').getBoundingClientRect(), fw = float.offsetWidth;
+    let left = box.left - work.left + box.width / 2 - fw / 2, top = box.bottom - work.top + 12;
+    left = Math.max(12, Math.min(left, work.width - fw - 12));
+    if (top > work.height - 360) top = box.top - work.top - 80;
+    top = Math.max(12, Math.min(top, work.height - 360));
+    float.style.left = left + 'px'; float.style.top = top + 'px';
+}
+function groupMembers(el) { const id = el?.dataset.group; return id ? [...svg.querySelectorAll('.object')].filter(x => x.dataset.group === id) : el ? [el] : []; }
+function choose(el) {
+    svg.querySelectorAll('.selected,.group-selected').forEach(x => x.classList.remove('selected', 'group-selected'));
+    selected = el;
+    if (!el) { $('floating').style.display = ''; $('floating').classList.remove('show'); clearHandles(); $('floating').dataset.moved = ''; return; }
+    const members = groupMembers(el);
+    members.forEach(x => x.classList.add(x === el ? 'selected' : 'group-selected'));
+    const [x, y] = trans(el);
+    $('x').value = x.toFixed(1); $('y').value = y.toFixed(1);
+    $('stroke').value = hex(el.getAttribute('stroke')); $('fill').value = hex(el.getAttribute('fill'), '#ffffff');
+    $('width').value = el.getAttribute('stroke-width') || 3; $('opacity').value = el.getAttribute('fill-opacity') || el.getAttribute('opacity') || 1;
+    $('label').value = el.tagName === 'text' ? el.textContent : '';
+    $('objectName').textContent = (el.dataset.kind || el.tagName) + (el.dataset.group ? ' · 组合' : '') + (el.tagName === 'text' ? ' ' + el.textContent : '');
+    $('visible').textContent = el.classList.contains('hidden-object') ? '◯　设为可见' : '◉　显示 / 隐藏';
+    $('unlockBtn').style.display = (el.tagName.toLowerCase() === 'g' || el.dataset.group) ? '' : 'none';
+
+    if (el.dataset.kind === '箭头线') {
+        $('tickBtn').style.display = '';
+        if (el.dataset.ticks === 'true') $('tickBtn').classList.add('active');
+        else $('tickBtn').classList.remove('active');
+    } else {
+        $('tickBtn').style.display = 'none';
+    }
+    if (el.dataset.kind === '角') {
+        $('angleBtn').style.display = '';
+        $('angleBtn').className = svg.querySelector(`text.angle-value[data-group="${el.dataset.group}"]`) ? 'float-btn active' : 'float-btn';
+    } else {
+        $('angleBtn').style.display = 'none';
+    }
+
+    if (selected.getAttribute('marker-end')) $('arrowToggleBtn').classList.add('active');
+    else $('arrowToggleBtn').classList.remove('active');
+
+    if (tool === 'rotate') {
+        tool = 'select';
+        $('rotateBtn').classList.remove('active');
+    }
+
+    $('floating').classList.add('show'); closePops(); showHandles(el); placeFloat();
+    say(el.dataset.group ? '已组合锁定：拖动将整体移动' : '拖动对象移动，拖动绿色控制点调整形状');
+}
+function add(markup) { previewLayer().insertAdjacentHTML('beforebegin', markup); }
+function addPointLabel(p, index, gid, center) {
+    let px = p.x + 10, py = p.y - 10, ta = 'start', db = 'auto';
+    if (center && center.isLine) {
+        const len = Math.hypot(center.dx, center.dy) || 1;
+        const nx = -center.dy / len, ny = center.dx / len;
+        const outDx = p.x - center.x, outDy = p.y - center.y, outLen = Math.hypot(outDx, outDy) || 1;
+        px = p.x + (outDx/outLen) * 15 + nx * 20; py = p.y + (outDy/outLen) * 15 + ny * 20;
+        ta = 'middle'; db = 'central';
+    } else if (center) {
+        const dx = p.x - center.x, dy = p.y - center.y, len = Math.hypot(dx, dy);
+        if (len > 0) { px = p.x + (dx / len) * 22; py = p.y + (dy / len) * 22; ta = 'middle'; db = 'central'; }
+    }
+    return `<circle class="object point-auto" data-group="${gid}" data-point-index="${index}" data-kind="点" cx="${p.x}" cy="${p.y}" r="3" stroke="#000" fill="#000"/><text class="object label-auto" data-group="${gid}" data-point-index="${index}" data-kind="文本" x="${px}" y="${py}" text-anchor="${ta}" dominant-baseline="${db}" font-size="22" fill="#000" stroke="none">${nextLabel()}</text>`;
+}
+function drawArrowPath(x1, y1, x2, y2, hasTicks) {
+    const dx = x2 - x1, dy = y2 - y1;
+    const len = Math.hypot(dx, dy);
+    if (len === 0) return '';
+    const nx = dx / len, ny = dy / len;
+    const mx = -ny, my = nx;
+    const aw = 8, ah = 12;
+    const sax1 = x1 + nx * ah + mx * aw/2, say1 = y1 + ny * ah + my * aw/2;
+    const sax2 = x1 + nx * ah - mx * aw/2, say2 = y1 + ny * ah - my * aw/2;
+    const eax1 = x2 - nx * ah + mx * aw/2, eay1 = y2 - ny * ah + my * aw/2;
+    const eax2 = x2 - nx * ah - mx * aw/2, eay2 = y2 - ny * ah - my * aw/2;
+    let path = `M ${x1} ${y1} L ${x2} ${y2} M ${x1} ${y1} L ${sax1} ${say1} M ${x1} ${y1} L ${sax2} ${say2} M ${x2} ${y2} L ${eax1} ${eay1} M ${x2} ${y2} L ${eax2} ${eay2}`;
+    if (hasTicks === 'true' || hasTicks === true) {
+        const tw = 12;
+        const tsx1 = x1 + mx * tw, tsy1 = y1 + my * tw;
+        const tsx2 = x1 - mx * tw, tsy2 = y1 - my * tw;
+        const tex1 = x2 + mx * tw, tey1 = y2 + my * tw;
+        const tex2 = x2 - mx * tw, tey2 = y2 - my * tw;
+        path += ` M ${tsx1} ${tsy1} L ${tsx2} ${tsy2} M ${tex1} ${tey1} L ${tex2} ${tey2}`;
+    }
+    return path;
+}
+function drawAnglePath(cx, cy, ax, ay, bx, by) {
+    const rA = Math.hypot(ax - cx, ay - cy), rB = Math.hypot(bx - cx, by - cy);
+    const aA = Math.atan2(ay - cy, ax - cx), aB = Math.atan2(by - cy, bx - cx);
+    let diff = aB - aA;
+    while (diff < -Math.PI) diff += 2 * Math.PI;
+    while (diff > Math.PI) diff -= 2 * Math.PI;
+    const sweep = diff > 0 ? 1 : 0;
+    const r = Math.min(rA, rB);
+    const ra = Math.min(40, r * 0.8);
+    const arcAx = cx + Math.cos(aA) * ra, arcAy = cy + Math.sin(aA) * ra;
+    const arcBx = cx + Math.cos(aB) * ra, arcBy = cy + Math.sin(aB) * ra;
+    return `M ${cx} ${cy} L ${ax} ${ay} M ${cx} ${cy} L ${bx} ${by} M ${arcAx} ${arcAy} A ${ra} ${ra} 0 0 ${sweep} ${arcBx} ${arcBy}`;
+}
+function getCubePaths(fx, fy, cw, ch, cox, coy) {
+    const bx = fx + cox, by = fy + coy;
+    const faceSide = cox >= 0
+        ? `M ${fx+cw} ${fy} L ${bx+cw} ${by} L ${bx+cw} ${by+ch} L ${fx+cw} ${fy+ch} Z`
+        : `M ${fx} ${fy} L ${bx} ${by} L ${bx} ${by+ch} L ${fx} ${fy+ch} Z`;
+    const faceVert = coy <= 0
+        ? `M ${fx} ${fy} L ${bx} ${by} L ${bx+cw} ${by} L ${fx+cw} ${fy} Z`
+        : `M ${fx} ${fy+ch} L ${bx} ${by+ch} L ${bx+cw} ${by+ch} L ${fx+cw} ${fy+ch} Z`;
+    const front = `M ${fx} ${fy} L ${fx+cw} ${fy} L ${fx+cw} ${fy+ch} L ${fx} ${fy+ch} Z`;
+    const eTL = `M ${fx} ${fy} L ${bx} ${by}`, eTR = `M ${fx+cw} ${fy} L ${bx+cw} ${by}`, eBR = `M ${fx+cw} ${fy+ch} L ${bx+cw} ${by+ch}`, eBL = `M ${fx} ${fy+ch} L ${bx} ${by+ch}`;
+    const bT = `M ${bx} ${by} L ${bx+cw} ${by}`, bR = `M ${bx+cw} ${by} L ${bx+cw} ${by+ch}`, bB = `M ${bx+cw} ${by+ch} L ${bx} ${by+ch}`, bL = `M ${bx} ${by+ch} L ${bx} ${by}`;
+    let hiddenConn, hiddenBack1, hiddenBack2;
+    if (cox >= 0 && coy <= 0) { hiddenConn = eBL; hiddenBack1 = bL; hiddenBack2 = bB; }
+    else if (cox < 0 && coy <= 0) { hiddenConn = eBR; hiddenBack1 = bR; hiddenBack2 = bB; }
+    else if (cox >= 0 && coy > 0) { hiddenConn = eTL; hiddenBack1 = bL; hiddenBack2 = bT; }
+    else { hiddenConn = eTR; hiddenBack1 = bR; hiddenBack2 = bT; }
+    const allEdges = [eTL, eTR, eBR, eBL, bT, bR, bB, bL];
+    const hiddenSet = new Set([hiddenConn, hiddenBack1, hiddenBack2]);
+    return {
+        back: allEdges.filter(e => hiddenSet.has(e)).join(' '),
+        right: faceSide, top: faceVert, front: front,
+        shapeFront: front + ' ' + allEdges.filter(e => !hiddenSet.has(e)).join(' ')
+    };
+}
+function twoPoint(p, q, kind) {
+    const x = Math.min(p.x, q.x), y = Math.min(p.y, q.y), w = Math.abs(q.x - p.x), h = Math.abs(q.y - p.y), cx = (p.x + q.x) / 2, cy = (p.y + q.y) / 2, r = Math.hypot(q.x - p.x, q.y - p.y);
+    const gid = 'g' + Date.now();
+    if (kind === 'segment') { add(`<line class="object" data-group="${gid}" data-kind="线段" x1="${p.x}" y1="${p.y}" x2="${q.x}" y2="${q.y}" stroke="#000" stroke-width="3"/>${addPointLabel(p, 0, gid, {x:cx, y:cy, isLine: true, dx: q.x-p.x, dy: q.y-p.y})}${addPointLabel(q, 1, gid, {x:cx, y:cy, isLine: true, dx: q.x-p.x, dy: q.y-p.y})}`); }
+    else if (kind === 'line') { const dx = q.x - p.x, dy = q.y - p.y, l = Math.hypot(dx, dy) || 1; add(`<line class="object" data-group="${gid}" data-kind="直线" x1="${p.x - dx / l * 1800}" y1="${p.y - dy / l * 1800}" x2="${q.x + dx / l * 1800}" y2="${q.y + dy / l * 1800}" stroke="#000" stroke-width="3"/>${addPointLabel(p, 0, gid, {x:cx, y:cy, isLine: true, dx: q.x-p.x, dy: q.y-p.y})}${addPointLabel(q, 1, gid, {x:cx, y:cy, isLine: true, dx: q.x-p.x, dy: q.y-p.y})}`); }
+    else if (kind === 'circle') add(`<circle class="object" data-kind="圆" cx="${p.x}" cy="${p.y}" r="${r}" stroke="#000" fill="none" stroke-width="3"/>`);
+    else if (kind === 'semicircle') {
+        const sx = 2 * p.x - q.x, sy = 2 * p.y - q.y;
+        add(`<path class="object" data-kind="半圆" data-cx="${p.x}" data-cy="${p.y}" data-rx="${q.x}" data-ry="${q.y}" d="M ${q.x} ${q.y} A ${r} ${r} 0 0 0 ${sx} ${sy} Z" stroke="#000" fill="none" stroke-width="3"/>`);
+    }
+    else if (kind === 'rectangle') add(`<rect class="object" data-kind="长方形" x="${x}" y="${y}" width="${w}" height="${h}" stroke="#000" fill="none" stroke-width="3"/>`);
+    else if (kind === 'ellipse') add(`<ellipse class="object" data-kind="椭圆" cx="${cx}" cy="${cy}" rx="${w / 2}" ry="${h / 2}" stroke="#000" fill="none" stroke-width="3"/>`);
+    else if (kind === 'shade') add(`<ellipse class="object" data-kind="阴影" cx="${cx}" cy="${cy}" rx="${w / 2}" ry="${h / 2}" stroke="#000" fill="url(#hatch-pattern)" opacity="1" stroke-width="2"/>`);
+    else if (kind === 'rightangle') {
+        const mx = p.x + Math.sign(q.x - p.x) * 15, my = p.y + Math.sign(q.y - p.y) * 15;
+        add(`<path class="object" data-kind="直角标记" d="M ${q.x} ${p.y} L ${p.x} ${p.y} L ${p.x} ${q.y} M ${mx} ${p.y} L ${mx} ${my} L ${p.x} ${my}" stroke="#000" fill="none" stroke-width="2"/>`);
+    }
+    else if (kind === 'angle') {
+        const sx = Math.sign(q.x - p.x) || 1;
+        const hx = p.x + sx * r;
+        add(`<path class="object" data-kind="角" data-cx="${p.x}" data-cy="${p.y}" data-ax="${hx}" data-ay="${p.y}" data-bx="${q.x}" data-by="${q.y}" d="${drawAnglePath(p.x, p.y, hx, p.y, q.x, q.y)}" stroke="#000" fill="none" stroke-width="2"/>`);
+    }
+    else if (kind === 'arc') {
+        const dx = q.x - p.x, dy = q.y - p.y;
+        const nx = -dy * 0.3, ny = dx * 0.3;
+        const cpx = p.x + dx/2 + nx, cpy = p.y + dy/2 + ny;
+        add(`<path class="object" data-kind="弧线" data-p1x="${p.x}" data-p1y="${p.y}" data-p2x="${q.x}" data-p2y="${q.y}" data-cpx="${cpx}" data-cpy="${cpy}" d="M ${p.x} ${p.y} Q ${cpx} ${cpy} ${q.x} ${q.y}" stroke="#000" fill="none" stroke-width="3"/>`);
+    }
+    else if (kind === 'arrow') {
+        add(`<path class="object" data-group="${gid}" data-kind="箭头线" data-x1="${p.x}" data-y1="${p.y}" data-x2="${q.x}" data-y2="${q.y}" data-ticks="true" d="${drawArrowPath(p.x, p.y, q.x, q.y, true)}" stroke="#000" fill="none" stroke-width="2"/>`);
+        const dx = q.x - p.x, dy = q.y - p.y, len = Math.hypot(dx, dy) || 1;
+        const nx = -dy / len, ny = dx / len;
+        const tx = cx + nx * 20, ty = cy + ny * 20;
+        add(`<text class="object label-auto" data-group="${gid}" data-kind="文本" x="${tx}" y="${ty}" text-anchor="middle" dominant-baseline="central" font-size="22" fill="#000" stroke="none">？</text>`);
+    }
+    else if (kind === 'cylinder') {
+        const rxx = Math.abs(q.x - p.x)/2, ryy = Math.max(4, rxx * 0.3);
+        const y1 = Math.min(p.y, q.y), y2 = Math.max(p.y, q.y);
+        add(`<g class="object cylinder" data-group="${gid}" data-kind="圆柱" data-cx="${cx}" data-cy1="${y1}" data-cy2="${y2}" data-rx="${rxx}" data-ry="${ryy}" stroke="#000">
+            <path class="shape-bg" d="M ${cx-rxx} ${y1} A ${rxx} ${ryy} 0 0 1 ${cx+rxx} ${y1} L ${cx+rxx} ${y2} A ${rxx} ${ryy} 0 0 1 ${cx-rxx} ${y2} Z" fill="none" stroke="none"/>
+            <path class="shape-back" d="M ${cx-rxx} ${y2} A ${rxx} ${ryy} 0 0 1 ${cx+rxx} ${y2}" fill="none" stroke-width="2" stroke-dasharray="6 6"/>
+            <ellipse class="shape-front" cx="${cx}" cy="${y1}" rx="${rxx}" ry="${ryy}" fill="none" stroke-width="2"/>
+            <path class="shape-front" d="M ${cx-rxx} ${y1} L ${cx-rxx} ${y2} A ${rxx} ${ryy} 0 0 0 ${cx+rxx} ${y2} L ${cx+rxx} ${y1}" fill="none" stroke-width="2"/>
+        </g>`);
+    }
+    else if (kind === 'cone') {
+        const rxx = Math.abs(q.x - p.x)/2, ryy = Math.max(4, rxx * 0.3);
+        const y1 = Math.min(p.y, q.y), y2 = Math.max(p.y, q.y);
+        add(`<g class="object cone" data-group="${gid}" data-kind="圆锥" data-cx="${cx}" data-cy1="${y1}" data-cy2="${y2}" data-rx="${rxx}" data-ry="${ryy}" stroke="#000">
+            <path class="shape-bg" d="M ${cx} ${y1} L ${cx+rxx} ${y2} A ${rxx} ${ryy} 0 0 1 ${cx-rxx} ${y2} Z" fill="none" stroke="none"/>
+            <path class="shape-back" d="M ${cx-rxx} ${y2} A ${rxx} ${ryy} 0 0 1 ${cx+rxx} ${y2}" fill="none" stroke-width="2" stroke-dasharray="6 6"/>
+            <path class="shape-front" d="M ${cx} ${y1} L ${cx-rxx} ${y2} A ${rxx} ${ryy} 0 0 0 ${cx+rxx} ${y2} Z" fill="none" stroke-width="2"/>
+        </g>`);
+    }
+    else if (kind === 'cube' || kind === 'cuboid') {
+        const isCube = kind === 'cube';
+        let cw = Math.abs(q.x - p.x), ch = Math.abs(q.y - p.y);
+        if (isCube) { const size = Math.max(cw, ch); cw = size; ch = size; }
+        const ccx = Math.min(p.x, q.x) + cw/2, ccy = Math.min(p.y, q.y) + ch/2;
+        const cox = cw * 0.35, coy = -ch * 0.35;
+        const gName = isCube ? '正方体' : '长方体';
+        const fx = ccx - cw/2, fy = ccy - ch/2;
+        const paths = getCubePaths(fx, fy, cw, ch, cox, coy);
+        add(`<g class="object ${kind}" data-group="${gid}" data-kind="${gName}" data-cx="${ccx}" data-cy="${ccy}" data-w="${cw}" data-h="${ch}" data-ox="${cox}" data-oy="${coy}" stroke="#000" fill="none">
+            <path class="shape-back" d="${paths.back}" fill="none" stroke-width="2" stroke-dasharray="6 6"/>
+            <path class="face-right" d="${paths.right}" fill="none" stroke="none"/>
+            <path class="face-front" d="${paths.front}" fill="none" stroke="none"/>
+            <path class="face-top" d="${paths.top}" fill="none" stroke="none"/>
+            <path class="shape-front" d="${paths.shapeFront}" fill="none" stroke-width="2"/>
+        </g>`);
+    }
+}
+function finishPolygon() {
+    snap();
+    const gid = 'g' + Date.now();
+    let ptsHtml = '';
+    const cx = poly.reduce((s, p) => s + p.x, 0) / poly.length;
+    const cy = poly.reduce((s, p) => s + p.y, 0) / poly.length;
+    poly.forEach((pt, i) => ptsHtml += addPointLabel(pt, i, gid, {x: cx, y: cy}));
+    add(`<polygon class="object" data-group="${gid}" data-kind="多边形" points="${poly.map(p => p.x + ',' + p.y).join(' ')}" stroke="#000" fill="none" stroke-width="3"/>` + ptsHtml);
+    poly = []; clearPreview(); say('多边形已完成');
+}
+function showBottomPopover(id, btn) {
+    document.querySelectorAll('.bottom-popover').forEach(p => p.classList.remove('show'));
+    if (!id) return;
+    const pop = $(id);
+    const box = btn.getBoundingClientRect();
+    const workBox = document.querySelector('.workspace').getBoundingClientRect();
+    pop.style.left = (box.left + box.width / 2 - workBox.left) + 'px';
+    pop.style.bottom = '84px'; // 24px (toolbar bottom) + 44px (toolbar height) + 16px (gap)
+    pop.style.transform = 'translateX(-50%)';
+    pop.classList.add('show');
+}
+
+document.querySelectorAll('[data-tool]').forEach(b => b.addEventListener('click', () => {
+    const t = b.dataset.tool;
+    if (tool === t && (t === 'pen' || t === 'eraser')) {
+        const popId = t === 'pen' ? 'penPopover' : 'eraserPopover';
+        if ($(popId).classList.contains('show')) $(popId).classList.remove('show');
+        else showBottomPopover(popId, b);
+        return;
+    }
+    choose(null);
+    document.querySelectorAll('.tool.active, .bottom-tool.active').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll(`[data-tool="${t}"]`).forEach(btn => btn.classList.add('active'));
+    $('rotateBtn').classList.remove('active');
+    shadeCandidate?.classList.remove('shade-candidate'); shadeCandidate = null;
+    tool = t; anchor = null; poly = []; clearPreview();
+    svg.classList.toggle('drawing-cursor', tool !== 'select' && tool !== 'rotate');
+    say(tool === 'select' ? '选择并拖动对象' : tool === 'pen' ? '自由绘制笔迹' : tool === 'eraser' ? '擦除对象' : '当前工具：' + (b.textContent.trim()||b.title) + '，请确定第一个点');
+    showBottomPopover(t === 'pen' ? 'penPopover' : t === 'eraser' ? 'eraserPopover' : null, b);
+}));
+
+document.querySelectorAll('.size-btn-col').forEach(b => b.onclick = (e) => {
+    e.stopPropagation();
+    const parent = b.parentElement;
+    parent.querySelectorAll('.size-btn-col').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    if (parent.id === 'penSizes') penSize = +b.dataset.size;
+    if (parent.id === 'eraserSizes') eraserSize = +b.dataset.size;
+});
+
+document.querySelectorAll('.pen-color-rect').forEach(b => b.onclick = (e) => {
+    e.stopPropagation();
+    document.querySelectorAll('.pen-color-rect').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    penColor = b.dataset.color;
+});
+
+$('clearStrokesBtn').onclick = (e) => {
+    e.stopPropagation();
+    const strokes = document.querySelectorAll('.pen-stroke, .object[data-kind="笔迹"]');
+    if (strokes.length) { strokes.forEach(el => el.remove()); snap(); }
+    $('eraserPopover').classList.remove('show');
+};
+
+$('rotateBtn').onclick = () => {
+    if(!selected) return;
+    if (tool === 'rotate') {
+        tool = 'select';
+        clearPreview();
+        showHandles(selected);
+        $('rotateBtn').classList.remove('active');
+        say('已退出旋转模式，返回选择状态');
+    } else {
+        tool = 'rotate';
+        clearPreview();
+        showHandles(selected);
+        $('rotateBtn').classList.add('active');
+        say('拖动图形外围的橙色遮罩框进行旋转，拖动中心点可改变轴心');
+    }
+};
+
+function syncPointAuto(index, nx, ny) {
+    if (!selected || !selected.dataset.group) return;
+    const pts = svg.querySelectorAll(`circle.point-auto[data-group="${selected.dataset.group}"][data-point-index="${index}"]`);
+    pts.forEach(pt => { pt.setAttribute('cx', nx); pt.setAttribute('cy', ny); });
+
+    let cx = nx, cy = ny, hasCenter = false, isLineSide = false, lineDx = 0, lineDy = 0;
+    const tag = selected.tagName.toLowerCase();
+    if (tag === 'line') {
+        const x1 = +selected.getAttribute('x1'), y1 = +selected.getAttribute('y1');
+        const x2 = +selected.getAttribute('x2'), y2 = +selected.getAttribute('y2');
+        if (['直线', '线段'].includes(selected.dataset.kind)) {
+            const len = Math.hypot(x2 - x1, y2 - y1) || 1;
+            lineDx = -(y2 - y1) / len; lineDy = (x2 - x1) / len;
+            isLineSide = true;
+            cx = (x1 + x2) / 2; cy = (y1 + y2) / 2;
+        } else {
+            cx = (x1 + x2) / 2; cy = (y1 + y2) / 2; hasCenter = true;
+        }
+    } else if (tag === 'polygon' || tag === 'polyline') {
+        const ptsList = (selected.getAttribute('points')||'').trim().split(/\s+/).map(p => p.split(',').map(Number));
+        if (ptsList.length > 0) {
+            cx = ptsList.reduce((s, p) => s + p[0], 0) / ptsList.length;
+            cy = ptsList.reduce((s, p) => s + p[1], 0) / ptsList.length; hasCenter = true;
+        }
+    }
+
+    const allPts = svg.querySelectorAll(`circle.point-auto[data-group="${selected.dataset.group}"]`);
+    allPts.forEach(pt => {
+        const pIdx = pt.dataset.pointIndex;
+        const px = +pt.getAttribute('cx'), py = +pt.getAttribute('cy');
+        let lx = px + 10, ly = py - 10, ta = 'start', db = 'auto';
+        if (isLineSide) {
+            const ox = px - cx, oy = py - cy, outLen = Math.hypot(ox, oy) || 1;
+            lx = px + (ox / outLen) * 15 + lineDx * 20; ly = py + (oy / outLen) * 15 + lineDy * 20;
+            ta = 'middle'; db = 'central';
+        } else if (hasCenter) {
+            const dx = px - cx, dy = py - cy, len = Math.hypot(dx, dy);
+            if (len > 0) { lx = px + (dx / len) * 22; ly = py + (dy / len) * 22; ta = 'middle'; db = 'central'; }
+        }
+        const lbls = svg.querySelectorAll(`text.label-auto[data-group="${selected.dataset.group}"][data-point-index="${pIdx}"]`);
+        lbls.forEach(lbl => {
+            lbl.setAttribute('x', lx); lbl.setAttribute('y', ly);
+            lbl.setAttribute('text-anchor', ta); lbl.setAttribute('dominant-baseline', db);
+            const rot = rotation(lbl);
+            const [tx, ty] = trans(lbl);
+            setPose(lbl, tx, ty, rot.angle, rot.cx, rot.cy);
+        });
+    });
+}
+
+function adjustHandle(p) {
+    if (!selected || !handleDrag) return;
+    const q = localPoint(selected, p), x = q.x, y = q.y, role = handleDrag.role, [tx, ty] = trans(selected), r = rotation(selected);
+
+    if (role === 'rotation-center') {
+        groupMembers(selected).forEach(m => setRotationCenter(m, q.x, q.y));
+        const r2 = rotation(selected);
+        const hm = handleLayer().querySelector('.rotation-marks');
+        if (hm) {
+            hm.querySelector('.rotation-center').setAttribute('cx', r2.cx); hm.querySelector('.rotation-center').setAttribute('cy', r2.cy);
+            hm.querySelector('.rotation-center-mark').setAttribute('d', `M ${r2.cx - 4/scale} ${r2.cy}h${8/scale}M ${r2.cx} ${r2.cy - 4/scale}v${8/scale}`);
+        }
+        $('floating').style.display = 'none';
+        return;
+    }
+
+    if (role === 'line-start') { selected.setAttribute('x1', x); selected.setAttribute('y1', y); syncPointAuto(0, x, y); }
+    if (role === 'line-end') { selected.setAttribute('x2', x); selected.setAttribute('y2', y); syncPointAuto(1, x, y); }
+    if (role === 'circle-center') { selected.setAttribute('cx', x); selected.setAttribute('cy', y); }
+    if (role === 'circle-radius') { const cx = +selected.getAttribute('cx'), cy = +selected.getAttribute('cy'); selected.setAttribute('r', Math.max(4, Math.hypot(x - cx, y - cy))); }
+    if (role === 'ellipse-x') selected.setAttribute('rx', Math.max(4, Math.abs(x - (+selected.getAttribute('cx')))));
+    if (role === 'ellipse-y') selected.setAttribute('ry', Math.max(4, Math.abs(y - (+selected.getAttribute('cy')))));
+    if (role === 'rect-start') { const ox = +selected.getAttribute('x'), oy = +selected.getAttribute('y'), ex = ox + (+selected.getAttribute('width')), ey = oy + (+selected.getAttribute('height')); selected.setAttribute('x', Math.min(x, ex)); selected.setAttribute('y', Math.min(y, ey)); selected.setAttribute('width', Math.abs(ex - x)); selected.setAttribute('height', Math.abs(ey - y)); }
+    if (role === 'rect-end') { const ox = +selected.getAttribute('x'), oy = +selected.getAttribute('y'); selected.setAttribute('width', Math.max(4, x - ox)); selected.setAttribute('height', Math.max(4, y - oy)); }
+    if (role === 'text-start') { const box = selected.getBBox(); const currentFs = parseFloat(selected.getAttribute('font-size')) || 24; const ratio = Math.max(0.1, (box.x + box.width - x) / box.width); const newFs = currentFs * ratio; if (newFs > 8 && newFs < 800) { selected.setAttribute('font-size', newFs); selected.setAttribute('x', x); selected.setAttribute('y', (+selected.getAttribute('y')) + box.y - y); /* Rough adjustment for y to stick to handle */ } }
+    if (role === 'text-end') { const box = selected.getBBox(); const currentFs = parseFloat(selected.getAttribute('font-size')) || 24; const ratio = Math.max(0.1, (x - box.x) / box.width); const newFs = currentFs * ratio; if (newFs > 8 && newFs < 800) selected.setAttribute('font-size', newFs); }
+    if (role === 'text-move') {
+        selected.setAttribute('x', x + (handleDrag.offsetX || 0)); selected.setAttribute('y', y + (handleDrag.offsetY || 0));
+        if (selected.classList.contains('angle-value')) {
+            const anglePath = svg.querySelector(`path.object[data-kind="角"][data-group="${selected.dataset.group}"]`);
+            if (anglePath) {
+                const cx = +anglePath.dataset.cx, cy = +anglePath.dataset.cy;
+                const ax = +anglePath.dataset.ax, ay = +anglePath.dataset.ay, bx = +anglePath.dataset.bx, by = +anglePath.dataset.by;
+                const aA = Math.atan2(ay - cy, ax - cx), aB = Math.atan2(by - cy, bx - cx);
+                let diff = aB - aA; while (diff < -Math.PI) diff += 2 * Math.PI; while (diff > Math.PI) diff -= 2 * Math.PI;
+                const bisector = aA + diff / 2;
+                const curA = Math.atan2((y + (handleDrag.offsetY || 0)) - cy, (x + (handleDrag.offsetX || 0)) - cx);
+                let aOffset = curA - bisector; while (aOffset < -Math.PI) aOffset += 2 * Math.PI; while (aOffset > Math.PI) aOffset -= 2 * Math.PI;
+                selected.dataset.ra = Math.hypot((x + (handleDrag.offsetX || 0)) - cx, (y + (handleDrag.offsetY || 0)) - cy);
+                selected.dataset.aOffset = aOffset;
+            }
+        }
+    }
+    if (role === 'vertex') { const pts = selected.getAttribute('points').trim().split(/\s+/); pts[+handleDrag.index] = x + ',' + y; selected.setAttribute('points', pts.join(' ')); syncPointAuto(+handleDrag.index, x, y); }
+    if (role === 'semicircle-center') {
+        const dx = x - (+selected.dataset.cx), dy = y - (+selected.dataset.cy);
+        const rx = (+selected.dataset.rx) + dx, ry = (+selected.dataset.ry) + dy;
+        selected.dataset.cx = x; selected.dataset.cy = y;
+        selected.dataset.rx = rx; selected.dataset.ry = ry;
+        const r = Math.hypot(rx - x, ry - y);
+        const sx = 2 * x - rx, sy = 2 * y - ry;
+        selected.setAttribute('d', `M ${rx} ${ry} A ${r} ${r} 0 0 0 ${sx} ${sy} Z`);
+    }
+    if (role === 'semicircle-radius') {
+        selected.dataset.rx = x; selected.dataset.ry = y;
+        const cx = +selected.dataset.cx, cy = +selected.dataset.cy;
+        const r = Math.hypot(x - cx, y - cy);
+        const sx = 2 * cx - x, sy = 2 * cy - y;
+        selected.setAttribute('d', `M ${x} ${y} A ${r} ${r} 0 0 0 ${sx} ${sy} Z`);
+    }
+    if (role === 'arc-p1') {
+        selected.dataset.p1x = x; selected.dataset.p1y = y;
+        selected.setAttribute('d', `M ${x} ${y} Q ${selected.dataset.cpx} ${selected.dataset.cpy} ${selected.dataset.p2x} ${selected.dataset.p2y}`);
+    }
+    if (role === 'arc-p2') {
+        selected.dataset.p2x = x; selected.dataset.p2y = y;
+        selected.setAttribute('d', `M ${selected.dataset.p1x} ${selected.dataset.p1y} Q ${selected.dataset.cpx} ${selected.dataset.cpy} ${x} ${y}`);
+    }
+    if (role === 'arc-m') {
+        const p1x = +selected.dataset.p1x, p1y = +selected.dataset.p1y;
+        const p2x = +selected.dataset.p2x, p2y = +selected.dataset.p2y;
+        const cpx = 2 * x - 0.5 * p1x - 0.5 * p2x;
+        const cpy = 2 * y - 0.5 * p1y - 0.5 * p2y;
+        selected.dataset.cpx = cpx; selected.dataset.cpy = cpy;
+        selected.setAttribute('d', `M ${p1x} ${p1y} Q ${cpx} ${cpy} ${p2x} ${p2y}`);
+    }
+    if (role === 'angle-center') {
+        const cx = +selected.dataset.cx, cy = +selected.dataset.cy;
+        const dx = x - cx, dy = y - cy;
+        const ax = (+selected.dataset.ax) + dx, ay = (+selected.dataset.ay) + dy;
+        const bx = (+selected.dataset.bx) + dx, by = (+selected.dataset.by) + dy;
+        selected.dataset.cx = x; selected.dataset.cy = y;
+        selected.dataset.ax = ax; selected.dataset.ay = ay;
+        selected.dataset.bx = bx; selected.dataset.by = by;
+        selected.setAttribute('d', drawAnglePath(x, y, ax, ay, bx, by));
+    }
+    if (role === 'angle-a') {
+        selected.dataset.ax = x; selected.dataset.ay = y;
+        selected.setAttribute('d', drawAnglePath(+selected.dataset.cx, +selected.dataset.cy, x, y, +selected.dataset.bx, +selected.dataset.by));
+    }
+    if (role === 'angle-b') {
+        selected.dataset.bx = x; selected.dataset.by = y;
+        selected.setAttribute('d', drawAnglePath(+selected.dataset.cx, +selected.dataset.cy, +selected.dataset.ax, +selected.dataset.ay, x, y));
+    }
+    if (role.startsWith('angle-')) {
+        const txt = svg.querySelector(`text.angle-value[data-group="${selected.dataset.group}"]`);
+        if (txt) {
+            const cx = +selected.dataset.cx, cy = +selected.dataset.cy, ax = +selected.dataset.ax, ay = +selected.dataset.ay, bx = +selected.dataset.bx, by = +selected.dataset.by;
+            const aA = Math.atan2(ay - cy, ax - cx), aB = Math.atan2(by - cy, bx - cx);
+            let diff = aB - aA;
+            while (diff < -Math.PI) diff += 2 * Math.PI;
+            while (diff > Math.PI) diff -= 2 * Math.PI;
+            const ra = txt.dataset.ra ? +txt.dataset.ra : Math.min(40, Math.min(Math.hypot(ax - cx, ay - cy), Math.hypot(bx - cx, by - cy)) * 0.8) + 15;
+            const bisector = aA + diff / 2;
+            const finalA = bisector + (txt.dataset.aOffset ? +txt.dataset.aOffset : 0);
+            txt.setAttribute('x', cx + Math.cos(finalA) * ra);
+            txt.setAttribute('y', cy + Math.sin(finalA) * ra);
+            txt.textContent = Math.round(Math.abs(diff) * 180 / Math.PI) + '°';
+        }
+    }
+    if (role === 'arrow-start' || role === 'arrow-end') {
+        if (role === 'arrow-start') { selected.dataset.x1 = x; selected.dataset.y1 = y; }
+        else { selected.dataset.x2 = x; selected.dataset.y2 = y; }
+        const x1 = +selected.dataset.x1, y1 = +selected.dataset.y1;
+        const x2 = +selected.dataset.x2, y2 = +selected.dataset.y2;
+        selected.setAttribute('d', drawArrowPath(x1, y1, x2, y2, selected.dataset.ticks));
+        const textNode = svg.querySelector(`text.label-auto[data-group="${selected.dataset.group}"]`);
+        if (textNode) {
+            const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy) || 1;
+            const nx = -dy / len, ny = dx / len;
+            textNode.setAttribute('x', (x1 + x2)/2 + nx * 20);
+            textNode.setAttribute('y', (y1 + y2)/2 + ny * 20);
+        }
+    }
+    if (role.startsWith('cyl-') || role.startsWith('cone-')) {
+        const isCyl = role.startsWith('cyl-');
+        let cx = +selected.dataset.cx, y1 = +selected.dataset.cy1, y2 = +selected.dataset.cy2;
+        let rx = +selected.dataset.rx, ry = +selected.dataset.ry;
+        if (role.includes('-top')) { cx = x; y1 = y; }
+        if (role.includes('-bottom')) { cx = x; y2 = y; }
+        if (role.includes('-rx')) { rx = Math.max(4, Math.abs(x - cx)); }
+        if (role.includes('-ry')) { ry = Math.max(4, Math.abs(y - y2)); }
+        selected.dataset.cx = cx; selected.dataset.cy1 = y1; selected.dataset.cy2 = y2;
+        selected.dataset.rx = rx; selected.dataset.ry = ry;
+
+        const bg = selected.querySelector('.shape-bg');
+        const back = selected.querySelector('.shape-back');
+        const fronts = selected.querySelectorAll('.shape-front');
+
+        if (isCyl) {
+            bg.setAttribute('d', `M ${cx-rx} ${y1} A ${rx} ${ry} 0 0 1 ${cx+rx} ${y1} L ${cx+rx} ${y2} A ${rx} ${ry} 0 0 1 ${cx-rx} ${y2} Z`);
+            back.setAttribute('d', `M ${cx-rx} ${y2} A ${rx} ${ry} 0 0 1 ${cx+rx} ${y2}`);
+            fronts[0].setAttribute('cx', cx); fronts[0].setAttribute('cy', y1);
+            fronts[0].setAttribute('rx', rx); fronts[0].setAttribute('ry', ry);
+            fronts[1].setAttribute('d', `M ${cx-rx} ${y1} L ${cx-rx} ${y2} A ${rx} ${ry} 0 0 0 ${cx+rx} ${y2} L ${cx+rx} ${y1}`);
+        } else {
+            bg.setAttribute('d', `M ${cx} ${y1} L ${cx+rx} ${y2} A ${rx} ${ry} 0 0 1 ${cx-rx} ${y2} Z`);
+            back.setAttribute('d', `M ${cx-rx} ${y2} A ${rx} ${ry} 0 0 1 ${cx+rx} ${y2}`);
+            fronts[0].setAttribute('d', `M ${cx} ${y1} L ${cx-rx} ${y2} A ${rx} ${ry} 0 0 0 ${cx+rx} ${y2} Z`);
+        }
+    }
+    if (role.startsWith('cuboid-')) {
+        let ccx = +selected.dataset.cx, ccy = +selected.dataset.cy, cw = +selected.dataset.w, ch = +selected.dataset.h, cox = +selected.dataset.ox, coy = +selected.dataset.oy;
+        if (role === 'cuboid-center') { ccx = x; ccy = y; }
+        if (role === 'cuboid-w') { cw = Math.max(10, Math.abs(x - ccx) * 2); if (selected.dataset.kind === '正方体') ch = cw; }
+        if (role === 'cuboid-h') { ch = Math.max(10, Math.abs(y - ccy) * 2); if (selected.dataset.kind === '正方体') cw = ch; }
+        if (role === 'cuboid-depth') { cox = x - (ccx + cw/2); coy = y - (ccy - ch/2); }
+
+        selected.dataset.cx = ccx; selected.dataset.cy = ccy; selected.dataset.w = cw; selected.dataset.h = ch;
+        selected.dataset.ox = cox; selected.dataset.oy = coy;
+
+        const fx = ccx - cw/2, fy = ccy - ch/2;
+        const ffront = selected.querySelector('.face-front');
+        const ftop = selected.querySelector('.face-top');
+        const fright = selected.querySelector('.face-right');
+        const back = selected.querySelector('.shape-back');
+        const front = selected.querySelector('.shape-front');
+
+        const paths = getCubePaths(fx, fy, cw, ch, cox, coy);
+        if (ffront && ftop && fright) {
+            ffront.setAttribute('d', paths.front);
+            ftop.setAttribute('d', paths.top);
+            fright.setAttribute('d', paths.right);
+        }
+        if (back) back.setAttribute('d', paths.back);
+        if (front) front.setAttribute('d', paths.shapeFront);
+    }
+
+    $('floating').style.display = 'none';
+    showHandles(selected);
+}
+function getHitObject(e) {
+    if (e.target.closest('.object')) return e.target.closest('.object');
+    if (e.target.closest('.handle') || e.target.closest('.preview')) return null;
+    const padding = 18;
+    for (let dx = -padding; dx <= padding; dx += 6) {
+        for (let dy = -padding; dy <= padding; dy += 6) {
+            if (dx === 0 && dy === 0) continue;
+            const found = document.elementFromPoint(e.clientX + dx, e.clientY + dy);
+            if (found && found.closest('.object')) return found.closest('.object');
+        }
+    }
+    return null;
+}
+function closedObject(el) { if (!el) return null; const tag = el.tagName.toLowerCase(); return ['polygon', 'rect', 'circle', 'ellipse'].includes(tag) || (tag === 'path' && /z\s*$/i.test(el.getAttribute('d') || '')) || (tag === 'g' && ['圆柱', '圆锥', '正方体', '长方体'].includes(el.dataset.kind)) ? el : null; }
+function identifyShade(el) { const next = closedObject(el); if (next === shadeCandidate) return; shadeCandidate?.classList.remove('shade-candidate'); shadeCandidate = next; if (next) { next.classList.add('shade-candidate'); say('已识别封闭区域，点击确认阴影'); } else say('移动鼠标识别封闭区域'); }
+
+function applyViewport() {
+    $('viewport').setAttribute('transform', `translate(${panX},${panY}) scale(${scale})`);
+    if(selected) showHandles(selected);
+}
+
+svg.onwheel = e => {
+    e.preventDefault();
+    const zoomSpeed = 0.0015;
+    const ds = -e.deltaY * zoomSpeed;
+    const newScale = Math.min(Math.max(0.1, scale + ds), 10);
+    const factor = newScale / scale;
+    const rect = svg.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    panX = mx - (mx - panX) * factor;
+    panY = my - (my - panY) * factor;
+    scale = newScale;
+    applyViewport();
+    say(`视图缩放: ${Math.round(scale*100)}%`);
+};
+
+$('fsBtn').onclick = () => {
+    if (!document.fullscreenElement) document.querySelector('.workspace').requestFullscreen().catch(err => say('全屏失败: ' + err.message));
+    else document.exitFullscreen();
+};
+
+$('exportBtn').onclick = () => {
+    const clone = $('viewport').cloneNode(true);
+    clone.querySelectorAll('.selected,.group-selected,.shade-candidate').forEach(e => e.classList.remove('selected', 'group-selected', 'shade-candidate'));
+    clone.querySelectorAll('#previewLayer,#handleLayer,#snapLayer').forEach(e => e.remove());
+    clone.removeAttribute('transform');
+    const fullSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" style="background:#fff">${clone.outerHTML}</svg>`;
+    const xml = new XMLSerializer().serializeToString(new DOMParser().parseFromString(fullSvg, "image/svg+xml").documentElement);
+    const img = new Image();
+    img.onload = () => {
+        const cvs = document.createElement('canvas'); cvs.width = 1200; cvs.height = 720;
+        const ctx = cvs.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, 1200, 720);
+        ctx.drawImage(img, 0, 0);
+        const now = new Date();
+        const yy = String(now.getFullYear()).slice(-2), MM = String(now.getMonth() + 1).padStart(2, '0'), dd = String(now.getDate()).padStart(2, '0');
+        const HH = String(now.getHours()).padStart(2, '0'), mm = String(now.getMinutes()).padStart(2, '0'), ss = String(now.getSeconds()).padStart(2, '0');
+        const a = document.createElement('a'); a.download = `五木几何-${yy}${MM}${dd}-${HH}${mm}${ss}.png`; a.href = cvs.toDataURL('image/png'); a.click();
+    };
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+};
+
+svg.onpointerdown = e => {
+    document.querySelectorAll('.bottom-popover').forEach(p => p.classList.remove('show'));
+    if ($('inlineEditor') && $('inlineEditor').style.display !== 'none') $('inlineEditor').blur();
+    if (spaceDown || e.button === 1) { isPanning = true; drag = { raw: rawScreenPoint(e), panX, panY }; svg.style.cursor = 'grabbing'; return; }
+    e.preventDefault(); const rawP = point(e); const objHit = getHitObject(e); const exclude = (drag && drag.members) ? drag.members.map(m => m.node) : (objHit ? [objHit] : []); const sp = getSnapPoint(rawP, exclude); const p = sp || rawP; showSnap(null);
+
+    if (tool === 'pen') {
+        isDrawingFreehand = true;
+        currentPenId = 'pen' + Date.now();
+        penPoints = [rawP];
+        previewLayer().insertAdjacentHTML('beforebegin', `<polyline class="object pen-stroke" id="${currentPenId}" data-kind="笔迹" points="${rawP.x},${rawP.y}" stroke="${penColor}" fill="none" stroke-width="${penSize}" stroke-linecap="round" stroke-linejoin="round"/>`);
+        return;
+    }
+    if (tool === 'eraser') {
+        isErasing = true;
+        eraseAt(e);
+        return;
+    }
+
+    if (tool === 'polygon' && poly.length >= 3 && sp && sp.x === poly[0].x && sp.y === poly[0].y) { finishPolygon(); return; }
+
+    const grip = e.target.closest('.resize-handle,.rotation-center,.rotate-mask');
+    if (grip && selected) {
+        const role = grip.dataset.role, index = grip.dataset.index;
+        snap();
+
+        if (role === 'rotation-mask') {
+            const downSp = getSnapPoint(rawP, groupMembers(selected)) || rawP;
+            drag = { mode: 'rotate', p: downSp, rawP, members: groupMembers(selected).map(node => { const [x, y] = trans(node); return { node, x, y, rot: rotation(node) } }) };
+            grip.setPointerCapture?.(e.pointerId);
+            return;
+        }
+
+        if (role === 'text-move' && selected) {
+            handleDrag = { role, index, offsetX: (+selected.getAttribute('x') || 0) - rawP.x, offsetY: (+selected.getAttribute('y') || 0) - rawP.y };
+        } else {
+            handleDrag = { role, index };
+        }
+        grip.setPointerCapture?.(e.pointerId);
+        say(role === 'rotation-center' ? '拖动设置旋转中心' : '拖动控制点调整图形');
+        return;
+    }
+
+    if (tool === 'shade') {
+        const el = shadeCandidate || getHitObject(e);
+        if (!el) return say('请点击一个已绘制的封闭区域');
+        choose(el); snap(); el.classList.remove('shade-candidate');
+        if (el.tagName.toLowerCase() === 'g') {
+            el.querySelectorAll('.face-right, .face-front, .face-top').forEach(node => { node.setAttribute('fill', 'url(#hatch-pattern)'); node.setAttribute('fill-opacity', '1'); });
+        } else {
+            el.setAttribute('fill', 'url(#hatch-pattern)'); el.setAttribute('fill-opacity', '1');
+        }
+        shadeCandidate = null; showHandles(el); say('阴影已确认'); return;
+    }
+    if (tool === 'select' || tool === 'rotate') {
+        let el = getHitObject(e);
+        if (el) {
+            if (el.dataset.group) {
+                const main = groupMembers(el).find(x => !x.classList.contains('point-auto') && !x.classList.contains('label-auto'));
+                if (main) el = main;
+            }
+            choose(el); snap(); const downSp = getSnapPoint(rawP, groupMembers(el)) || rawP;
+            drag = { mode: tool, p: downSp, rawP, members: groupMembers(el).map(node => { const [x, y] = trans(node); return { node, x, y, rot: rotation(node) } }) };
+            el.setPointerCapture(e.pointerId);
+        } else {
+            choose(null);
+            if (tool === 'select') { drag = { marquee: { x: p.x, y: p.y } }; }
+        }
+        return;
+    }
+    if (tool === 'point') { snap(); const gid = 'g' + Date.now(); add(`<circle class="object point-auto" data-group="${gid}" data-kind="点" cx="${p.x}" cy="${p.y}" r="3" stroke="#000" fill="#000"/><text class="object label-auto" data-group="${gid}" data-kind="文本" x="${p.x+10}" y="${p.y-10}" font-size="22" fill="#000" stroke="none">${nextLabel()}</text>`); say('点已添加，可继续取点'); return; }
+    if (tool === 'text') { snap(); add(`<text class="object" data-kind="文本" x="${p.x}" y="${p.y}" fill="#000" stroke="none" font-size="24">文本</text>`); const txt = previewLayer().previousElementSibling; openInlineEdit(txt); return; }
+    if (tool === 'midpoint') { if (!anchor) { anchor = p; say('第一个端点已确定，请移动并选择第二个端点'); } else { snap(); const gid = 'g' + Date.now(); add(`<circle class="object point-auto" data-group="${gid}" data-kind="中点" cx="${(anchor.x + p.x) / 2}" cy="${(anchor.y + p.y) / 2}" r="3" stroke="#000" fill="#000"/><text class="object label-auto" data-group="${gid}" data-kind="文本" x="${(anchor.x+p.x)/2+10}" y="${(anchor.y+p.y)/2-10}" font-size="22" fill="#000" stroke="none">${nextLabel()}</text>`); anchor = null; clearPreview(); say('中点已添加'); } return; }
+    if (tool === 'polygon') { poly.push(p); say(`已确定 ${poly.length} 个顶点，继续取点，双击结束`); return; }
+    if (!anchor) { anchor = p; say('第一个点已确定，请移动并选择第二个点'); } else { snap(); twoPoint(anchor, p, tool); anchor = null; clearPreview(); say('图形已完成，可继续绘制'); }
+};
+svg.ondblclick = e => {
+    if (tool === 'polygon' && poly.length > 2) {
+        finishPolygon();
+        return;
+    }
+    const el = e.target.closest('text'); if (el) { openInlineEdit(el); }
+};
+svg.onpointermove = e => {
+    if (isPanning) {
+        const raw = rawScreenPoint(e);
+        panX = drag.panX + (raw.x - drag.raw.x);
+        panY = drag.panY + (raw.y - drag.raw.y);
+        applyViewport();
+        return;
+    }
+    const rawP = point(e); const exclude = (drag && drag.members) ? drag.members.map(m => m.node) : (handleDrag && selected ? groupMembers(selected) : []); const sp = getSnapPoint(rawP, exclude); const p = sp || rawP; showSnap(sp);
+    if (isDrawingFreehand) {
+        penPoints.push(rawP);
+        const last = penPoints[penPoints.length - 2];
+        if (last && Math.hypot(rawP.x - last.x, rawP.y - last.y) < 2) return;
+        const el = $(currentPenId);
+        if (el) el.setAttribute('points', penPoints.map(pt => pt.x + ',' + pt.y).join(' '));
+        return;
+    }
+    if (isErasing) { eraseAt(e); return; }
+
+    if (tool === 'shade') { identifyShade(getHitObject(e)); return; }
+    if (handleDrag) { adjustHandle(p); return; }
+    if ((tool === 'rectangle' || tool === 'ellipse') && anchor && !sp) {
+        const dx = p.x - anchor.x, dy = p.y - anchor.y;
+        if (Math.abs(Math.abs(dx) - Math.abs(dy)) < 6 / scale) {
+            const size = (Math.abs(dx) + Math.abs(dy)) / 2;
+            p = { x: anchor.x + Math.sign(dx || 1) * size, y: anchor.y + Math.sign(dy || 1) * size };
+        }
+    }
+    if (anchor || poly.length) previewAt(p);
+    if (!drag) return;
+
+    if (drag.marquee) {
+        const layer = previewLayer();
+        const x = Math.min(drag.marquee.x, p.x), y = Math.min(drag.marquee.y, p.y), w = Math.abs(p.x - drag.marquee.x), h = Math.abs(p.y - drag.marquee.y);
+        layer.innerHTML = `<rect class="preview" x="${x}" y="${y}" width="${w}" height="${h}" fill="rgba(47,155,114,0.1)"/>`;
+        return;
+    }
+    if (!selected) return;
+
+    $('floating').style.display = 'none'; // Hide floating during drag
+
+    if (drag.mode === 'rotate') {
+        const main = drag.members[0];
+        const gcx = main.rot.cx + main.x;
+        const gcy = main.rot.cy + main.y;
+        let angleStart = Math.atan2(drag.rawP.y - gcy, drag.rawP.x - gcx);
+        let angleCurrent = Math.atan2(p.y - gcy, p.x - gcx);
+        let dAngle = (angleCurrent - angleStart) * 180 / Math.PI;
+        let newAngle = main.rot.angle + dAngle;
+        if (!e.altKey && !e.shiftKey) {
+            if (Math.abs((newAngle % 15 + 15) % 15) <= 4 || Math.abs((newAngle % 15 + 15) % 15) >= 11) {
+                newAngle = Math.round(newAngle / 15) * 15;
+            }
+        }
+        const da = newAngle - main.rot.angle;
+        drag.members.forEach(m => setPose(m.node, m.x, m.y, m.rot.angle + da, main.rot.cx, main.rot.cy));
+        say(`旋转角度 ${Math.round(newAngle)}°`);
+    } else {
+        const dx = p.x - drag.p.x, dy = p.y - drag.p.y;
+        drag.members.forEach(m => setPose(m.node, m.x + dx, m.y + dy, m.rot.angle, m.rot.cx, m.rot.cy));
+    }
+
+    const [x, y] = trans(selected); $('x').value = x.toFixed(1); $('y').value = y.toFixed(1);
+
+    const hl = handleLayer().firstChild; if (hl && hl.tagName === 'g') hl.setAttribute('transform', selected.getAttribute('transform'));
+};
+svg.onpointerleave = () => { if (tool === 'shade') identifyShade(null); showSnap(null); if (isPanning) { isPanning = false; svg.style.cursor = ''; } };
+svg.onpointerup = e => {
+    if (anchor && tool !== 'polygon') {
+        const rawP = point(e);
+        let p = getSnapPoint(rawP, []) || rawP;
+        if ((tool === 'rectangle' || tool === 'ellipse') && !getSnapPoint(rawP, [])) {
+            const dx = p.x - anchor.x, dy = p.y - anchor.y;
+            if (Math.abs(Math.abs(dx) - Math.abs(dy)) < 6 / scale) {
+                const size = (Math.abs(dx) + Math.abs(dy)) / 2;
+                p = { x: anchor.x + Math.sign(dx || 1) * size, y: anchor.y + Math.sign(dy || 1) * size };
+            }
+        }
+        if (Math.hypot(p.x - anchor.x, p.y - anchor.y) > 8) {
+            snap();
+            if (tool === 'midpoint') {
+                const gid = 'g' + Date.now(); add(`<circle class="object point-auto" data-group="${gid}" data-kind="中点" cx="${(anchor.x + p.x) / 2}" cy="${(anchor.y + p.y) / 2}" r="3" stroke="#000" fill="#000"/><text class="object label-auto" data-group="${gid}" data-kind="文本" x="${(anchor.x+p.x)/2+10}" y="${(anchor.y+p.y)/2-10}" font-size="22" fill="#000" stroke="none">${nextLabel()}</text>`);
+            } else {
+                twoPoint(anchor, p, tool);
+            }
+            anchor = null; clearPreview(); say(tool === 'midpoint' ? '中点已添加' : '图形已完成，可继续绘制');
+            return;
+        }
+    }
+    if (isDrawingFreehand) {
+        isDrawingFreehand = false;
+        snap();
+        return;
+    }
+    if (isErasing) {
+        isErasing = false;
+        clearPreview();
+        snap();
+        return;
+    }
+    if (handleDrag) {
+        $('floating').style.display = ''; placeFloat(); // Restore floating
+    }
+    if (drag && drag.mode) {
+        $('floating').style.display = ''; placeFloat(); // Restore floating after object drag
+    }
+    if (isPanning) { isPanning = false; svg.style.cursor = ''; drag = null; return; }
+    if (drag && drag.marquee) {
+        clearPreview();
+        const mx = Math.min(drag.marquee.x, point(e).x), my = Math.min(drag.marquee.y, point(e).y), mw = Math.abs(point(e).x - drag.marquee.x), mh = Math.abs(point(e).y - drag.marquee.y);
+        const inBox = [];
+        document.querySelectorAll('.object:not(.hidden-object)').forEach(el => {
+            const box = el.getBBox(), [tx, ty] = trans(el);
+            if (box.x + tx > mx && box.y + ty > my && box.x + tx + box.width < mx + mw && box.y + ty + box.height < my + mh) {
+                inBox.push(el);
+            }
+        });
+        if (inBox.length > 0) {
+            svg.querySelectorAll('.selected,.group-selected').forEach(x => x.classList.remove('selected', 'group-selected'));
+            inBox.forEach(x => x.classList.add('group-selected'));
+            selected = inBox[0];
+            const tempGroupId = 'temp-' + Date.now();
+            inBox.forEach(x => x.dataset.group = tempGroupId); // Auto-group them
+            choose(selected);
+        }
+    }
+    drag = null; handleDrag = null; showSnap(null);
+};
+
+[['x', 'transform'], ['y', 'transform'], ['stroke', 'stroke'], ['fill', 'fill'], ['width', 'stroke-width'], ['opacity', 'opacity']].forEach(([id, a]) => $(id).oninput = () => { if (!selected) return; if (a === 'transform') { const r = rotation(selected); setPose(selected, +$('x').value || 0, +$('y').value || 0, r.angle, r.cx, r.cy); showHandles(selected); } else selected.setAttribute(a, $(id).value); }); $('label').onchange = () => { if (selected?.tagName === 'text') selected.textContent = safe($('label').value); };
+function remove() { if (selected) { snap(); groupMembers(selected).forEach(x => x.remove()); selected = null; clearHandles(); $('floating').style.display = ''; $('floating').classList.remove('show'); say('对象组合已删除'); } } $('remove2').onclick = remove;
+$('unlockBtn').onclick = () => {
+    if (!selected) return;
+    snap();
+    if (selected.tagName.toLowerCase() === 'g') {
+        const parent = selected.parentNode;
+        const stroke = selected.getAttribute('stroke') || '#000';
+        const fill = selected.getAttribute('fill') || 'none';
+        const strokeWidth = selected.getAttribute('stroke-width') || '2';
+        Array.from(selected.children).forEach(child => {
+            if (!child.hasAttribute('stroke')) child.setAttribute('stroke', stroke);
+            if (!child.hasAttribute('fill')) child.setAttribute('fill', fill);
+            if (!child.hasAttribute('stroke-width')) child.setAttribute('stroke-width', strokeWidth);
+            child.removeAttribute('class');
+            child.setAttribute('class', 'object');
+            const tag = child.tagName.toLowerCase();
+            child.setAttribute('data-kind', tag === 'path' ? '图形' : (tag === 'ellipse' ? '椭圆' : '图形'));
+            parent.insertBefore(child, selected);
+        });
+        selected.remove();
+        choose(null);
+        say('已解散组合为独立图形');
+    } else if (selected.dataset.group) {
+        groupMembers(selected).forEach(m => {
+            m.removeAttribute('data-group');
+            if (m.dataset.kind === '角' || m.dataset.kind === '箭头线') {
+                if (m.tagName.toLowerCase() === 'path') m.setAttribute('data-kind', m.dataset.cpx ? '弧线' : '图形');
+            }
+        });
+        choose(null);
+        say('已解散关联');
+    }
+};
+$('visible').onclick = () => { if (!selected) return; groupMembers(selected).forEach(x => x.classList.toggle('hidden-object')); $('visible').textContent = selected.classList.contains('hidden-object') ? '◯　设为可见' : '◉　显示 / 隐藏'; }; $('duplicate').onclick = () => { if (selected) { snap(); const members = groupMembers(selected), newGroup = selected.dataset.group ? 'copy-' + Date.now() : ''; let primary = null; members.forEach(node => { const copy = node.cloneNode(true), [x, y] = trans(node), r = rotation(node); copy.classList.remove('selected', 'group-selected'); setPose(copy, x + 24, y + 24, r.angle, r.cx, r.cy); if (newGroup) copy.dataset.group = newGroup; $('viewport').insertAdjacentElement('beforeend', copy); if (node === selected) primary = copy; }); choose(primary); } };
+$('bringFront').onclick = () => { if (selected) { snap(); groupMembers(selected).forEach(el => $('viewport').append(el)); say('已置于顶层'); }};
+$('sendBack').onclick = () => { if (selected) { snap(); groupMembers(selected).forEach(el => $('viewport').prepend(el)); say('已置于底层'); }};
+
+$('toggleLabels').onclick = () => { svg.classList.toggle('labels-hidden'); say(svg.classList.contains('labels-hidden') ? '标签已隐藏' : '标签已显示'); }; $('togglePoints').onclick = () => { svg.classList.toggle('points-hidden'); say(svg.classList.contains('points-hidden') ? '线段端点已隐藏' : '线段端点已显示'); }; $('undo').onclick = () => { if (!history.length) return say('没有可撤销的操作'); future.push(capture()); restore(history.pop()); say('已撤销'); }; $('redo').onclick = () => { if (!future.length) return say('没有可恢复的操作'); history.push(capture()); restore(future.pop()); say('已恢复'); }; $('clearAll').onclick = () => { if (confirm('确定清空全部图形吗？')) { snap(); $('viewport').querySelectorAll('.object').forEach(x => x.remove()); choose(null); say('画布已清空'); } };
+$('colorBtn').onclick = () => togglePop('colorPop', 'colorBtn'); $('lineBtn').onclick = () => togglePop('linePop', 'lineBtn'); $('moreBtn').onclick = () => togglePop('morePop', 'moreBtn'); function togglePop(pop, btn) { const was = $(pop).classList.contains('show'); closePops(); if (!was) { $(pop).classList.add('show'); $(btn).classList.add('open'); } } $('labelBtn').onclick = () => { if (!selected) return; openInlineEdit(selected); };
+$('tickBtn').onclick = () => {
+    if (!selected || selected.dataset.kind !== '箭头线') return;
+    snap();
+    const hasTicks = selected.dataset.ticks === 'true';
+    selected.dataset.ticks = hasTicks ? 'false' : 'true';
+    selected.setAttribute('d', drawArrowPath(+selected.dataset.x1, +selected.dataset.y1, +selected.dataset.x2, +selected.dataset.y2, !hasTicks));
+    if (!hasTicks) $('tickBtn').classList.add('active');
+    else $('tickBtn').classList.remove('active');
+};
+$('angleBtn').onclick = () => {
+    if (!selected || selected.dataset.kind !== '角') return;
+    snap();
+    const gid = selected.dataset.group;
+    let txt = svg.querySelector(`text.angle-value[data-group="${gid}"]`);
+    if (txt) {
+        txt.remove();
+        $('angleBtn').classList.remove('active');
+    } else {
+        const cx = +selected.dataset.cx, cy = +selected.dataset.cy;
+        const ax = +selected.dataset.ax, ay = +selected.dataset.ay;
+        const bx = +selected.dataset.bx, by = +selected.dataset.by;
+        const aA = Math.atan2(ay - cy, ax - cx), aB = Math.atan2(by - cy, bx - cx);
+        let diff = aB - aA;
+        while (diff < -Math.PI) diff += 2 * Math.PI;
+        while (diff > Math.PI) diff -= 2 * Math.PI;
+        const ra = Math.min(40, Math.min(Math.hypot(ax - cx, ay - cy), Math.hypot(bx - cx, by - cy)) * 0.8);
+        const bisector = aA + diff / 2;
+        const tx = cx + Math.cos(bisector) * (ra + 15);
+        const ty = cy + Math.sin(bisector) * (ra + 15);
+        let deg = Math.round(Math.abs(diff) * 180 / Math.PI);
+        add(`<text class="object angle-value" data-group="${gid}" x="${tx}" y="${ty}" text-anchor="middle" dominant-baseline="central" font-size="16" fill="${selected.getAttribute('stroke') || '#000'}" stroke="none">${deg}°</text>`);
+        $('angleBtn').classList.add('active');
+    }
+};
+const colors = ['none', 'url(#hatch-pattern)', '#000000', '#5b6574', '#ffffff', '#f1a46d', '#e56b73', '#f3c54b', '#5ecb8b', '#52b894', '#8bc0ec', '#3869bd', '#7c4dcc', '#ef3b2d'];
+const setupSwatch = (c, b, isLineOnly) => {
+    b.className = 'swatch';
+    if (c === 'none') {
+        b.style.background = '#fff url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 10 10%27%3E%3Cline x1=%270%27 y1=%2710%27 x2=%2710%27 y2=%270%27 stroke=%27%23dc3545%27 stroke-width=%271.5%27/%3E%3C/svg%3E") center/cover';
+        b.title = '无填充';
+    } else if (c.startsWith('url')) {
+        b.style.background = 'repeating-linear-gradient(45deg, transparent, transparent 3px, #999 3px, #999 4.5px)';
+        b.style.backgroundColor = '#fff';
+        b.title = '斜线阴影';
+    } else {
+        b.style.background = c;
+        b.title = c;
+    }
+    b.onclick = () => {
+        if (!selected) return;
+        snap();
+        const isLineType = ['线段', '直线', '箭头线', '角', '弧线', '直角标记', '笔迹'].includes(selected.dataset.kind) || ['line', 'text', 'polyline'].includes(selected.tagName.toLowerCase());
+        if (isLineType || isLineOnly) {
+            if (c !== 'none') selected.setAttribute('stroke', c);
+            if (selected.tagName.toLowerCase() === 'text') selected.setAttribute('fill', c);
+        } else {
+            if (['圆柱', '圆锥', '正方体', '长方体'].includes(selected.dataset.kind)) {
+                if (c === 'none') {
+                    selected.querySelectorAll('.shape-bg, .face-top, .face-right, .face-front, .shape-front').forEach(node => {
+                        if (node.classList.contains('shape-front') && node.tagName.toLowerCase() !== 'ellipse') return;
+                        node.setAttribute('fill', 'none');
+                    });
+                } else if (c.startsWith('url')) {
+                    selected.querySelectorAll('.shape-bg, .face-right, .face-top, .face-front').forEach(node => node.setAttribute('fill', c));
+                    selected.querySelectorAll('.shape-front').forEach(node => { if (node.tagName.toLowerCase() === 'ellipse') node.setAttribute('fill', c); });
+                } else {
+                    let frontColor = c, topColor = c;
+                    if (c === '#000000') { frontColor = '#444444'; topColor = '#777777'; }
+                    else if (c === '#ffffff') { frontColor = '#ffffff'; topColor = '#ffffff'; }
+                    else {
+                        let r = parseInt(c.slice(1,3), 16), g = parseInt(c.slice(3,5), 16), b = parseInt(c.slice(5,7), 16);
+                        const mix = (clr, factor) => Math.round(clr + (255 - clr) * factor).toString(16).padStart(2,'0');
+                        frontColor = `#${mix(r, 0.35)}${mix(g, 0.35)}${mix(b, 0.35)}`;
+                        topColor = `#${mix(r, 0.7)}${mix(g, 0.7)}${mix(b, 0.7)}`;
+                    }
+                    selected.querySelectorAll('.shape-bg, .face-right').forEach(node => node.setAttribute('fill', c));
+                    selected.querySelectorAll('.face-front').forEach(node => node.setAttribute('fill', frontColor));
+                    selected.querySelectorAll('.face-top').forEach(node => node.setAttribute('fill', topColor));
+                    selected.querySelectorAll('.shape-front').forEach(node => { if (node.tagName.toLowerCase() === 'ellipse') node.setAttribute('fill', topColor); });
+                }
+            } else {
+                selected.setAttribute('fill', c);
+            }
+        }
+        if (c !== 'none') {
+            if (!c.startsWith('url')) {
+                $('fill').value = hex(c);
+                $('stroke').value = hex(c);
+            }
+        }
+    };
+};
+colors.forEach(c => { const b = document.createElement('button'); setupSwatch(c, b, false); $('palette').append(b); });
+['#000000', '#5b6574', '#e56b73', '#f3c54b', '#5ecb8b', '#8bc0ec', '#3869bd', '#7c4dcc'].forEach(c => { const b = document.createElement('button'); setupSwatch(c, b, true); $('lineColors').append(b); });
+
+$('arrowToggleBtn').onclick = () => {
+    if (!selected) return;
+    snap();
+    if (selected.getAttribute('marker-end')) {
+        selected.removeAttribute('marker-end');
+        $('arrowToggleBtn').classList.remove('active');
+    } else {
+        selected.setAttribute('marker-end', 'url(#arrowhead)');
+        $('arrowToggleBtn').classList.add('active');
+    }
+};
+
+document.querySelectorAll('[data-dash]').forEach(b => { b.onclick = () => { if (!selected) return; snap(); selected.setAttribute('stroke-dasharray', b.dataset.dash); document.querySelectorAll('.line-types .line-type:not(.arrow-toggle)').forEach(x => x.classList.remove('active')); b.classList.add('active'); }}); window.onresize = placeFloat;
+document.onkeydown = e => {
+    if (e.code === 'Space' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) spaceDown = true;
+    if (e.key === 'Escape') { anchor = null; poly = []; clearPreview(); closePops(); say('已取消当前操作'); }
+    if ((e.key === 'Delete' || e.key === 'Backspace') && selected && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) { e.preventDefault(); remove(); }
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); (e.shiftKey ? $('redo') : $('undo')).click(); }
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'y') { e.preventDefault(); $('redo').click(); }
+};
+document.onkeyup = e => { if (e.code === 'Space') spaceDown = false; };
+
+let floatDrag = null;
+const floatBar = document.querySelector('.float-bar');
+floatBar.style.cursor = 'grab';
+floatBar.style.touchAction = 'none';
+floatBar.addEventListener('pointerdown', e => {
+    if (e.target.closest('.float-btn') || e.target.closest('input')) return;
+    const float = $('floating');
+    floatDrag = {
+        startX: e.clientX, startY: e.clientY,
+        initialLeft: parseFloat(float.style.left) || 0,
+        initialTop: parseFloat(float.style.top) || 0
+    };
+    floatBar.setPointerCapture(e.pointerId);
+    e.preventDefault();
+});
+floatBar.addEventListener('pointermove', e => {
+    if (floatDrag) {
+        const float = $('floating');
+        float.style.left = (floatDrag.initialLeft + e.clientX - floatDrag.startX) + 'px';
+        float.style.top = (floatDrag.initialTop + e.clientY - floatDrag.startY) + 'px';
+        float.dataset.moved = 'true';
+    }
+});
+floatBar.addEventListener('pointerup', e => {
+    if (floatDrag) {
+        floatBar.releasePointerCapture(e.pointerId);
+        floatDrag = null;
+    }
+});
+
+</script></body></html>
