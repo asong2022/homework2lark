@@ -1,8 +1,10 @@
-# shi-homework2lark
+# homework2lark
 
-[![CI](https://github.com/asong2022/shi-homework2lark/actions/workflows/ci.yml/badge.svg)](https://github.com/asong2022/shi-homework2lark/actions/workflows/ci.yml)
+[![CI](https://github.com/asong2022/homework2lark/actions/workflows/ci.yml/badge.svg)](https://github.com/asong2022/homework2lark/actions/workflows/ci.yml)
 
 面向小学数学教师的对话式错题学习系统。它把作业图片、试卷或 PDF 中经过教师确认的错题，整理为来源清楚、可修订、可复用的题目资产，并通过飞书多维表格连接后续的变式题、精准练习与再练反馈。
+
+仓库内的对话式工作流 Skill 名为 `shi-homework2lark`。
 
 当前版本是 Phase 1 / MVP。项目强调“教师把关、证据分层、数据可追溯”，不把 OCR 或 AI 输出直接当作可信题目，也不提供自动批改、学生账号或班级分析平台。
 
