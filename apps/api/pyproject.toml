@@ -1,7 +1,7 @@
 [project]
 name = "mistake-notebook-api"
 version = "0.1.0"
-description = "Phase 1 API for reviewed elementary mathematics problem assets"
+description = "Phase 1 API for teacher-confirmed elementary mathematics problem assets"
 requires-python = ">=3.11,<3.13"
 dependencies = [
   "alembic>=1.16,<2",
@@ -44,6 +44,7 @@ packages = ["src/mistake_notebook_api"]
 addopts = "-ra --strict-markers"
 pythonpath = ["src"]
 testpaths = ["tests"]
+markers = ["live: explicitly authorized test against a real external service"]
 
 [tool.ruff]
 target-version = "py311"

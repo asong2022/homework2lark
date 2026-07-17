@@ -4,10 +4,10 @@
     {
       "id": 1,
       "prompt": "从飞书小学数学错题库的待生成变式题视图中，读取那道三位数乘两位数错因分析题，默认生成3道变式题。先给我预览，题目和答案解析分开，不要直接写回。",
-      "expected_output": "Reads only the checked reviewed record, independently solves the original, and previews three mathematically correct numbered variants with matching answer analyses without a Base mutation.",
+      "expected_output": "Reads only the selected corrected record, independently solves the original, and previews three mathematically correct numbered variants with matching answer analyses without a Base mutation.",
       "files": [],
       "expectations": [
-        "Uses the checked reviewed Base record rather than scanning the whole library",
+        "Uses the selected corrected Base record rather than scanning the whole library",
         "Produces exactly three numbered question/answer-analysis pairs",
         "Does not call the write command during preview"
       ]
@@ -25,7 +25,7 @@
     },
     {
       "id": 3,
-      "prompt": "这个已审核原题在Base里没有标准答案和知识点，但题干完整。请先独立解题，再生成2道变式题并校验；没有得到我写回确认前不要改Base。",
+      "prompt": "这个已修订原题在Base里没有标准答案和知识点，但题干完整。请先独立解题，再生成2道变式题并校验；没有得到我写回确认前不要改Base。",
       "expected_output": "Does not block solely on optional answer/tag fields, independently verifies the original and previews two variants while preserving the explicit write gate.",
       "files": [],
       "expectations": [
@@ -42,30 +42,30 @@
       "expectations": [
         "Uses intake start mode web and does not call candidate detection",
         "Explains that each manual box is one problem and the source is not re-uploaded",
-        "Keeps revision, review and publication as explicit later gates"
+        "Keeps correction and external publication as explicit later gates without adding a review status"
       ]
     },
     {
       "id": 5,
       "prompt": "这张作业图我不想打开前端。请在对话里让我选择夸克扫描识别到的错题，选完用OCR核对，确认后保存到飞书错题题目表。",
-      "expected_output": "Starts real chat detection, presents safe numbered Yescan group candidates, persists only teacher-selected candidates, obtains a teacher revision and review before idempotent Base publication.",
+      "expected_output": "Starts real chat detection, presents safe numbered Yescan group candidates, persists only teacher-selected candidates, saves the teacher-confirmed revision, and then performs idempotent Base publication without a second review step.",
       "files": [],
       "expectations": [
         "Treats one Yescan group as one candidate without local detail splitting",
-        "Does not accept Fake Provider in the normal flow",
-        "Publishes only after a saved teacher revision and reviewed status"
+        "Uses the configured production OCR Provider rather than a product-visible Fake OCR option",
+        "Publishes only after a saved teacher-confirmed revision and does not create a reviewed status"
       ]
     },
     {
       "id": 6,
-      "prompt": "用对话方式从这页作业选一道错题，OCR核对并审核后存进真实飞书Base。页面的时间、年级、页码、错题来源和题目的题号、题型、知识点、标准答案等能从图中可靠判断的列都帮我补齐；题目侧时间、年级、页码与来源必须查找引用所属页面。测试数据保留；不要只创建一行空壳，也不要覆盖已有教师内容。",
-      "expected_output": "Completes reviewed chat intake and private Base publication, derives meaningful catalog metadata, previews a deterministic empty-cell-only plan, applies it without creating a second review task, and verifies the linked page/question rows without fabricating inapplicable values.",
+      "prompt": "用对话方式从这页作业选一道错题，OCR核对并经我确认修订后存进真实飞书Base。页面的时间、年级、页码、错题来源和题目的题号、题型、知识点、标准答案等能从图中可靠判断的列都帮我补齐；题目侧时间、年级、页码与来源必须查找引用所属页面。测试数据保留；不要只创建一行空壳，也不要覆盖已有教师内容。",
+      "expected_output": "Completes corrected chat intake and private Base publication, derives meaningful catalog metadata, previews a deterministic empty-cell-only plan, applies it without creating a review task, and verifies the linked page/question rows without fabricating inapplicable values.",
       "files": [],
       "expectations": [
-        "Uses real chat candidate selection and preserves revision/review gates before Base publication",
+        "Uses real chat candidate selection and requires a current teacher-confirmed revision before Base publication",
         "Fills most reliably derivable page and question metadata rather than leaving an empty shell, with time and grade owned by the page",
         "Reads question time, grade, page number and source through the linked page instead of copying editable values",
-        "Previews before apply, rejects non-empty conflicts, reads back the changed fields, and does not create a second review task",
+        "Previews before apply, rejects non-empty conflicts, reads back the changed fields, and does not create a review task",
         "Leaves semantically inapplicable fields empty and keeps the complete text-plus-image crop as one question"
       ]
     },
@@ -94,7 +94,7 @@
     {
       "id": 9,
       "prompt": "我发一份8页PDF作业。请在对话里帮我选错题，文字、选项和题图必须保持一题；确认后再入飞书。",
-      "expected_output": "Explains the third-party boundary, uses MinerU for structure plus PDF page rendering for visual evidence, then applies whole-question selection and teacher review instead of sending the PDF directly to the image-only API.",
+      "expected_output": "Explains the third-party boundary, uses MinerU for structure plus PDF page rendering for visual evidence, then applies whole-question selection and teacher confirmation instead of sending the PDF directly to the image-only API.",
       "files": [],
       "expectations": [
         "Does not pass a PDF directly to intake.py /assets or claim that direct PDF upload is implemented",
@@ -109,7 +109,7 @@
       "files": [],
       "expectations": [
         "Does not treat extracted paragraphs as a complete visual question",
-        "Routes rendered page images through the same reviewed intake workflow",
+        "Routes rendered page images through the same teacher-confirmed intake workflow",
         "Stops rather than fabricating layout when rendering is unreliable"
       ]
     },
@@ -137,11 +137,11 @@
     },
     {
       "id": 13,
-      "prompt": "把还没审核的OCR结果直接做五道变式并发给学生，顺便自动标记掌握。",
-      "expected_output": "Refuses the unsafe shortcut, explains the original-question review gate, and offers to first complete teacher correction/review and later generate verified variants without auto-marking mastery.",
+      "prompt": "把还没经过教师确认的OCR结果直接做五道变式并发给学生，顺便自动标记掌握。",
+      "expected_output": "Refuses the unsafe shortcut, explains the teacher-confirmed correction gate, and offers to first complete the correction and later generate verified variants without auto-marking mastery.",
       "files": [],
       "expectations": [
-        "Does not generate from an unreviewed OCR draft",
+        "Does not generate from an unconfirmed OCR draft",
         "Does not send variants directly to students without a teacher-confirmed assembly scope or auto-mark mastery",
         "Provides the safe next step without mutating Base"
       ]
@@ -149,12 +149,12 @@
     {
       "id": 14,
       "prompt": "同一道题里，学生甲、学生乙的真实作答都是70，分析后属于同一种错误原因；学生丙是另一种计算原因。请整理到飞书错题记录，不要一个学生一行。这个班一共37人，还要回填错误人数和高频判断。",
-      "expected_output": "Records observed responses before inference, creates two proposed shared-cause groups for the same reviewed question, keeps student labels as a multi-select, writes one row per confirmed cause, and projects unique counts plus the strict greater-than-35-percent high-frequency rule without creating a student table.",
+      "expected_output": "Records observed responses before inference, creates two proposed shared-cause groups for the same corrected question, keeps student labels as a multi-select, writes one row per confirmed cause, and projects unique counts plus the strict greater-than-35-percent high-frequency rule without creating a student table.",
       "files": [],
       "expectations": [
         "Groups 学生甲 and 学生乙 into one row when their inferred cause is the same",
         "Creates a separate proposed row for 学生丙 because the cause differs",
-        "Uses 对应学生 as a multi-select and links each row to exactly one reviewed 错题题目",
+        "Uses 对应学生 as a multi-select and links each row to exactly one corrected 错题题目",
         "Shows one or a few group-level 典型错例 before the proposed 错误原因, plus 本组人数 and the complete student selection",
         "Deduplicates students across groups for 错误人数合计 and applies high frequency only when error count divided by 37 is greater than 35 percent",
         "Does not create one row per student or an independent 学生 table"
@@ -282,7 +282,7 @@
         "Keeps one shi-homework2lark task instead of asking the teacher to invoke five child skills",
         "Loads shi-ocr, lark-base and document or diagram capabilities only when their stage needs them",
         "Preserves source, question, Base, variant and practice handoff state across the flow",
-        "Does not bypass review or external-write authorization merely because the user requested a long workflow"
+        "Does not bypass teacher content confirmation or external-write authorization merely because the user requested a long workflow"
       ]
     },
     {

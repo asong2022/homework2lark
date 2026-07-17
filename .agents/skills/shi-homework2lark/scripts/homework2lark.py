@@ -61,7 +61,6 @@ READ_FIELDS_WITHOUT_ID = (
     "页码",
     "错题来源",
     "本地修订版本",
-    "已审核时间",
     MANUAL_ATTENTION_FIELD,
     REVERSE_VARIANT_LINK_FIELD,
 )
@@ -86,7 +85,6 @@ EXPECTED_SOURCE_FIELD_TYPES = {
     "设计意图": "text",
     ERROR_CAUSE_SUMMARY_FIELD: "text",
     "本地修订版本": "number",
-    "已审核时间": "datetime",
 }
 EXPECTED_VIEW_FILTERS: dict[str, tuple[tuple[JSONValue, ...], ...]] = {
     SELECTED_VIEW: (
@@ -722,22 +720,11 @@ class Homework2LarkService:
             "请通过 variant_catalog.py write 将题图上传到独立变式题记录。",
         )
 
-    def review(self, record_id: str) -> dict[str, JSONValue]:
-        del record_id
-        raise SkillError(
-            "independent_variant_catalog_required",
-            "独立变式题默认可用；原题异常仍在错题题目.需人工处理中单独维护。",
-        )
-
     def list_available(self) -> list[dict[str, JSONValue]]:
         raise SkillError(
             "independent_variant_catalog_required",
             "请使用 variant_catalog.py list-available 读取独立变式题表。",
         )
-
-    def list_reviewed(self) -> list[dict[str, JSONValue]]:
-        """Backward-compatible alias for callers that still use the old command."""
-        return self.list_available()
 
     def download_images(self, record_id: str, output_dir: str) -> dict[str, JSONValue]:
         self._validated_schema()
@@ -878,11 +865,10 @@ def ensure_source_eligible(record: BaseRecord, *, allow_attention: bool = False)
         or not isinstance(revision_number, (int, float))
         or revision_number < 1
         or revision_number % 1 != 0
-        or _empty(record.fields.get("已审核时间"))
     ):
         raise SkillError(
-            "source_review_evidence_missing",
-            "原题缺少本地审核版本或审核时间，不能生成变式题。",
+            "source_revision_missing",
+            "原题缺少有效的本地修订版本，不能生成变式题。",
         )
     has_text = bool(_text(record.fields.get("题干文本")))
     has_image = _attachment_count(record.fields.get("图片题目")) > 0
@@ -1147,11 +1133,7 @@ def build_parser() -> argparse.ArgumentParser:
     attach_parser.add_argument("--variant", required=True, type=int)
     attach_parser.add_argument("--file", required=True)
 
-    review_parser = subparsers.add_parser("review")
-    review_parser.add_argument("--record-id", required=True)
-
     subparsers.add_parser("list-available")
-    subparsers.add_parser("list-reviewed")
 
     download_parser = subparsers.add_parser("download-images")
     download_parser.add_argument("--record-id", required=True)
@@ -1186,14 +1168,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             elif args.command == "write":
                 payload = validate_generated_payload(load_json_input(args.input))
                 result = service.write(args.record_id, payload, replace_all=args.replace_all)
-            elif args.command == "review":
-                result = service.review(args.record_id)
             elif args.command == "attach-diagram":
                 result = service.attach_diagram(args.record_id, args.variant, args.file)
             elif args.command == "list-available":
                 result = service.list_available()
-            elif args.command == "list-reviewed":
-                result = service.list_reviewed()
             elif args.command == "download-images":
                 result = service.download_images(args.record_id, args.output_dir)
             else:

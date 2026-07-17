@@ -72,7 +72,7 @@ class SourceBundleTests(unittest.TestCase):
                     "originalFileName": "作业.pdf",
                     "privacyNoticeShown": True,
                     "pages": [],
-                    "apiKey": "must-not-appear",  # pragma: allowlist secret
+                    "apiKey": "must-not-appear",
                 }
             )
 

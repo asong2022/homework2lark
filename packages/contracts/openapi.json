@@ -323,10 +323,6 @@
             "title": "Createdat",
             "type": "string"
           },
-          "futureReuseEligible": {
-            "title": "Futurereuseeligible",
-            "type": "boolean"
-          },
           "history": {
             "$ref": "#/components/schemas/HistoryResponse"
           },
@@ -380,14 +376,8 @@
           "region": {
             "$ref": "#/components/schemas/ProblemRegionResponse"
           },
-          "review": {
-            "$ref": "#/components/schemas/ReviewResponse"
-          },
           "source": {
             "$ref": "#/components/schemas/SourceAssetResponse"
-          },
-          "status": {
-            "$ref": "#/components/schemas/ReviewStatus"
           },
           "updatedAt": {
             "format": "date-time",
@@ -397,14 +387,11 @@
         },
         "required": [
           "problemId",
-          "status",
-          "futureReuseEligible",
           "source",
           "region",
           "ocr",
           "latestOcrRun",
           "humanRevision",
-          "review",
           "lineage",
           "history",
           "publication",
@@ -1168,127 +1155,6 @@
         "title": "RegionSelectionSource",
         "type": "string"
       },
-      "ReviewRequest": {
-        "properties": {
-          "revisionId": {
-            "maxLength": 64,
-            "minLength": 1,
-            "title": "Revisionid",
-            "type": "string"
-          }
-        },
-        "required": [
-          "revisionId"
-        ],
-        "title": "ReviewRequest",
-        "type": "object"
-      },
-      "ReviewResponse": {
-        "properties": {
-          "reviewedAt": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reviewedat"
-          },
-          "status": {
-            "$ref": "#/components/schemas/ReviewStatus"
-          },
-          "statusHistory": {
-            "items": {
-              "$ref": "#/components/schemas/ReviewStatusEventResponse"
-            },
-            "title": "Statushistory",
-            "type": "array"
-          }
-        },
-        "required": [
-          "status",
-          "reviewedAt",
-          "statusHistory"
-        ],
-        "title": "ReviewResponse",
-        "type": "object"
-      },
-      "ReviewStatus": {
-        "enum": [
-          "draft",
-          "ocr_completed",
-          "needs_review",
-          "reviewed"
-        ],
-        "title": "ReviewStatus",
-        "type": "string"
-      },
-      "ReviewStatusEventResponse": {
-        "properties": {
-          "createdAt": {
-            "format": "date-time",
-            "title": "Createdat",
-            "type": "string"
-          },
-          "eventId": {
-            "title": "Eventid",
-            "type": "string"
-          },
-          "fromStatus": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ReviewStatus"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "ocrRunId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ocrrunid"
-          },
-          "reason": {
-            "title": "Reason",
-            "type": "string"
-          },
-          "revisionId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Revisionid"
-          },
-          "toStatus": {
-            "$ref": "#/components/schemas/ReviewStatus"
-          }
-        },
-        "required": [
-          "eventId",
-          "fromStatus",
-          "toStatus",
-          "reason",
-          "ocrRunId",
-          "revisionId",
-          "createdAt"
-        ],
-        "title": "ReviewStatusEventResponse",
-        "type": "object"
-      },
       "RevisionCreateRequest": {
         "properties": {
           "basedOnOcrRunId": {
@@ -1396,7 +1262,7 @@
     }
   },
   "info": {
-    "description": "这是提供给 AI 与开发者的配置接口，不是教师日常操作页面。当前支持：上传单页图片、教师框题、OCR、人工修订、审核、来源追溯和发布飞书 Base。",
+    "description": "这是提供给 AI 与开发者的配置接口，不是教师日常操作页面。当前支持：上传单页图片、教师框题、OCR、人工修订、来源追溯和发布飞书 Base。",
     "title": "小学数学错题学习系统 API",
     "version": "0.1.0"
   },
@@ -2087,7 +1953,7 @@
         },
         "summary": "读取一条完整的规范化题目记录",
         "tags": [
-          "题目审核"
+          "题目记录"
         ]
       }
     },
@@ -2197,101 +2063,9 @@
             "description": "外部识别服务运行超时。"
           }
         },
-        "summary": "把已审核题目发布到飞书 Base",
+        "summary": "把已整理题目发布到飞书 Base",
         "tags": [
           "飞书 Base"
-        ]
-      }
-    },
-    "/api/v1/problems/{problem_id}/review": {
-      "post": {
-        "operationId": "review_problem_api_v1_problems__problem_id__review_post",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "problem_id",
-            "required": true,
-            "schema": {
-              "title": "Problem Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ReviewRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NormalizedProblemResponse"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "HTTP 请求或上传表单格式错误。"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "找不到请求的来源材料或题目记录。"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "当前状态不允许执行这个操作。"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "请求内容没有通过校验。"
-          },
-          "500": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "系统内部或本地文件存储发生错误。"
-          }
-        },
-        "summary": "确认一个教师修订为已审核题目",
-        "tags": [
-          "题目审核"
         ]
       }
     },
@@ -2559,11 +2333,7 @@
       "name": "OCR 与修订"
     },
     {
-      "description": "读取来源页题目并执行教师审核门槛。",
-      "name": "题目审核"
-    },
-    {
-      "description": "显式发布已经审核的题目资产。",
+      "description": "显式发布教师确认修订后的题目资产。",
       "name": "飞书 Base"
     },
     {

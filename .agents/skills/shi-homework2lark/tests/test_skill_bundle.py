@@ -38,7 +38,7 @@ class BundleManifestTests(unittest.TestCase):
             {"name", "description", "license", "allowed-tools", "metadata", "compatibility"},
         )
         self.assertNotIn("version", top_level_keys)
-        self.assertIn('version: "2.1.2"', frontmatter)
+        self.assertIn('version: "2.3.0"', frontmatter)
 
     def test_bundle_declares_one_entry_and_five_stages(self) -> None:
         manifest = doctor.load_bundle(SKILL_ROOT)
@@ -125,7 +125,7 @@ class DoctorTests(unittest.TestCase):
         self.assertEqual(intake["status"], "degraded")
         self.assertIn("skill:shi-ocr", intake["missingRecommended"])
 
-    def test_missing_required_base_blocks_bundle(self) -> None:
+    def test_missing_filesystem_base_degrades_because_cli_embedded_guide_remains(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             report = doctor.build_report(
                 SKILL_ROOT,
@@ -135,9 +135,11 @@ class DoctorTests(unittest.TestCase):
                 module_available=lambda _name: True,
             )
 
-        self.assertEqual(report["overallStatus"], "blocked")
+        self.assertEqual(report["overallStatus"], "degraded")
         base_check = next(item for item in report["skills"] if item["name"] == "lark-base")
         self.assertFalse(base_check["available"])
+        mistakes = next(stage for stage in report["stages"] if stage["id"] == "mistakes")
+        self.assertIn("skill:lark-base", mistakes["missingRecommended"])
 
     def test_report_does_not_expose_discovered_paths(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

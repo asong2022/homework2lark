@@ -4,7 +4,7 @@
 
 ### 1. Scope / Trigger
 
-Use this contract when Codex, Hermes, or another compatible Agent receives an image, PDF, Word document or teacher description and helps turn selected questions into reviewed local problem assets and explicitly publish them to Lark Base. PDF/Word are normalized to visual page images before entering the image-only FastAPI; the primary experience starts in the Agent conversation and Web is an optional precision tool.
+Use this contract when Codex, Hermes, or another compatible Agent receives an image, PDF, Word document or teacher description and helps turn selected questions into teacher-confirmed local problem assets and explicitly publish them to Lark Base. PDF/Word are normalized to visual page images before entering the image-only FastAPI; the primary experience starts in the Agent conversation and Web is an optional precision tool.
 
 When collection begins, the user—not the Agent—must first choose one of three collection modes: `teacher_selected`, `anonymous_corrected`, or `identified_corrected`. If the conversation does not already contain an explicit user choice, the Agent presents exactly those three options and stops without inspecting attachments, calling OCR/Web/Base, or persisting a default. `scripts/workflow.py` records the chosen mode with `decidedBy=user`; the five learning stages remain an internal orchestration model and are not substitutes for this choice.
 
@@ -16,18 +16,17 @@ There are three entry experiences but one business core:
 
 For one blank template plus many corrected copies, the blank page is the unique printed-question source. The Agent may call Yescan AI Agent `scene=question-ocr` once per blank page, confirms the complete questions, then locally registers corrected pages to those regions. It does not repeat printed-stem OCR for every student copy.
 
-All three image modes use the FastAPI domain workflow for `SourceAsset -> ProblemRegion -> OCRRun -> ProblemRevision -> ReviewedProblem -> publication`. The Skill never writes those tables directly. PDF/Word first use MinerU plus PDF/doc page rendering; extracted text assists reading but never replaces visual page evidence.
+All three image modes use the FastAPI domain workflow for `SourceAsset -> ProblemRegion -> OCRRun -> ProblemRevision -> ProblemAsset.current_revision_id -> publication`. The Skill never writes those tables directly. PDF/Word first use MinerU plus PDF/doc page rendering; extracted text assists reading but never replaces visual page evidence.
 
 ### 2. Signatures
 
 ```text
-python scripts/intake.py [--api-url URL] [--web-url URL] [--allow-fake] health
+python scripts/intake.py [--api-url URL] [--web-url URL] health
 python scripts/intake.py start --file <image> --mode web|chat|single --output <manifest.json>
 python scripts/intake.py select --session <json-path> --candidate-id <id>... --output <selection.json>
 python scripts/intake.py ocr --problem-id problem_xxx
 python scripts/intake.py get --problem-id problem_xxx
 python scripts/intake.py save-revision --problem-id problem_xxx --input <json-path|->
-python scripts/intake.py review --problem-id problem_xxx [--revision-id revision_xxx]
 python scripts/intake.py publish --problem-id problem_xxx
 python scripts/intake.py download-evidence --problem-id problem_xxx --output-dir <dir>
 python scripts/intake.py validate-metadata --input <json-path|->
@@ -48,25 +47,25 @@ Backend operations remain the existing typed HTTP API; the Skill is a client/orc
 - Runtime configuration: `SHI_HOMEWORK2LARK_API_URL` defaults to the local API; `SHI_HOMEWORK2LARK_WEB_URL` defaults to `http://localhost:3000`. The current real OCR path is the hosted PaddleOCR Job API with model `PaddleOCR-VL-1.6`. Neither source nor manifests contain Provider keys, Lark tokens, Base IDs, or model keys.
 - Existing JSON inputs and session manifests may be read from any readable relative or absolute path. New session, selection and evidence outputs remain explicit relative destinations under the current working directory.
 - `web` uploads the source exactly once and returns the existing-asset route. That route starts in manual mode, does not invoke detection on load, and exposes an explicit automatic-framing action.
-- `chat` requires a real configured detection Provider unless `--allow-fake` is explicitly used for tests. It persists Provider evidence through the API and emits only safe candidate IDs, reading order, and normalized bbox data.
+- `chat` requires a real configured detection Provider. Tests inject their own gateway/provider fixture; no product CLI flag enables fabricated detection. The real path persists Provider evidence and emits only safe candidate IDs, reading order, and normalized bbox data.
 - One Yescan group-level `StructureInfo` is one candidate. The Skill never splits nested text/choice/formula/table/illustration details and never silently merges separate groups. Text and an embedded diagram in one group remain one complete question asset.
-- `single` creates a normalized full-image bbox without detection. OCR, revision, review, and publication gates are unchanged.
-- After a Web batch save, the browser shows saved crops and public problem IDs, then stops. It must not call OCR, revision, review, publication, or Base operations.
+- `single` creates a normalized full-image bbox without detection. OCR, revision, and publication gates are unchanged.
+- After a Web batch save, the browser shows saved crops and public problem IDs, then stops. It must not call OCR, revision, publication, or Base operations.
 - The existing-asset route restores every persisted region from the source-scoped problem collection and returns the same public IDs to the Agent. The teacher may deliberately continue framing on the same source.
 - `get` and `ocr` return curated fields. Provider raw response, storage keys, absolute paths, image Base64, attachment URLs, remote record IDs, CLI stderr, and credentials never appear in normal output or manifests.
 - The Agent may propose corrected text and teaching metadata only after inspecting the crop and OCR. The teacher must see the evidence and proposed value before mutation.
-- Revision, review, and publication are distinct durable transitions. A single explicit teacher confirmation may authorize the ordered sequence, but a later failure never rolls back earlier evidence.
-- Publishing uses `POST /api/v1/problems/{problemId}/publications/lark`. It requires server-confirmed reviewed eligibility. Questions are idempotent by hidden system ID; pages first use `系统页面ID` and then exact `源文件哈希`, so repeated uploads of the same bytes reuse one page row.
+- Revision and publication are distinct durable transitions. Saving a teacher-confirmed non-empty revision immediately selects it as current; explicit Base publication may follow under the same scoped request, and a later failure never rolls back earlier evidence.
+- Publishing uses `POST /api/v1/problems/{problemId}/publications/lark`. It requires a server-confirmed current non-empty revision and complete source/crop/OCR lineage. Questions are idempotent by hidden system ID; pages first use `系统页面ID` and then exact `源文件哈希`, so repeated uploads of the same bytes reuse one page row.
 - Approved metadata keys are limited to:
-  - page: `页面名称`, `时间`, `年级`, `页码`, `单元`, `课题名`, `错题来源`, `页面主知识点`, `备注`;
-  - question: `题号`, `题目名称`, `分区标题`, `题型`, `对应知识点`, `图表说明`, `标准答案`, `答案备注`.
+  - page: `页面名称`, `时间`, `年级`, `页码`, `单元`, `课题名`, `错题来源`, `页面主知识点`;
+  - question: `题号`, `题目名称`, `分区标题`, `题型`, `核心素养`, `对应知识点`, `图表说明`, `标准答案`, `答案备注`, `设计意图`.
 - `错题题目.典型错例` and `错题题目.错误表现` are read-only raw-value lookups from all linked `错题记录` groups. Metadata enrichment never writes them or fabricates a student response when grouped evidence is absent.
 - `错题来源` and `题型` must match the existing agreed Base option sets; enrichment never creates a new select option as a side effect.
 - `错题页面` is one row per physical source page. Multiple questions from one page link to that row through `所属错题页面`; question-side `时间`, `年级`, `页码` and `错题来源` are read-only lookups from the linked page and never appear in metadata write payloads.
 - After publication, metadata enrichment is a required normal completion step. The Agent fills every reliably derivable field but leaves inapplicable or uncertain values empty.
 - `base_metadata.py preview` performs no write and returns field names only. `apply` fills empty cells, treats equal values as idempotent, rejects any different non-empty value, and reads back both the question and linked page. It has no broad overwrite switch and does not create a second Base review task.
-- The reviewed local original remains the publication gate. Legacy Base review fields may stay hidden during migration, but normal metadata enrichment is usable immediately; only genuine content conflicts enter the single `需人工处理` exception queue.
-- Metadata never overwrites OCR, revision, review evidence, images, stable IDs, or generated variants. `题干文本` includes textual choices; `图片题目` remains one complete text-plus-image crop; `题干图片` is only an optional extracted non-text visual and never a second question. Numeric/`待整理…` title placeholders may be replaced with readable `页面名称`/`题目名称`; other non-empty titles remain conflicts.
+- The teacher-confirmed current local revision remains the publication gate. Retired Base review fields are not required or written; normal metadata enrichment is usable immediately, and only genuine content conflicts enter the single `需人工处理` exception queue.
+- Metadata never overwrites OCR/revision evidence, images, stable IDs, or generated variants. `题干文本` includes textual choices; `图片题目` remains one complete text-plus-image crop; `题干图片` is only an optional extracted non-text visual and never a second question. Numeric/`待整理…` title placeholders may be replaced with readable `页面名称`/`题目名称`; other non-empty titles remain conflicts.
 
 Target Base projection:
 
@@ -79,7 +78,7 @@ Target Base projection:
 `错题页面.时间`, `错题页面.年级`, `错题页面.页码` and `错题页面.错题来源` are authoritative. `错题题目` exposes the same names as lookup fields selected through `所属错题页面`.
 
 Teaching priority is a scoped view, not a durable question attribute. Every priority view declares a concrete grade and date window before applying `是否高频错题` and sorting by `错误率`. The current `2025学年下·三年级优先` view contains only Grade 3 pages dated from 2026-02-01 through 2026-08-31, excludes real exceptions, and sorts by error rate descending, date descending, then collection order. The lifelong archive remains available in `错题库`; a later term or grade must use an explicitly renamed/rescoped view rather than silently reusing this definition.
-`错题记录` is a grouped teaching projection: one row represents one reviewed question, one assignment date and one shared error cause with multiple selected students. It is not one row per student and does not require a `学生` table.
+`错题记录` is a grouped teaching projection: one row represents one teacher-confirmed question, one assignment date and one shared error cause with multiple selected students. It is not one row per student and does not require a `学生` table.
 
 ### 4. Validation & Error Matrix
 
@@ -90,13 +89,12 @@ Teaching priority is a scoped view, not a durable question attribute. Every prio
 | JSON input missing/unreadable or malformed | `input_unreadable` / `invalid_payload` | none |
 | PDF/Word passed directly to image CLI | `source_requires_page_images` | public Skill normalizes to page images first; no hidden direct upload |
 | Web asset missing | `asset_not_found` | no detection or replacement upload |
-| chat mode with Fake Provider unintentionally active | local configuration rejection | source is not described as truly detected |
+| chat mode with a test-only detection provider active | local configuration rejection | source is not described as truly detected |
 | Yescan unavailable/timeout/empty | safe Provider category; retry or switch to Web manual mode | source retained; failed run evidence retained when created |
 | unknown/duplicate candidate selection | local validation/API selection error | detection evidence retained; no guessed region |
 | OCR failure/empty text | safe OCR code plus problem ID | source, region, crop, failed run retained |
 | revision text empty | validation rejection | OCR and earlier revisions retained |
-| review without valid revision | `review_requires_revision` | draft/needs-review remains |
-| publish before reviewed | `problem_not_publishable` | local evidence remains; no Base mutation |
+| publish before a valid current revision/lineage exists | `problem_not_publishable` | local evidence remains; no Base mutation |
 | metadata unknown key/non-object | `invalid_metadata` | no Base mutation |
 | metadata conflicts with non-empty cell | conflict preview | no overwrite without a new confirmation |
 | metadata apply repeated with equal values | `no_change` | no duplicate row and no extra mutation |
@@ -105,15 +103,15 @@ Teaching priority is a scoped view, not a durable question attribute. Every prio
 ### 5. Good / Base / Bad Cases
 
 - Good: the Agent uploads `image1.png`, returns a Web URL, the teacher uses automatic candidates plus one manual correction, clicks complete, and public problem IDs return to the conversation; the Agent then performs OCR, correction, the local quality gate, and explicit Base publication.
-- Base: the Agent receives `image2.png` in chat mode; Yescan returns whole-question candidates, the teacher selects one, hosted PaddleOCR-VL-1.6 recognizes it, and the teacher corrects the flattened table text before review.
-- Bad: run detection merely by opening the Web route, call OCR/review/publication from the browser, treat nested Yescan details as separate questions, silently review AI text, or write directly to Base before the local review gate.
+- Base: the Agent receives `image2.png` in chat mode; Yescan returns whole-question candidates, the teacher selects one, hosted PaddleOCR-VL-1.6 recognizes it, and the teacher corrects the flattened table text before saving the current revision.
+- Bad: run detection merely by opening the Web route, call OCR/revision/publication from the browser, treat nested Yescan details as separate questions, silently treat AI text as teacher-confirmed, or write directly to Base before the current-revision gate.
 
 ### 6. Tests Required
 
-- CLI unit: health, Web/chat/single manifests, candidate selection, safe HTTP errors, Fake rejection, OCR retry IDs, revision/review gates, safe projections, and metadata whitelist.
+- CLI unit: health, Web/chat/single manifests, candidate selection, safe HTTP errors, production fake-provider rejection, OCR retry IDs, revision/publication gates, safe projections, and metadata whitelist.
 - Metadata unit: typical-error lookup immutability, absolute input paths inside/outside the repository, empty-field apply, idempotent readback, non-empty conflict, and preview output without full private text.
 - Frontend unit: existing-asset load, manual mode by default, explicit optional detection, batch save without OCR, restoration, and copyable public IDs.
-- Backend: Provider contracts, immutable retry history, review eligibility, hidden-ID plus source-hash page idempotency, readable sequence allocation, and privacy-safe errors.
+- Backend: Provider contracts, immutable retry history, current-revision publication eligibility, hidden-ID plus source-hash page idempotency, readable sequence allocation, and privacy-safe errors.
 - E2E Web: manual/automatic selected regions -> batch save -> saved crops/public IDs -> reopen without review routes.
 - Real smoke: `image1.png` loads in the existing-asset Web route without automatic detection on open, explicit automatic framing remains available, and the selected crop IDs return to the Agent; `image2.png` yields Yescan whole-question candidates; one selected crop succeeds with hosted PaddleOCR-VL-1.6; after teacher-authorized Agent processing/publication, AI-derived catalog fields are previewed, applied and read back while test data remains in the private Base.
 
@@ -122,14 +120,14 @@ Teaching priority is a scoped view, not a durable question attribute. Every prio
 Wrong:
 
 ```text
-upload -> force auto-detect -> write OCR text directly to Base -> mark reviewed
+upload -> force auto-detect -> write OCR text directly to Base
 ```
 
 Correct:
 
 ```text
 upload once -> (manual/automatic Web boxes | teacher-selected chat candidate | full-image single)
--> Web returns public IDs -> Agent runs OCR evidence -> teacher-visible correction -> append revision -> explicit review
+-> Web returns public IDs -> Agent runs OCR evidence -> teacher-visible correction -> append current revision
 -> explicit idempotent Base publication
 ```
 
@@ -137,7 +135,7 @@ upload once -> (manual/automatic Web boxes | teacher-selected chat candidate | f
 
 ### 1. Scope / Trigger
 
-Use this contract after publication, when Codex/Hermes selects reviewed elementary-math originals from `错题题目`, generates numbered variants, and appends one linked record per variant to the separate `变式题` table. This is the order: reviewed original enters Base first; Base selection then drives generation. Complete variants are immediately reusable; only genuine exceptions require manual handling.
+Use this contract after publication, when Codex/Hermes selects teacher-confirmed elementary-math originals from `错题题目`, generates numbered variants, and appends one linked record per variant to the separate `变式题` table. This is the order: confirmed original enters Base first; Base selection then drives generation. Complete variants are immediately reusable; only genuine exceptions require manual handling.
 
 The workflow is a Skill/CLI capability, not a backend LLM Provider, queue, student workflow, or evidence-store replacement.
 
@@ -188,8 +186,8 @@ Generated input:
 ```
 
 - Resolve every exact-title Base candidate, list its live tables, and select the unique candidate satisfying the current table contract. Feishu may return a direct Base and an app wrapper under the same title; never assume `title-resolve.data.base_token` is present. Legacy `pages/questions` aliases are accepted only during the compatibility window. Stable lookup uses `系统题目ID`; `题目名称` is teacher-facing only and must not be used as a sync key. `收录序号` is a read-only auto number; teacher-facing question views keep it after the primary field and sort ascending by default.
-- `variants` contains 1-5 questions per generation request; default is 3. Each becomes a separate catalog row with the next positive `变式序号`. `question` is required and `answerAnalysis` is optional teacher support. Read both `questionImageCount` (complete crop) and `questionStemImageCount` (`题干图片`). Text-only originals default to text-only variants; a new diagram is generated only when the variant still needs a visual or the teacher explicitly asks to change representation. This is not a write-time prohibition. An item may contain a `diagram` object with reviewed relative HTML/PNG paths and a mathematical-relation description. Do not add category columns: consolidation, new representation, application, literacy, and challenge are all variation angles under the same variant concept.
-- Original eligibility requires a stable `系统题目ID`, positive `本地修订版本`, non-empty `已审核时间`, `需人工处理=false`, and complete text and/or image evidence. The backend publisher still rejects every locally unreviewed problem before it can create this Base projection; Base does not duplicate `审核状态` or `是否待复核`.
+- `variants` contains 1-5 questions per generation request; default is 3. Each becomes a separate catalog row with the next positive `变式序号`. `question` is required and `answerAnalysis` is optional teacher support. Read both `questionImageCount` (complete crop) and `questionStemImageCount` (`题干图片`). Text-only originals default to text-only variants; a new diagram is generated only when the variant still needs a visual or the teacher explicitly asks to change representation. This is not a write-time prohibition. An item may contain a `diagram` object with verified relative HTML/PNG paths and a mathematical-relation description. Do not add category columns: consolidation, new representation, application, literacy, and challenge are all variation angles under the same variant concept.
+- Original eligibility requires a stable `系统题目ID`, positive `本地修订版本`, `需人工处理=false`, and complete text and/or image evidence. The backend publisher rejects missing current revisions or incomplete lineage before creating this Base projection; Base has no routine review-state dependency.
 - Standard answer, knowledge point, linked page number, mistake source, grouped `典型错例` / `错误表现` lookups, and the `错误原因` count summary are optional context. The Agent independently solves and verifies the original when absent and never invents observed student evidence.
 - Pedagogical generation is owned by `references/variant-generation-prompt.md`. Before drafting, the Agent builds a fact card from grade/semester, the complete source, embedded visuals, mathematical essence, teacher intent, verified typical responses, visible error patterns, teacher diagnosis and latest retry feedback. Unknown facts stay unknown. If grade or an ambiguous source relation would materially change suitability, the Agent may preview an explicit assumption but must not write.
 - The default style follows common Zhejiang elementary-mathematics end-of-term assessment characteristics: authentic context, concise grade-appropriate language, plausible quantities, necessary and sufficient conditions, and meaningful mathematical reasoning. Without supplied real samples, the Agent must not claim to have consulted a specific historical exam. A default three-item set uses at least two substantive variation axes unless the teacher explicitly requests tightly isomorphic practice; it never creates category fields.
@@ -208,7 +206,7 @@ Generated input:
 
 | Condition | Safe code | Mutation |
 |---|---|---|
-| local review evidence absent / manually flagged | `source_review_evidence_missing` / `source_needs_attention` | none |
+| current revision evidence absent / manually flagged | `source_revision_evidence_missing` / `source_needs_attention` | none |
 | zero or multiple title candidates satisfy the table contract | `schema_mismatch` | none |
 | original text and image both absent | `source_incomplete` | none |
 | 0 or >5 questions, missing question, extra category | `invalid_payload` | none |
@@ -224,7 +222,7 @@ Do not expose lark-cli stderr, tokens, attachment URLs, absolute paths, or compl
 
 ### 5. Good / Base / Bad Cases
 
-- Good: `title-resolve` returns a direct Base plus an empty app wrapper; live table inspection uniquely selects the direct Base. A reviewed original receives three linked variant rows, two with answer analysis and one without; all immediately appear in `变式题/可组卷` because their required content is complete.
+- Good: `title-resolve` returns a direct Base plus an empty app wrapper; live table inspection uniquely selects the direct Base. A teacher-confirmed original receives three linked variant rows, two with answer analysis and one without; all immediately appear in `变式题/可组卷` because their required content is complete.
 - Base: a complete original has no answer/tag metadata. The Agent independently solves it, validates a local preview, and waits for write approval.
 - Bad: take the first same-title token without reading its tables, generate before the original enters Base, keep adding numbered columns to the original table, omit the source relation, hide an incomplete diagram from the exception queue, or create duplicate rows on an identical rerun.
 
@@ -234,7 +232,7 @@ Do not expose lark-cli stderr, tokens, attachment URLs, absolute paths, or compl
 - Prompt contract: the main Skill routes generation to the dedicated reference; the reference includes the fact card, Zhejiang-style boundary, non-mechanical variation rule, student-evidence honesty, independent solve/check gate, diagram delegation, stop conditions and exact `variant_catalog.py` JSON shape.
 - Generation evals: a Grade 5 promotion problem targets the observed grouping error with at least two variation axes; an incomplete grade/source case stops before write; a visual problem declares a diagram only when the new conditions depend on it and verifies text-image consistency.
 - Workflow: separate-row first write, append-only numbering, idempotent identical rerun, stable-key conflict, diagram exception/clear, source checkbox recovery on failure, legacy migration without deletion, and no dependency on deleted Base review columns.
-- Availability: a stable source question ID plus positive local revision and reviewed time are required; question-only rows are immediately listed with `answerAnalysis: null`, while missing-source, missing-question or incomplete-diagram rows are excluded.
+- Availability: a stable source question ID plus positive local revision are required; question-only rows are immediately listed with `answerAnalysis: null`, while missing-source, missing-question or incomplete-diagram rows are excluded.
 - Adapter: Fake runner for target/legacy schema, duplicate-title direct Base plus empty app wrapper, hidden stable ID, columnar mapping, argv lists, Windows executable resolution, and `record-get --format json` regression.
 - Live readback: required fields/views, absence of all retired review states, selected count before write, separate-row count/source relation after write, idempotent second migration, and exception count for incomplete diagrams.
 - Word: exact manifest shape, source/image/answer-space validation, derived title/page-code assertions, one-section natural-flow structure without generated hard page breaks, upper-right text-box position, footer page field, image-below-text ordering, question-block keep rules, editable DOCX generation, and no QR dependency.
@@ -254,8 +252,8 @@ Correct:
 
 ```text
 title-resolve -> inspect every exact-title candidate -> unique table-contract match
-reviewed original -> explicit Base publication -> Base selection
--> stable problem ID + local revision + reviewed time
+teacher-confirmed original -> explicit Base publication -> Base selection
+-> stable problem ID + local revision
 -> local preview -> teacher-approved batch-create of linked variant rows
 -> complete: available for assembly
 -> incomplete/conflicting: do not write until repaired
@@ -265,7 +263,7 @@ reviewed original -> explicit Base publication -> Base selection
 
 ### 1. Scope
 
-Use this contract after a reviewed original is in Base. A diagram-bearing variant delegates mathematical drawing to `wumu-jihe-html` (“这道题画张图”), keeps editable HTML locally, and writes only after the checked PNG is ready for the same `变式题` row. Practice assembly freezes exact source IDs in a batch manifest. Returned scans are observed by the Agent/`shi-ocr`; `retry_batch.py` maps page code plus visible item number back to the exact immutable source and prepares append-only events plus conservative Base projections.
+Use this contract after a teacher-confirmed original is in Base. A diagram-bearing variant delegates mathematical drawing to `wumu-jihe-html` (“这道题画张图”), keeps editable HTML locally, and writes only after the checked PNG is ready for the same `变式题` row. Practice assembly freezes exact source IDs in a batch manifest. Returned scans are observed by the Agent/`shi-ocr`; `retry_batch.py` maps page code plus visible item number back to the exact immutable source and prepares append-only events plus conservative Base projections.
 
 Base title resolution is schema-aware. When Feishu returns a direct Base and an app wrapper under the same visible title, the Skill enumerates exact-title candidates and selects the unique candidate containing the required live tables. A top-level `base_token` remains supported only for older CLI response compatibility.
 
@@ -311,14 +309,14 @@ Feedback Base fields:
 Wrong:
 
 ```text
-variant text -> generic image guess -> mark reviewed
+variant text -> generic image guess -> write without checking
 retry response -> overwrite grouped 典型错例 -> mark mastered automatically
 ```
 
 Correct:
 
 ```text
-variant -> mathematical diagram work item -> editable HTML + reviewed PNG
+variant -> mathematical diagram work item -> editable HTML + verified PNG
 -> same 变式题 row attachment + readback
 
 Base selection -> immutable batch manifest -> formal practice Word with upper-right page code + visible number mapped to R01...
@@ -333,7 +331,7 @@ observed retry + teacher judgment -> preview -> append local event
 
 ### 1. Scope / Trigger
 
-Use this contract after a reviewed original exists in `错题题目` and the teacher provides corrected-work evidence or a description of which students made which errors. The Agent records observed real responses before inference, then groups students who share the same suggested cause on the same question and assignment date. This is a Base/Skill projection only; it does not add student accounts, a student table, class relations or local FastAPI persistence.
+Use this contract after a teacher-confirmed original exists in `错题题目` and the teacher provides corrected-work evidence or a description of which students made which errors. The Agent records observed real responses before inference, then groups students who share the same suggested cause on the same question and assignment date. This is a Base/Skill projection only; it does not add student accounts, a student table, class relations or local FastAPI persistence.
 
 ### 2. Signatures
 
@@ -403,7 +401,7 @@ Both lookups follow the existing `错题题目.学生错题记录` / `错题记�
 
 `错误分类` is restricted to `审题与信息提取 / 概念理解 / 方法与策略 / 运算与计算 / 图形与表征 / 推理与表达 / 作答规范 / 其他/待判断`. OCR/vision provenance remains in local evidence and is not duplicated as a Base select field.
 
-- One group row links exactly one reviewed question and may select multiple students. Students with the same error cause share a row; different causes create different rows.
+- One group row links exactly one teacher-confirmed question and may select multiple students. Students with the same error cause share a row; different causes create different rows.
 - The same student may appear in several rows across questions, dates or distinct causes. Personal mistake sets are Base filters on the multi-select field, not separate physical tables.
 - AI vision, PaddleOCR-VL and Yescan handwriting are evidence helpers. They may propose grouping and transcription; the Agent writes only after showing the full group and receiving explicit permission for the external mutation. No persistent second audit column is required afterward.
 - Before mutation, show the linked question, date, observed real response, suggested cause, category, group count, complete selected-student list and evidence source. Rejected candidates are not written.
@@ -435,7 +433,7 @@ Both lookups follow the existing `错题题目.学生错题记录` / `错题记�
 
 ### 5. Good / Base / Bad Cases
 
-- Good: two students have the same observed calculation error on one reviewed question; the Agent proposes one group row with both students selected, the teacher confirms, and the reverse link shows one group.
+- Good: two students have the same observed calculation error on one teacher-confirmed question; the Agent proposes one group row with both students selected, the teacher confirms, and the reverse link shows one group.
 - Base: one student has a different strategy cause on the same question; it becomes a second group row because the cause differs.
 - Bad: create one duplicate row per student, store names in `典型错例`, write directly into question lookup cells, invent a new category named “粗心”, or mark a visual guess confirmed without teacher review.
 
@@ -463,7 +461,7 @@ lookup guide is missing -> bypass the guard and guess nested JSON
 Correct:
 
 ```text
-reviewed question + corrected-work evidence
+teacher-confirmed question + corrected-work evidence
 -> parse any readable relative/absolute JSON input; unreadable path -> input_unreadable
 -> observed real response
 -> AI proposes cause-based groups
@@ -518,7 +516,7 @@ Default target count is six and the accepted range is `1..12`.
 7. Never pad with an unrelated question. If fewer eligible assets exist, return the smaller truthful count; if none exist, fail.
 8. One question with several mistake rows remains one source candidate. Its highest-priority eligible mastery and newest matching evidence determine ordering.
 
-Only reviewed originals with complete text/visual assets and `需人工处理=false` are eligible. A variant is eligible when it has one unique source relation, a non-empty stem and any declared image has been read back successfully; answer analysis remains optional. Invalid records are skipped and counted in the private selection report.
+Only teacher-confirmed originals with a positive local revision, complete text/visual assets and `需人工处理=false` are eligible. A variant is eligible when it has one unique source relation, a non-empty stem and any declared image has been read back successfully; answer analysis remains optional. Invalid records are skipped and counted in the private selection report.
 
 ### 4. Manifest And Rendering
 

@@ -42,6 +42,6 @@ Before Base upload verify:
 - no answer or hidden solution is shown in the student diagram;
 - the diagram contains all necessary conditions and no unsupported condition;
 - labels remain legible in Word/PDF output;
-- the PNG is the exported state of the reviewed editable HTML.
+- the PNG is the exported state of the visually checked editable HTML.
 
-An image file is not a new problem. It attaches to the same numbered variant. When a diagram is declared, the write must stop unless the reviewed PNG exists, uploads successfully and reads back as exactly one attachment on that variant row. The variant table has no second approval or exception field; an incomplete image transaction must not be reported as a completed write.
+An image file is not a new problem. It attaches to the same numbered variant. When a diagram is declared, the write must stop unless the checked PNG exists, uploads successfully and reads back as exactly one attachment on that variant row. The variant table has no second approval or exception field; an incomplete image transaction must not be reported as a completed write.

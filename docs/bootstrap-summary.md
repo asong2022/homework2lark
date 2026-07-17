@@ -42,7 +42,7 @@
 ```text
 apps/
   api/       FastAPI、领域/应用/基础设施、Alembic、测试
-  web/       Next.js、录入/审核/详情页面、Vitest、Playwright
+  web/       Next.js、上传/框题页面、Vitest、Playwright
 packages/
   contracts/ OpenAPI 快照
 docs/        Phase 1 产品与架构文档
@@ -69,23 +69,23 @@ data/        SQLite 运行数据
 AI 对话或 Web 上传 JPG/JPEG/PNG 原图
 → 保存 SourceAsset 与不可变原始字节
 → Web 人工框题 / 对话选择 Yescan 整题候选 / 单题整图录入
-→ 校验坐标并创建 ProblemRegion/ReviewedProblem(draft)
+→ 校验坐标并创建 ProblemRegion/ProblemAsset
 → 保存独立 PNG 裁图
 → 追加 OCRRun 并调用一个 OCRProvider
 → 同屏显示来源、区域、裁图、OCR 原文和 Provider 信息
 → 保存新的 ProblemRevision
-→ 显式审核该 revision
+→ 保存后立即设为当前 revision
 → GET problemId 重建 normalized record
 → 显式发布到飞书 `错题页面/错题题目`
 → Codex/Hermes 以后从 Base 选题、生成编号变式并追加到独立 `变式题` 表
 ```
 
-原图、机器结果、教师修订和审核事件没有互相覆盖。重复 OCR/修订追加历史；失败 OCR 仍保留 source、region 和 crop。
+原图、机器结果和教师修订没有互相覆盖。重复 OCR/修订追加历史；失败 OCR 仍保留 source、region、crop 和当前人工修订。
 
 ## 7. OCR Provider
 
-- 测试路径：`FakeOCRProvider`，不访问网络，只用于自动化或显式测试模式。
-- Web 真实路径：`PaddleOCRVLAPIProvider`，调用 PaddleOCR/AI Studio 官方托管 Job API 与 `PaddleOCR-VL-1.6`；无需本地 PaddlePaddle、GPU 或 VLM 权重。
+- 默认真实路径：`PaddleOCRVLAPIProvider`，调用 PaddleOCR/AI Studio 官方托管 Job API 与 `PaddleOCR-VL-1.6`；无需本地 PaddlePaddle、GPU 或 VLM 权重。
+- 测试路径：测试目录内注入的 stub/transport，不作为生产 Provider 或教师配置出现。
 - 本机已用用户授权的 `image2.png` 完成真实上传→区域→OCRRun→重新读取链路：Provider/model 为 `paddleocr_vl_api` / `PaddleOCR-VL-1.6`，标准化文本 1853 字符，原图和裁图仍可读；浏览器证据页也显示真实 Provider/模型与非空文本。
 - 本地回退：`PaddleOCRProvider` 仍保留为 PaddleOCR 3.x / `PP-OCRv5_server_rec` 选项，与 `PaddleOCR-VL-1.6` 托管 API 是两条不同路径。
 - Quark Yescan 已作为整页题目检测 Provider 接入，对 group-level `StructureInfo` 一题一候选；MinerU/PDF 和 Doc2X 尚未正式接入，也未实现多 Provider 路由、降级或投票。

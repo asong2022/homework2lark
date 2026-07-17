@@ -4,7 +4,7 @@
 
 The product is a teacher's evidence desk, not a generic SaaS dashboard.
 
-- Palette: paper white `#F6F8F5`, ink blue `#183153`, geometry blue `#2B63A9`, teacher red `#B83A3A`, graphite `#5D6873`, reviewed green `#2F6B4F`.
+- Palette: paper white `#F6F8F5`, ink blue `#183153`, geometry blue `#2B63A9`, teacher red `#B83A3A`, graphite `#5D6873`, teacher green `#2F6B4F`.
 - Typography: system Chinese sans-serif for body and controls; restrained KaiTi/STKaiti for the product mark only; tabular/system monospace for IDs and coordinates.
 - Signature element: the source image with precise, numbered question boxes and a compact saved-crop handoff.
 - Background may use a subtle squared-paper grid around the image workspace; never place it behind dense reading text.
@@ -35,7 +35,7 @@ Props use explicit `type XxxProps = { ... }`. Pass domain data and callbacks; do
 - Selected numbering derives from current final bbox order and is not stored separately.
 - One active box exposes drag movement, four corner resize handles, exact coordinate inputs, and deletion.
 - Manual mode is one-shot: drag on the source to create one selected `manual` box, then exit manual mode.
-- Keep machine and teacher state legible: detected boxes use geometry blue; manual boxes use reviewed green; the original detection candidate remains immutable on the backend.
+- Keep machine and teacher state legible: detected boxes use geometry blue; manual boxes use teacher green; the original detection candidate remains immutable on the backend.
 - Each Provider candidate initializes as one unselected question box. It is a machine suggestion, not a trusted final question count; never split it from nested OCR/detail metadata or silently regroup adjacent candidates in the browser.
 - Selecting two or more Provider boxes enables `合并为一题`; replace them with one selected bbox union and preserve all candidate IDs in stable order.
 - Label composites as `一道题（合并 N 个识别框）`. The logical selected-question count decreases after merge while the Provider source-box lineage remains intact.
@@ -45,7 +45,7 @@ Props use explicit `type XxxProps = { ... }`. Pass domain data and callbacks; do
 
 - The Skill-generated `/intake/[assetId]` route loads the existing asset, starts with manual drawing active, and never reuploads it.
 - Keep explicit automatic detection, select-all, clear, merge, manual add, move, resize, numeric editing, and deletion available. Detection is optional and never runs merely because the route opened.
-- Saving a batch calls the region API once and stops. The browser must not invoke OCR, revision, review, publication, or Base operations.
+- Saving a batch calls the region API once and stops. The browser must not invoke OCR, revision, publication, or Base operations.
 - Reopening `/intake/[assetId]` reads the source-scoped problem collection, renders persisted boxes as a locked overlay, and displays saved crops plus public IDs. It may offer a deliberate “continue framing” action.
 - The completed state offers `返回框题，继续补选`. Continuing starts an add-only pass: persisted boxes stay visible and read-only, only newly selected regions are submitted, and the next completion result contains the accumulated saved collection.
 - Show only public `problem_*` IDs in the copyable AI handoff. Never copy storage keys, absolute paths, raw Provider responses, attachment URLs, Base record IDs, or credentials.

@@ -190,7 +190,7 @@ def _request() -> ProblemPublicationRequest:
         revision_id="revision_1",
         revision_number=2,
         corrected_text="24 支铅笔平均分给 6 人，每人多少支？",
-        reviewed_at=datetime(2026, 7, 13, 2, 30, tzinfo=UTC),
+        revision_created_at=datetime(2026, 7, 13, 2, 30, tzinfo=UTC),
         ocr_provider="paddleocr",
     )
 
@@ -216,7 +216,7 @@ def test_lark_cli_publisher_creates_records_and_uploads_once(tmp_path: Path) -> 
     body = question_upsert[question_upsert.index("--json") + 1]
     assert '"题干文本"' in body
     assert '"本地修订版本":2' in body
-    assert '"已审核时间":"2026-07-13 10:30:00"' in body
+    assert "已审核时间" not in body
     assert "审核状态" not in body
     assert "是否待复核" not in body
     assert "标准答案" not in body

@@ -16,7 +16,6 @@ export type ProblemPublication = components["schemas"]["ProblemPublicationRespon
 export type NormalizedProblemRecord = components["schemas"]["NormalizedProblemResponse"];
 export type RegionCreateRequest = components["schemas"]["RegionCreateRequest"];
 export type RevisionCreateRequest = components["schemas"]["RevisionCreateRequest"];
-export type ReviewStatus = components["schemas"]["ReviewStatus"];
 
 export type NormalizedBBox = RegionCreateRequest["bbox"];
 

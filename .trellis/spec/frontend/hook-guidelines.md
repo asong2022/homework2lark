@@ -36,4 +36,4 @@ Keep successfully created IDs in state across a later collection-refresh or clip
 - Calling hooks conditionally.
 - Swallowing `AbortError` and real API errors together.
 - Running detection automatically in an effect merely because an existing-asset route opened.
-- Calling OCR, revision, review, publication, or Base endpoints from the framing hook.
+- Calling OCR, revision, publication, or Base endpoints from the framing hook.

@@ -8,13 +8,12 @@ from mistake_notebook_api.domain.detection import (
     RegionDetectionInput,
     RegionDetectionResult,
 )
-from mistake_notebook_api.domain.errors import JsonValue
 from mistake_notebook_api.domain.geometry import BoundingBox
 
 
-class FakeProblemRegionDetectionProvider:
-    name = "fake"
-    model_name = "deterministic-page-layout-v1"
+class StubProblemRegionDetectionProvider:
+    name = "test_stub"
+    model_name = "deterministic-test-only"
 
     def detect(self, input: RegionDetectionInput) -> RegionDetectionResult:
         started = perf_counter()
@@ -23,10 +22,9 @@ class FakeProblemRegionDetectionProvider:
             (0.68, 0.14, 0.24, 0.18),
             (0.08, 0.46, 0.84, 0.18),
         )
-        metadata: dict[str, JsonValue] = {"fixture": "automatic-region-selection"}
         candidates = [
             RegionCandidate(
-                provider_candidate_id=f"fake-{index + 1}",
+                provider_candidate_id=f"test-{index + 1}",
                 bbox=BoundingBox(
                     x=round(x * input.width),
                     y=round(y * input.height),
@@ -35,20 +33,18 @@ class FakeProblemRegionDetectionProvider:
                 ),
                 confidence=0.99,
                 reading_order=index,
-                metadata=metadata,
+                metadata={"fixture": "test-only"},
             )
             for index, (x, y, width, height) in enumerate(ratios)
         ]
         return RegionDetectionResult(
             provider=self.name,
             model=self.model_name,
-            provider_version="1.0",
+            provider_version="test-only",
             candidates=candidates,
             raw_response={
-                "engine": self.name,
+                "fixture": "test-only",
                 "candidateCount": len(candidates),
-                "sourceWidth": input.width,
-                "sourceHeight": input.height,
             },
             warnings=[],
             processing_time_ms=max(1, round((perf_counter() - started) * 1000)),

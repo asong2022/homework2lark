@@ -535,7 +535,6 @@ class LarkPersonalPracticeGateway:
             "题干图片": "attachment",
             "题型": "select",
             "本地修订版本": "number",
-            "已审核时间": "datetime",
             core.MANUAL_ATTENTION_FIELD: "checkbox",
         }
         errors = [
@@ -595,7 +594,6 @@ class LarkPersonalPracticeGateway:
                 "题型",
                 "图表说明",
                 "本地修订版本",
-                "已审核时间",
                 core.MANUAL_ATTENTION_FIELD,
             )
             if field in question_schema.fields

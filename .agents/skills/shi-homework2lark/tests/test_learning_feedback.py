@@ -48,7 +48,6 @@ class MemoryGateway:
             "页码": "lookup",
             "错题来源": "lookup",
             "本地修订版本": "number",
-            "已审核时间": "datetime",
             core.TYPICAL_ERROR_FIELD: "lookup",
             core.ERROR_PATTERN_FIELD: "lookup",
             core.ERROR_CAUSE_SUMMARY_FIELD: "text",
@@ -82,7 +81,6 @@ class MemoryGateway:
                 "题干图片": [],
                 "题干文本": "一道完整题",
                 "本地修订版本": 1,
-                "已审核时间": "2026-07-14 10:30:00",
                 core.REVERSE_VARIANT_LINK_FIELD: [{"id": "variant_1"}],
                 core.TYPICAL_ERROR_FIELD: "原始真实作答保持不变",
             }

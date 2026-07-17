@@ -19,7 +19,6 @@ from mistake_notebook_api.api.schemas import (
     RegionCreateRequest,
     RegionCreateResponse,
     RegionDetectionRunResponse,
-    ReviewRequest,
     RevisionCreateRequest,
     SourceAssetResponse,
 )
@@ -245,26 +244,9 @@ def create_revision(
 
 
 @router.post(
-    "/problems/{problem_id}/review",
-    summary="确认一个教师修订为已审核题目",
-    tags=["题目审核"],
-    responses=_error_responses(404, 409),
-)
-def review_problem(
-    request: Request, problem_id: str, payload: ReviewRequest
-) -> NormalizedProblemResponse:
-    view = (
-        _runtime(request)
-        .problem_service()
-        .review(problem_id=problem_id, revision_id=payload.revision_id)
-    )
-    return NormalizedProblemResponse.from_view(view)
-
-
-@router.post(
     "/problems/{problem_id}/publications/lark",
     response_model=ProblemPublicationResponse,
-    summary="把已审核题目发布到飞书 Base",
+    summary="把已整理题目发布到飞书 Base",
     tags=["飞书 Base"],
     responses=_error_responses(404, 409, 502, 503, 504),
 )
@@ -277,7 +259,7 @@ def publish_problem(request: Request, problem_id: str) -> ProblemPublicationResp
     "/problems/{problem_id}",
     response_model=NormalizedProblemResponse,
     summary="读取一条完整的规范化题目记录",
-    tags=["题目审核"],
+    tags=["题目记录"],
     responses=_error_responses(404),
 )
 def get_problem(request: Request, response: Response, problem_id: str) -> NormalizedProblemResponse:

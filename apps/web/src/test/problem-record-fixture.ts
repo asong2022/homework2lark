@@ -7,8 +7,6 @@ export function problemRecordFixture(
 ): NormalizedProblemRecord {
   const record: NormalizedProblemRecord = {
     problemId: "problem_test",
-    status: "needs_review",
-    futureReuseEligible: false,
     source: {
       assetId: "asset_test",
       fileName: "worksheet.png",
@@ -36,8 +34,8 @@ export function problemRecordFixture(
     },
     ocr: {
       runId: "ocr_test",
-      provider: "fake",
-      model: "fake-deterministic-v1",
+      provider: "paddleocr_vl_api",
+      model: "PaddleOCR-VL-1.6",
       providerVersion: "1",
       text: "原始 OCR 文本",
       confidence: 0.98,
@@ -52,8 +50,8 @@ export function problemRecordFixture(
     },
     latestOcrRun: {
       runId: "ocr_test",
-      provider: "fake",
-      model: "fake-deterministic-v1",
+      provider: "paddleocr_vl_api",
+      model: "PaddleOCR-VL-1.6",
       providerVersion: "1",
       text: "原始 OCR 文本",
       confidence: 0.98,
@@ -67,21 +65,6 @@ export function problemRecordFixture(
       finishedAt: timestamp,
     },
     humanRevision: null,
-    review: {
-      status: "needs_review",
-      reviewedAt: null,
-      statusHistory: [
-        {
-          eventId: "event_test",
-          fromStatus: "draft",
-          toStatus: "needs_review",
-          reason: "ocr_succeeded",
-          ocrRunId: "ocr_test",
-          revisionId: null,
-          createdAt: timestamp,
-        },
-      ],
-    },
     lineage: {
       sourceAssetId: "asset_test",
       problemRegionId: "region_test",

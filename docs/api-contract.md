@@ -55,7 +55,7 @@ Hash 只用于提示重复，不自动合并/替换 SourceAsset。
 - `200`: `{ assetId, count, items }`，其中每项都是完整 `NormalizedProblemResponse`。
 - 按题框上、左坐标稳定排序；响应使用 `Cache-Control: no-store`。
 - 已存在但未框题的来源页返回空集合；不存在的 asset 返回 404 `asset_not_found`。
-- Web 用该接口恢复同一原图上的已保存题框和批量审核上下文，不把 OCR/修订文本写入 URL 或本地存储。
+- Web 用该接口恢复同一原图上的已保存题框，不把 OCR/修订文本写入 URL 或本地存储。
 
 ### `POST /assets/{assetId}/regions`
 
@@ -99,24 +99,20 @@ Hash 只用于提示重复，不自动合并/替换 SourceAsset。
 
 - `201`: 新 `ProblemRevisionResponse`，含递增 revision number。
 - `422`: 空文字或 OCR run 无效/不属于 region。
-- 新 revision 立即成为 current；问题为/转为 `needs_review`，已审核时清除 `reviewedAt`。
-
-### `POST /problems/{problemId}/review`
-
-```json
-{ "revisionId": "revision_..." }
-```
-
-- `200`: 完整 `NormalizedProblemRecord`。
-- `409`: 无有效 revision 的 `review_revision_required`。
-- `409`: revision 不存在、不属于该 problem 或文本无效时同样返回 `review_revision_required`，避免泄露其他记录是否存在。
-- 服务端设置 current revision、reviewedAt、status event 和 eligibility。
+- 新 revision 立即成为 `ProblemAsset.currentRevisionId`；不再需要第二次审核调用。
 
 ### `GET /problems/{problemId}`
 
 - `200`: `NormalizedProblemRecord`。
 - `404`: `problem_not_found`。
-- 响应使用 `Cache-Control: no-store`，避免审核后仍显示旧状态。
+- 响应使用 `Cache-Control: no-store`，避免保存修订后仍显示旧版本。
+
+### `POST /problems/{problemId}/publications/lark`
+
+- `201`: 当前 `ProblemPublicationResponse`。
+- `409`: 没有非空当前修订，或来源、裁图、OCR 依据不完整时返回 `problem_not_publishable`。
+- `502/503`: 飞书返回异常、登录/Schema 配置错误或暂时不可用；本地证据和当前修订保持不变。
+- 重试复用同一 `problemId` 的本地发布状态和远端隐藏稳定键，不重复创建题目。
 
 ### `GET /health`
 
@@ -127,7 +123,7 @@ Hash 只用于提示重复，不自动合并/替换 SourceAsset。
 - 上传/创建 region 不做透明重试，避免重复资产；UI 只在明确失败时由教师再次操作。
 - OCR retry 是新 POST/new run，天然保留历史。
 - revision save 是新版本；前端 pending 时禁止双击。Phase 1 单教师下不增加复杂幂等键。
-- review 必须显式 revision ID，避免审核一个过时/未保存的 textarea。
+- publication 总是读取服务端当前修订，不接受客户端伪造 revision ID 或修订内容。
 
 ## 5. OpenAPI 同步
 

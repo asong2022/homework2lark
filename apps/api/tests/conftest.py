@@ -16,13 +16,11 @@ from mistake_notebook_api.infrastructure.database.session import (
     create_session_factory,
 )
 from mistake_notebook_api.infrastructure.database.uow import SQLAlchemyUnitOfWorkFactory
-from mistake_notebook_api.infrastructure.detection.fake import (
-    FakeProblemRegionDetectionProvider,
-)
-from mistake_notebook_api.infrastructure.ocr.fake import FakeOCRProvider
-from mistake_notebook_api.infrastructure.publication.fake import FakeProblemPublisher
 from mistake_notebook_api.infrastructure.storage.local import LocalFileStorageAdapter
 from mistake_notebook_api.main import create_app
+from tests.support.detection import StubProblemRegionDetectionProvider
+from tests.support.ocr import StubOCRProvider
+from tests.support.publication import StubProblemPublisher
 
 
 def image_bytes(
@@ -43,7 +41,7 @@ def runtime(tmp_path: Path) -> Iterator[Runtime]:
         max_image_pixels=1_000_000,
         min_region_pixels=2,
         cors_origins="http://localhost:3000",
-        ocr_provider="fake",
+        ocr_provider="paddleocr_vl_api",
     )
     engine = create_database_engine(settings.database_url)
     Base.metadata.create_all(engine)
@@ -53,9 +51,9 @@ def runtime(tmp_path: Path) -> Iterator[Runtime]:
         engine=engine,
         uow_factory=SQLAlchemyUnitOfWorkFactory(sessions),
         storage=LocalFileStorageAdapter(settings.storage_root),
-        ocr_provider=FakeOCRProvider(),
-        region_detection_provider=FakeProblemRegionDetectionProvider(),
-        problem_publisher=FakeProblemPublisher(),
+        ocr_provider=StubOCRProvider(),
+        region_detection_provider=StubProblemRegionDetectionProvider(),
+        problem_publisher=StubProblemPublisher(),
     )
     yield value
     engine.dispose()

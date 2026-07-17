@@ -1,0 +1,235 @@
+{
+  "schemaVersion": "homework2lark-base-v1",
+  "baseTitle": "小学数学错题学习库",
+  "tables": [
+    {
+      "name": "错题页面",
+      "primaryField": "页面名称",
+      "fields": [
+        { "name": "页面名称", "type": "text" },
+        { "name": "原始页面图片", "type": "attachment" },
+        { "name": "时间", "type": "datetime" },
+        {
+          "name": "年级",
+          "type": "select",
+          "multiple": false,
+          "options": ["一年级", "二年级", "三年级", "四年级", "五年级", "六年级"]
+        },
+        {
+          "name": "错题来源",
+          "type": "select",
+          "multiple": false,
+          "options": ["教材", "作业本", "试卷", "其他"]
+        },
+        { "name": "页码", "type": "text" },
+        { "name": "单元", "type": "text" },
+        { "name": "课题名", "type": "text" },
+        { "name": "页面主知识点", "type": "text" },
+        {
+          "name": "核心素养",
+          "type": "lookup",
+          "sourceTable": "错题题目",
+          "sourceField": "核心素养"
+        },
+        {
+          "name": "关联题目",
+          "type": "link",
+          "sourceTable": "错题题目"
+        },
+        { "name": "系统页面ID", "type": "text", "system": true },
+        { "name": "源文件哈希", "type": "text", "system": true }
+      ]
+    },
+    {
+      "name": "错题题目",
+      "primaryField": "题目名称",
+      "fields": [
+        { "name": "题目名称", "type": "text" },
+        { "name": "收录序号", "type": "auto_number" },
+        {
+          "name": "所属错题页面",
+          "type": "link",
+          "sourceTable": "错题页面"
+        },
+        { "name": "图片题目", "type": "attachment" },
+        { "name": "题干文本", "type": "text" },
+        { "name": "题干图片", "type": "attachment" },
+        { "name": "题号", "type": "text" },
+        { "name": "分区标题", "type": "text" },
+        {
+          "name": "题型",
+          "type": "select",
+          "multiple": false,
+          "options": ["选择题", "填空题", "判断题", "计算题", "解答题", "操作题", "应用题", "开放题", "其他"]
+        },
+        { "name": "图表说明", "type": "text" },
+        { "name": "对应知识点", "type": "text" },
+        {
+          "name": "核心素养",
+          "type": "select",
+          "multiple": true,
+          "options": [
+            "数感", "量感", "符号意识", "运算能力", "几何直观", "空间观念",
+            "推理意识", "数据意识", "模型意识", "应用意识", "创新意识"
+          ]
+        },
+        { "name": "标准答案", "type": "text" },
+        { "name": "答案备注", "type": "text" },
+        { "name": "设计意图", "type": "text" },
+        {
+          "name": "典型错例",
+          "type": "lookup",
+          "sourceTable": "错题记录",
+          "sourceField": "典型错例"
+        },
+        {
+          "name": "错误表现",
+          "type": "lookup",
+          "sourceTable": "错题记录",
+          "sourceField": "错误表现"
+        },
+        { "name": "错误原因", "type": "text" },
+        {
+          "name": "学生错题记录",
+          "type": "link",
+          "sourceTable": "错题记录"
+        },
+        { "name": "统计批次", "type": "text" },
+        { "name": "批改样本人数", "type": "number" },
+        { "name": "错误人数合计", "type": "number" },
+        { "name": "错误率", "type": "number", "percentage": true },
+        {
+          "name": "高频判定方式",
+          "type": "select",
+          "multiple": false,
+          "options": ["批改统计", "教师判断"]
+        },
+        { "name": "是否高频错题", "type": "checkbox" },
+        {
+          "name": "时间",
+          "type": "lookup",
+          "sourceTable": "错题页面",
+          "sourceField": "时间"
+        },
+        {
+          "name": "年级",
+          "type": "lookup",
+          "sourceTable": "错题页面",
+          "sourceField": "年级"
+        },
+        {
+          "name": "页码",
+          "type": "lookup",
+          "sourceTable": "错题页面",
+          "sourceField": "页码"
+        },
+        {
+          "name": "错题来源",
+          "type": "lookup",
+          "sourceTable": "错题页面",
+          "sourceField": "错题来源"
+        },
+        {
+          "name": "关联变式题",
+          "type": "link",
+          "sourceTable": "变式题"
+        },
+        {
+          "name": "掌握状态",
+          "type": "select",
+          "multiple": false,
+          "options": ["未开始", "练习中", "需再练", "已掌握"]
+        },
+        { "name": "最近再练时间", "type": "datetime" },
+        { "name": "需人工处理", "type": "checkbox", "system": true },
+        { "name": "系统题目ID", "type": "text", "system": true },
+        { "name": "本地修订版本", "type": "number", "system": true }
+      ]
+    },
+    {
+      "name": "错题记录",
+      "primaryField": "记录名称",
+      "fields": [
+        { "name": "记录名称", "type": "text" },
+        {
+          "name": "对应错题",
+          "type": "link",
+          "sourceTable": "错题题目"
+        },
+        {
+          "name": "对应学生",
+          "type": "select",
+          "multiple": true,
+          "options": []
+        },
+        { "name": "作业日期", "type": "datetime" },
+        {
+          "name": "错误分类",
+          "type": "select",
+          "multiple": false,
+          "options": [
+            "审题与信息提取", "概念理解", "方法与策略", "运算与计算",
+            "图形与表征", "推理与表达", "作答规范", "其他/待判断"
+          ]
+        },
+        { "name": "典型错例", "type": "text" },
+        { "name": "错误表现", "type": "text" },
+        { "name": "错误原因", "type": "text" },
+        { "name": "本组人数", "type": "number" },
+        {
+          "name": "核心素养",
+          "type": "lookup",
+          "sourceTable": "错题题目",
+          "sourceField": "核心素养"
+        },
+        {
+          "name": "题干图片",
+          "type": "lookup",
+          "sourceTable": "错题题目",
+          "sourceField": "题干图片"
+        },
+        {
+          "name": "图片题目",
+          "type": "lookup",
+          "sourceTable": "错题题目",
+          "sourceField": "图片题目"
+        },
+        {
+          "name": "掌握状态",
+          "type": "select",
+          "multiple": false,
+          "options": ["未开始", "练习中", "需再练", "已掌握"]
+        },
+        { "name": "再练反馈", "type": "text" },
+        { "name": "最近再练时间", "type": "datetime" },
+        { "name": "系统记录ID", "type": "text", "system": true }
+      ]
+    },
+    {
+      "name": "变式题",
+      "primaryField": "变式题名称",
+      "fields": [
+        { "name": "变式题名称", "type": "text" },
+        { "name": "收录序号", "type": "auto_number" },
+        {
+          "name": "来源错题",
+          "type": "link",
+          "sourceTable": "错题题目"
+        },
+        { "name": "变式序号", "type": "number" },
+        { "name": "题干文本", "type": "text" },
+        { "name": "题干图片", "type": "attachment" },
+        { "name": "答案解析", "type": "text" },
+        { "name": "设计意图", "type": "text" },
+        {
+          "name": "核心素养",
+          "type": "lookup",
+          "sourceTable": "错题题目",
+          "sourceField": "核心素养"
+        },
+        { "name": "生成时间", "type": "datetime" },
+        { "name": "系统变式ID", "type": "text", "system": true }
+      ]
+    }
+  ]
+}

@@ -7,6 +7,9 @@ import pytest
 
 from mistake_notebook_api.domain.detection import RegionDetectionInput
 from mistake_notebook_api.domain.errors import JsonValue, RegionDetectionProviderError
+from mistake_notebook_api.infrastructure.detection.manual import (
+    ManualOnlyRegionDetectionProvider,
+)
 from mistake_notebook_api.infrastructure.yescan.client import (
     YescanApiClient,
     YescanClientError,
@@ -78,7 +81,7 @@ def _provider(response: JsonValue) -> tuple[YescanQuestionDetectionProvider, Fak
     transport = FakeTransport(response)
     client = YescanApiClient(
         client_id="BACK_test",
-        client_secret="test-secret",  # pragma: allowlist secret
+        client_secret="test-secret",
         endpoint="https://scan-business.quark.cn/vision",
         timeout_seconds=120,
         transport=transport,
@@ -95,18 +98,27 @@ def _input() -> RegionDetectionInput:
     )
 
 
+def test_manual_provider_never_fabricates_automatic_candidates() -> None:
+    provider = ManualOnlyRegionDetectionProvider()
+
+    with pytest.raises(RegionDetectionProviderError) as raised:
+        provider.detect(_input())
+
+    assert provider.name == "manual"
+    assert raised.value.category == "configuration_error"
+    health = provider.health_check()
+    assert health.available is False
+    assert health.provider == "manual"
+
+
 def test_signature_matches_official_formula() -> None:
     signature = create_signature(
         client_id="BACK_test",
-        client_secret="test-secret",  # pragma: allowlist secret
+        client_secret="test-secret",
         sign_nonce="nonce",
         timestamp=1702467101020,
     )
-    expected_signature = (
-        "1673b34997d99aa991414df9bab962d6"  # pragma: allowlist secret
-        "0119c00f117d58959d0bb20b7da4174f"  # pragma: allowlist secret
-    )
-    assert signature == expected_signature
+    assert signature == "1673b34997d99aa991414df9bab962d60119c00f117d58959d0bb20b7da4174f"
 
 
 def test_yescan_structure_groups_are_normalized_one_to_one_without_request_secrets() -> None:
@@ -162,7 +174,7 @@ def test_vendor_errors_are_mapped_to_safe_categories(code: str, category: str) -
 def test_transport_errors_are_mapped_without_details(category: str) -> None:
     client = YescanApiClient(
         client_id="BACK_test",
-        client_secret="test-secret",  # pragma: allowlist secret
+        client_secret="test-secret",
         endpoint="https://scan-business.quark.cn/vision",
         timeout_seconds=120,
         transport=FailingTransport(category),

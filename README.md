@@ -1,207 +1,142 @@
-# homework2lark
+# homework2lark · 小学数学智能错题学习系统
 
 [![CI](https://github.com/asong2022/homework2lark/actions/workflows/ci.yml/badge.svg)](https://github.com/asong2022/homework2lark/actions/workflows/ci.yml)
 
-面向小学数学教师的对话式错题学习系统。它把作业图片、试卷或 PDF 中经过教师确认的错题，整理为来源清楚、可修订、可复用的题目资产，并通过飞书多维表格连接后续的变式题、精准练习与再练反馈。
+把作业图片、PDF、Word 或单题截图发给 AI，经过教师确认后保存到飞书多维表格；以后继续让 AI 从错题库生成变式题、个人精准练习和再练内容。
 
-仓库内的对话式工作流 Skill 名为 `shi-homework2lark`。
+教师不用手工建表，不用理解 OCR、FastAPI、字段 ID 或命令行。Codex、Hermes 等能操作电脑的 AI 是主入口，Web 只是需要时打开的手动画框工具。
 
-当前版本是 Phase 1 / MVP。项目强调“教师把关、证据分层、数据可追溯”，不把 OCR 或 AI 输出直接当作可信题目，也不提供自动批改、学生账号或班级分析平台。
+## 最简单的安装方式
 
-## 核心工作流
+把本仓库地址发给 AI：
 
-```mermaid
-flowchart LR
-    A["作业图片 / 试卷 / PDF"] --> B["AI 对话或 Web 框题"]
-    B --> C["OCR 证据"]
-    C --> D["教师修订与审核"]
-    D --> E["飞书 Base 错题资产"]
-    E --> F["变式题"]
-    E --> G["个人或班级练习纸"]
-    F --> G
-    G --> H["再练反馈"]
-    H --> E
-```
+<https://github.com/asong2022/homework2lark>
 
-系统支持三种由用户明确选择的收集方式：
+然后把下面这段话原样发给它：
 
-1. 教师精选：上传空白卷或单题图片，由教师选择需要收录的题目。
-2. 匿名批改统计：空白卷加已批改作业，只汇总错情，不绑定学生身份。
-3. 实名绑定统计：空白卷、已批改作业和私有名单共同完成身份核对；学号只留在本地私有映射中。
+> 请帮我安装并初始化 homework2lark。先阅读仓库的 README、AI_INSTALL.md 和 shi-homework2lark/SKILL.md，使用仓库内置的 onboarding.py 一直处理到 verify 返回 ready。每次只问我一个真正缺失的信息；默认使用官方托管 PaddleOCR-VL-1.6，默认由教师在对话中选题或手动框题，不强制配置 Yescan；用内置空白模板创建我的飞书 Base。密钥不要出现在命令参数、聊天回显、日志或 Git 中。不要先给我讲开发、测试和技术架构，配置完成后直接告诉我“可以开始发作业了”。
 
-## 已实现能力
+首次使用通常只需要教师完成两件事：
 
-- Next.js Web：图片上传、自动候选、手动框题、移动缩放、合并和服务端裁图。
-- FastAPI：原图、区域、裁图、OCRRun、人工修订、审核状态和规范化记录。
-- OCR 抽象：Fake Provider、PaddleOCR 本地适配器、PaddleOCR-VL-1.6 托管 API 适配器。
-- 题目检测：Fake Provider 与 Yescan 适配器；自动候选必须由教师确认。
-- 飞书 Base：审核题目幂等发布、错题分组、变式题目录、练习与再练投影。
-- `shi-homework2lark` Skill：对话式收题、错情整理、变式、组卷与反馈的统一入口。
-- 本地 SQLite 和文件存储；数据库与文件系统均通过适配器边界隔离。
+1. PaddleOCR / AI Studio Token；
+2. 一次飞书用户授权。
 
-## 架构
+Yescan 自动候选框、当前年级和学期日期都是可选项，不阻塞开始收题；教师以后需要时再让 AI 配置即可。
+
+详细的 AI 执行清单见 [AI_INSTALL.md](./AI_INSTALL.md)。
+
+## 配置好以后怎么用
+
+继续在同一个 AI 对话里说，例如：
+
+- “收集错题到飞书。”
+- “这是一份空白卷和一批已批改作业，统计共性错题，不记姓名。”
+- “这是班级名单和已批改作业，按学生整理错题。”
+- “从飞书错题库选 5 道题，每题生成 2 道变式题并写回。”
+- “按班级名单给每个学生生成一份个人练习纸。”
+- “这是上次练习的批改 PDF，把再练结果反馈到错题库。”
+
+第一次收题时，AI 会让教师明确选择一种方式，不替教师猜：
+
+1. **教师精选**：只提供题目或空白卷，由教师指定要收录的题号；
+2. **匿名批改统计**：空白卷 + 已批改作业，统计哪些题错得多，不记录姓名；
+3. **实名绑定统计**：空白卷 + 已批改作业 + 班级名单，形成学生个人错题关系。
+
+无论哪种方式，一道题始终是一个完整资产：题干文字、文字选项和题干图片不会被拆成多道题。外层题号单独保存，不重复进入可复用题干。
+
+## 飞书 Base 里有什么
+
+内置空白模板会创建四张表：
+
+| 表 | 用途 |
+|---|---|
+| 错题页面 | 保存来源页、日期、年级、来源、页码和原始页面 |
+| 错题题目 | 保存完整原题、题干图文、答案、知识点、核心素养和统计结果 |
+| 错题记录 | 按“同一道题 + 同一种错误原因”归组真实作答和对应学生 |
+| 变式题 | 每道变式独立成行，并关联唯一原题 |
+
+模板没有示例记录、学生名单、固定年级、固定学期、审核状态或 Fake 数据。`对应学生` 初始为空，只有教师自己的私有名单流程会填入选项。
+
+“教学优先”不是永久标签。AI 只在教师给出年级和学期日期后创建范围化视图，筛选该年级、该时间段内的高频错题，避免把多年级、跨学期的历史错题混在一起。
+
+## 这套系统坚持什么
+
+- **教师确认内容，不维护审核状态**：OCR 是初稿，教师确认后的非空修订即可入库。
+- **Base 是中转核心，本地证据不丢**：飞书负责长期筛选复用；原图、裁图、OCR 原文和修订历史保存在本机。
+- **先收原题，再谈举一反三**：变式题和练习都从已经入库的真实错题出发，并能写回 Base。
+- **真实作答先于错误归因**：先记录典型错例和可见错误表现，再由 AI 与教师共同判断原因。
+- **答案解析可选**：变式题只要题目完整就能用于练习，答案解析可稍后补。
+- **最少必要字段**：教师常用字段显示在视图里；稳定 ID 等幂等字段保留但不占用日常操作界面。
+
+## OCR 与题图
+
+默认 OCR 是官方托管 `PaddleOCR-VL-1.6`，无需教师在本地部署模型或 GPU。题图不交给 OCR 猜：完整题目裁图和题干图片都以原始高清页面为视觉依据，从原像素提取，上传飞书后再回读检查。
+
+未配置 Yescan 时，系统明确采用教师手动框题或 AI 对话选题，不会产生虚假的“自动检测结果”。Yescan 只是可选的整页题目候选路径，不是错题学习闭环的前提。
+
+## 可选 Web 框题器
+
+如果教师在电脑前，希望自己从整页图片上框出错题，可以让 AI 启动 Web：
 
 ```text
-apps/web                         Next.js 教师框题界面
-apps/api                         FastAPI 单体后端
-packages/contracts               OpenAPI 契约
-.agents/skills/shi-homework2lark 对话式错题工作流 Skill
-.agents/skills/wumu-jihe-html    可复用题图子技能
-docs                             产品、领域、数据流与 ADR
-.trellis/spec                    项目开发约束
-artifacts/skills                 已构建的 .skill 安装包
+请启动 homework2lark 的可视化框题页面，我要手动框题。
 ```
 
-原始数据、机器派生数据和人工修订数据分层保存。核心关系为：
+Web 只负责上传页面、手动新增/编辑题框并把题目编号交回对话；OCR、整理和飞书写入仍由 AI 完成。只在 AI 对话里使用时，不需要安装或启动 Web。
 
-```text
-SourceAsset
-  -> ProblemRegion
-  -> OCRRun (append-only)
-  -> ProblemRevision (append-only)
-  -> ReviewedProblem
-  -> Lark Base projection
-```
+## 隐私边界
 
-## 本地启动
+- PaddleOCR Token、Yescan Key、飞书身份与本地 `.env` 不进入 Git。
+- 班级名单、学号、原始作业、OCR 原文、练习 manifest 和学生反馈保持私有，不进入公开模板。
+- 飞书默认只保存名单中的准确姓名；学号用于本地身份核对和个人练习纸，不写入稳定 ID 或普通日志。
+- 含学生信息的材料发送到第三方 OCR 前，AI 仍应说明服务商和范围。
+- 初始化器不会修改或清理已有业务 Base；同名库冲突时会停止，不会“取第一个”。
 
-### 环境要求
+## 给开发者
 
-- Node.js 20.9+
-- Python 3.11
-- [uv](https://docs.astral.sh/uv/)
+主要技术栈：Python 3.11/3.12、FastAPI、SQLAlchemy、Alembic、SQLite、Next.js 16、React 19、TypeScript，以及用户身份下的 `lark-cli`。
 
-### 安装
+首次安装运行时：
 
 ```powershell
-Copy-Item .env.example .env
-npm ci
-uv sync --directory apps/api --group dev
+uv sync --directory apps/api --all-groups
 uv run --directory apps/api alembic upgrade head
 ```
 
-macOS/Linux 可将第一行改为 `cp .env.example .env`。
-
-### 启动 API
+启动 API：
 
 ```powershell
-uv run --directory apps/api uvicorn mistake_notebook_api.main:app --reload --port 8000
+uv run --directory apps/api uvicorn --app-dir src mistake_notebook_api.main:app --port 8000
 ```
 
-- API 健康检查：<http://localhost:8000/api/v1/health>
-- OpenAPI：<http://localhost:8000/docs>
-
-### 启动 Web
-
-另开终端：
+只有开发或使用 Web 时才需要：
 
 ```powershell
+npm install
 npm run dev:web
 ```
 
-访问 <http://localhost:3000>。
-
-默认配置使用 Fake OCR、Fake 题框检测和 Fake 发布器，不访问外部服务，适合首次体验和自动化测试。
-
-## 可选外部服务
-
-所有密钥只能写入未纳入 Git 的 `.env`，不得写入源码、README、日志或测试夹具。
-
-### PaddleOCR-VL-1.6 托管 API
-
-```dotenv
-OCR_PROVIDER=paddleocr_vl_api
-PADDLEOCR_ACCESS_TOKEN=<your-token>
-```
-
-启用后，只应向服务商发送教师已确认的题目裁图。原图、裁图和原始返回仍在本地证据层保存。
-
-### Yescan 题目检测
-
-```dotenv
-REGION_DETECTION_PROVIDER=yescan
-YESCAN_API_KEY_ID=<your-back-client-id>
-YESCAN_API_KEY=<your-secret>
-```
-
-业务层不依赖 Yescan 原始返回结构，也不会自动进行多 Provider 投票或静默降级。
-
-### 飞书多维表格
-
-```dotenv
-PROBLEM_PUBLISHER=lark_cli
-LARK_BASE_TITLE=<your-base-title>
-```
-
-需要先单独安装并登录 `lark-cli`。发布动作以稳定题目 ID 保证幂等；Base 是教师与 Agent 的长期目录，本地证据层仍是来源真相。
-
-## 使用 Skill
-
-开发事实源位于：
-
-```text
-.agents/skills/shi-homework2lark/
-```
-
-检查依赖：
+初始化器与 Skill 入口：
 
 ```powershell
-python .agents/skills/shi-homework2lark/scripts/doctor.py
+python -X utf8 .agents/skills/shi-homework2lark/scripts/onboarding.py --repo-root . check
+python -X utf8 .agents/skills/shi-homework2lark/scripts/onboarding.py --repo-root . verify
+python -X utf8 .agents/skills/shi-homework2lark/scripts/doctor.py
 ```
 
-查看三种收集模式：
+API 健康检查：`http://localhost:8000/api/v1/health`。Web 默认地址：`http://localhost:3000`。架构和开发约定从 [docs/index.md](./docs/index.md) 与 [.trellis/spec/](./.trellis/spec/) 开始。
+
+质量门：
 
 ```powershell
-python .agents/skills/shi-homework2lark/scripts/workflow.py choices
-```
-
-已构建安装包位于 `artifacts/skills/shi-homework2lark.skill`。包内不含 Token、真实学生材料、Base ID 或本机绝对路径。
-
-## 测试
-
-```powershell
-# Backend
-uv run --directory apps/api pytest
-uv run --directory apps/api ruff check .
 uv run --directory apps/api ruff format --check .
+uv run --directory apps/api ruff check .
 uv run --directory apps/api mypy src
-
-# Web
+uv run --directory apps/api pytest -q
 npm run lint:web
 npm run typecheck:web
 npm run test:web
 npm run build:web
-
-# Skill
-python -m unittest discover -s .agents/skills/shi-homework2lark/tests -p "test_*.py"
 ```
 
-浏览器端到端测试需先安装 Chromium：
-
-```powershell
-npx playwright install chromium
-npm run test:e2e
-```
-
-## 隐私与安全
-
-这个发行快照不包含真实学生名单、作业图片、PDF、数据库、Base token 或 OCR/API 密钥。运行时仍请遵守以下原则：
-
-- 不把学生身份写入仓库、日志或公开 Issue。
-- 原图和裁图只发送给本次明确启用的 Provider。
-- `.env`、`data/`、`storage/`、`output/` 和生成练习材料保持私有。
-- 密钥一旦误提交，立即撤销并重新生成；仅从 Git 历史删除是不够的。
-
-更多要求见 [SECURITY.md](./SECURITY.md)。
-
-## 文档
-
-完整产品与架构文档从 [docs/index.md](./docs/index.md) 开始。当前范围、领域模型、数据流、Provider 抽象、规范化记录、验收标准和 Roadmap 均已记录。
-
-## 贡献
-
-提交变更前请阅读 [CONTRIBUTING.md](./CONTRIBUTING.md)。任何示例材料必须是合成数据或已经可靠匿名化的数据。
-
-## 许可
-
-当前仓库尚未声明开源许可证。除非仓库所有者另行授权，保留全部权利。
+公开自动化测试不使用教师 Token，也不消耗 PaddleOCR 额度；真实云端冒烟测试必须显式开启。

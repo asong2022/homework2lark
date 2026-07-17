@@ -3,7 +3,6 @@ from __future__ import annotations
 import hashlib
 import logging
 from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
 from queue import Empty, Queue
 from threading import Thread
@@ -25,21 +24,18 @@ from mistake_notebook_api.application.records import (
 from mistake_notebook_api.config import Settings
 from mistake_notebook_api.domain.entities import (
     OCRRun,
+    ProblemAsset,
     ProblemRegion,
     ProblemRevision,
-    ReviewedProblem,
-    ReviewStatusEvent,
     SourceAsset,
 )
 from mistake_notebook_api.domain.enums import (
     OCRRunStatus,
     RegionSelectionSource,
-    ReviewStatus,
 )
 from mistake_notebook_api.domain.errors import AppError, JsonValue, OCRProviderError
 from mistake_notebook_api.domain.identifiers import new_id
 from mistake_notebook_api.domain.ocr import OCRBlock, OCRInput, OCRProvider, OCRResult
-from mistake_notebook_api.domain.review_rules import status_after_ocr
 from mistake_notebook_api.domain.storage import StorageAdapter
 from mistake_notebook_api.domain.time import utc_now
 
@@ -299,7 +295,6 @@ class ProblemWorkflowService:
             )
             created_at = utc_now()
             results: list[RegionCreateResult] = []
-            status_events: list[ReviewStatusEvent] = []
             crop_writes: list[tuple[str, bytes]] = []
             for selection, bbox, crop_bytes in zip(
                 ordered_selections, pixel_bboxes, crop_payloads, strict=True
@@ -326,38 +321,23 @@ class ProblemWorkflowService:
                     detection_candidate_ids=list(selection.detection_candidate_ids),
                     created_at=created_at,
                 )
-                problem = ReviewedProblem(
+                problem = ProblemAsset(
                     id=problem_id,
                     problem_region_id=region_id,
                     current_revision_id=None,
-                    review_status=ReviewStatus.DRAFT,
-                    reviewed_at=None,
                     created_at=created_at,
                     updated_at=created_at,
                 )
                 results.append(RegionCreateResult(region, problem))
-                status_events.append(
-                    ReviewStatusEvent(
-                        id=new_id("review_event"),
-                        reviewed_problem_id=problem_id,
-                        from_status=None,
-                        to_status=ReviewStatus.DRAFT,
-                        reason="region_created",
-                        ocr_run_id=None,
-                        revision_id=None,
-                        created_at=created_at,
-                    )
-                )
                 crop_writes.append((crop_key, crop_bytes))
 
             try:
                 for crop_key, crop_bytes in crop_writes:
                     self._storage.write(crop_key, crop_bytes)
                     written_crop_keys.append(crop_key)
-                for result, status_event in zip(results, status_events, strict=True):
+                for result in results:
                     uow.problems.add_region(result.region)
                     uow.problems.add_problem(result.problem)
-                    uow.problems.add_status_event(status_event)
                 uow.commit()
             except Exception:
                 uow.rollback()
@@ -479,25 +459,11 @@ class ProblemWorkflowService:
                 created_at=created_at,
             )
             uow.problems.add_revision(revision)
-            previous_status = problem.review_status
             uow.problems.update_problem(
                 problem.id,
                 current_revision_id=revision.id,
-                review_status=ReviewStatus.NEEDS_REVIEW,
-                reviewed_at=None,
                 updated_at=created_at,
             )
-            if previous_status is not ReviewStatus.NEEDS_REVIEW:
-                uow.problems.add_status_event(
-                    self._status_event(
-                        problem_id=problem.id,
-                        from_status=previous_status,
-                        to_status=ReviewStatus.NEEDS_REVIEW,
-                        reason="revision_saved",
-                        revision_id=revision.id,
-                        created_at=created_at,
-                    )
-                )
             uow.commit()
 
         logger.info(
@@ -507,47 +473,6 @@ class ProblemWorkflowService:
             revision.revision_number,
         )
         return revision
-
-    def review(self, *, problem_id: str, revision_id: str) -> NormalizedProblemView:
-        reviewed_at = utc_now()
-        with self._uow_factory() as uow:
-            problem = uow.problems.get_problem(problem_id)
-            if problem is None:
-                raise AppError("problem_not_found", "找不到这道题目记录。")
-            revision = uow.problems.get_revision(revision_id)
-            if (
-                revision is None
-                or revision.problem_region_id != problem.problem_region_id
-                or not revision.corrected_text.strip()
-            ):
-                raise AppError("review_revision_required", "请先保存有效的人工修订版本。")
-            if (
-                problem.review_status is ReviewStatus.REVIEWED
-                and problem.current_revision_id == revision_id
-            ):
-                return self.get_record(problem_id)
-            previous_status = problem.review_status
-            uow.problems.update_problem(
-                problem.id,
-                current_revision_id=revision.id,
-                review_status=ReviewStatus.REVIEWED,
-                reviewed_at=reviewed_at,
-                updated_at=reviewed_at,
-            )
-            uow.problems.add_status_event(
-                self._status_event(
-                    problem_id=problem.id,
-                    from_status=previous_status,
-                    to_status=ReviewStatus.REVIEWED,
-                    reason="teacher_reviewed",
-                    revision_id=revision.id,
-                    created_at=reviewed_at,
-                )
-            )
-            uow.commit()
-
-        logger.info("problem_reviewed problem_id=%s revision_id=%s", problem_id, revision_id)
-        return self.get_record(problem_id)
 
     def get_record(self, problem_id: str) -> NormalizedProblemView:
         with self._uow_factory() as uow:
@@ -562,7 +487,6 @@ class ProblemWorkflowService:
                 raise AppError("asset_not_found", "找不到这道题的原始材料。")
             runs = uow.problems.list_ocr_runs(region.id)
             revisions = uow.problems.list_revisions(region.id)
-            events = uow.problems.list_status_events(problem.id)
             publication = uow.publications.get_by_problem(problem.id)
 
         current_revision = next(
@@ -588,7 +512,6 @@ class ProblemWorkflowService:
             current_revision=current_revision,
             ocr_runs=runs,
             revisions=revisions,
-            status_events=events,
             publication=publication,
         )
 
@@ -628,28 +551,6 @@ class ProblemWorkflowService:
                 finished_at=finished_at,
                 processing_time_ms=result.processing_time_ms,
             )
-            problem = uow.problems.get_problem_by_region(current.problem_region_id)
-            if problem is None:
-                raise AppError("problem_not_found", "找不到这道题目记录。")
-            next_status = status_after_ocr(problem.review_status, result.text)
-            if next_status is not problem.review_status:
-                uow.problems.update_problem(
-                    problem.id,
-                    current_revision_id=problem.current_revision_id,
-                    review_status=next_status,
-                    reviewed_at=problem.reviewed_at,
-                    updated_at=finished_at,
-                )
-                uow.problems.add_status_event(
-                    self._status_event(
-                        problem_id=problem.id,
-                        from_status=problem.review_status,
-                        to_status=next_status,
-                        reason="ocr_text_ready" if result.text.strip() else "ocr_empty",
-                        ocr_run_id=run_id,
-                        created_at=finished_at,
-                    )
-                )
             uow.commit()
 
         logger.info(
@@ -719,30 +620,6 @@ class ProblemWorkflowService:
             "OCR 服务暂时不可用，原图和题目区域已保存，可以稍后重试。",
             True,
             details,
-        )
-
-    @staticmethod
-    def _status_event(
-        *,
-        problem_id: str,
-        from_status: ReviewStatus,
-        to_status: ReviewStatus,
-        reason: str,
-        created_at: datetime,
-        ocr_run_id: str | None = None,
-        revision_id: str | None = None,
-    ) -> ReviewStatusEvent:
-        if not hasattr(created_at, "tzinfo"):
-            raise ValueError("created_at must be a datetime")
-        return ReviewStatusEvent(
-            id=new_id("review_event"),
-            reviewed_problem_id=problem_id,
-            from_status=from_status,
-            to_status=to_status,
-            reason=reason,
-            ocr_run_id=ocr_run_id,
-            revision_id=revision_id,
-            created_at=created_at,
         )
 
     def _compensate_crop(self, key: str) -> None:

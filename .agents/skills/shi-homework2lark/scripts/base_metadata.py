@@ -502,7 +502,7 @@ def _compact_json(value: JSONValue | dict[str, JSONValue]) -> str:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Safely enrich reviewed Base records")
+    parser = argparse.ArgumentParser(description="Safely enrich corrected Base records")
     parser.add_argument(
         "--base-title",
         default=os.environ.get("SHI_HOMEWORK2LARK_BASE_TITLE", DEFAULT_BASE_TITLE),

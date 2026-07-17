@@ -8,7 +8,6 @@ from mistake_notebook_api.domain.enums import (
     PublicationStatus,
     RegionDetectionRunStatus,
     RegionSelectionSource,
-    ReviewStatus,
 )
 from mistake_notebook_api.domain.errors import JsonValue
 
@@ -106,32 +105,18 @@ class ProblemRevision:
 
 
 @dataclass(frozen=True, slots=True)
-class ReviewedProblem:
+class ProblemAsset:
     id: str
     problem_region_id: str
     current_revision_id: str | None
-    review_status: ReviewStatus
-    reviewed_at: datetime | None
     created_at: datetime
     updated_at: datetime
 
 
 @dataclass(frozen=True, slots=True)
-class ReviewStatusEvent:
-    id: str
-    reviewed_problem_id: str
-    from_status: ReviewStatus | None
-    to_status: ReviewStatus
-    reason: str
-    ocr_run_id: str | None
-    revision_id: str | None
-    created_at: datetime
-
-
-@dataclass(frozen=True, slots=True)
 class ProblemPublication:
     id: str
-    reviewed_problem_id: str
+    problem_id: str
     source_asset_id: str
     publisher: str
     status: PublicationStatus

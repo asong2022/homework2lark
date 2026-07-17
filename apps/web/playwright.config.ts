@@ -35,9 +35,10 @@ export default defineConfig({
         DATABASE_URL: "sqlite:///./data/e2e.db",
         STORAGE_ROOT: "./data/e2e-storage",
         CORS_ORIGINS: "http://127.0.0.1:3001",
-        OCR_PROVIDER: "fake",
-        REGION_DETECTION_PROVIDER: "fake",
-        PROBLEM_PUBLISHER: "fake",
+        OCR_PROVIDER: "paddleocr_vl_api",
+        PADDLEOCR_ACCESS_TOKEN: "e2e-not-used",
+        REGION_DETECTION_PROVIDER: "manual",
+        PROBLEM_PUBLISHER: "lark_cli",
       },
     },
     {

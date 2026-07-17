@@ -1,0 +1,115 @@
+{
+  "schemaVersion": "homework2lark-views-v1",
+  "tables": [
+    {
+      "name": "错题页面",
+      "views": [
+        {
+          "name": "全部页面",
+          "type": "grid",
+          "visibleFields": [
+            "页面名称", "原始页面图片", "时间", "年级", "错题来源", "页码",
+            "单元", "课题名", "页面主知识点", "核心素养", "关联题目"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "错题题目",
+      "views": [
+        {
+          "name": "错题库",
+          "type": "grid",
+          "visibleFields": [
+            "题目名称", "收录序号", "时间", "年级", "题号", "题干文本", "题干图片",
+            "对应知识点", "核心素养", "错误人数合计", "错误率", "是否高频错题", "掌握状态"
+          ]
+        },
+        {
+          "name": "错题图片",
+          "type": "gallery",
+          "visibleFields": ["题目名称", "图片题目", "题干图片", "年级", "对应知识点"]
+        },
+        {
+          "name": "待生成变式",
+          "type": "grid",
+          "filter": {
+            "logic": "and",
+            "conditions": [["关联变式题", "empty"], ["需人工处理", "==", false]]
+          },
+          "visibleFields": [
+            "题目名称", "题干文本", "题干图片", "标准答案", "对应知识点", "核心素养", "设计意图"
+          ]
+        },
+        {
+          "name": "已有变式",
+          "type": "grid",
+          "filter": {
+            "logic": "and",
+            "conditions": [["关联变式题", "non_empty"], ["需人工处理", "==", false]]
+          },
+          "visibleFields": ["题目名称", "题干文本", "关联变式题", "核心素养", "掌握状态"]
+        }
+      ]
+    },
+    {
+      "name": "错题记录",
+      "views": [
+        {
+          "name": "错误分组",
+          "type": "grid",
+          "visibleFields": [
+            "记录名称", "对应错题", "对应学生", "作业日期", "错误分类", "典型错例",
+            "错误表现", "错误原因", "本组人数", "核心素养"
+          ]
+        },
+        {
+          "name": "按学生查询",
+          "type": "grid",
+          "visibleFields": ["对应学生", "对应错题", "典型错例", "错误原因", "掌握状态", "最近再练时间"]
+        },
+        {
+          "name": "再练跟踪",
+          "type": "grid",
+          "filter": { "logic": "and", "conditions": [["最近再练时间", "non_empty"]] },
+          "visibleFields": ["对应学生", "对应错题", "掌握状态", "再练反馈", "最近再练时间"]
+        },
+        {
+          "name": "共性问题",
+          "type": "grid",
+          "filter": { "logic": "and", "conditions": [["本组人数", ">=", 2]] },
+          "visibleFields": ["对应错题", "错误分类", "错误表现", "错误原因", "本组人数", "对应学生"]
+        }
+      ]
+    },
+    {
+      "name": "变式题",
+      "views": [
+        {
+          "name": "全部变式题",
+          "type": "grid",
+          "visibleFields": [
+            "变式题名称", "收录序号", "来源错题", "变式序号", "题干文本", "题干图片",
+            "答案解析", "设计意图", "核心素养", "生成时间"
+          ]
+        }
+      ]
+    }
+  ],
+  "dynamicTeachingPriority": {
+    "table": "错题题目",
+    "namePattern": "{termName}·{grade}教学优先",
+    "requiredParameters": ["termName", "grade", "startDate", "endDate"],
+    "dateRangeSemantics": "inclusive; implementation uses the day-before/day-after boundaries required by Feishu lookup-date filters",
+    "filter": {
+      "logic": "and",
+      "conditions": [
+        ["是否高频错题", "==", true],
+        ["年级", "intersects", ["{grade}"]],
+        ["时间", ">", "ExactDate({dayBeforeStart})"],
+        ["时间", "<", "ExactDate({dayAfterEnd})"]
+      ]
+    }
+  },
+  "dashboards": ["错题仪表盘"]
+}

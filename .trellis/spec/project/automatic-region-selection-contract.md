@@ -2,7 +2,7 @@
 
 ## 1. Scope / Trigger
 
-Use this contract only when the teacher explicitly requests automatic candidates. Both standalone upload and the Skill-to-Web existing-asset handoff start manual-first; either may call detection as an optional framing aid. Detection never creates reviewed or reusable problems by itself.
+Use this contract only when the teacher explicitly requests automatic candidates. Both standalone upload and the Skill-to-Web existing-asset handoff start manual-first; either may call detection as an optional framing aid. Detection never creates teacher-confirmed or reusable problems by itself.
 
 ## 2. Signatures
 
@@ -45,7 +45,7 @@ problem_region_candidate_sources
 
 ## 3. Contracts
 
-- `REGION_DETECTION_PROVIDER` is `fake` or `yescan`; selection happens once at runtime composition, not per request.
+- `REGION_DETECTION_PROVIDER` is `manual` or `yescan`; selection happens once at runtime composition, not per request. `manual` never fabricates candidates and returns an explicit configuration category if the optional detection endpoint is called. Test stubs live only under `tests/support` and cannot be selected from production configuration.
 - A successful detection stores the complete JSON-safe Provider body under `provider-evidence/region-detections/{assetId}/{runId}.json`. The API never returns the body or its storage key.
 - `RegionCandidate` stores one immutable Provider question suggestion. For Yescan this is exactly one group-level `StructureInfo.Position`; nested text, formula, table, and illustration `Detail` entries do not become separate candidates.
 - Candidate count is not trusted as the final question count because the Provider may merge two questions or split one question across groups. The Adapter preserves this evidence one-to-one and the teacher corrects it explicitly.
@@ -81,7 +81,7 @@ problem_region_candidate_sources
 ## 6. Tests Required
 
 - Integration: successful/failed detection runs, private raw evidence, one/multiple same-asset lineage, duplicate/reused candidate rejection, and file compensation.
-- Contract: Fake and Yescan adapters return the same vendor-neutral result shape; Yescan candidate count equals `StructureInfo` count even when a group contains multiple `Detail` entries.
+- Contract: the manual production provider never returns candidates; injected test stubs and Yescan exercise the vendor-neutral result shape; Yescan candidate count equals `StructureInfo` count even when a group contains multiple `Detail` entries.
 - Frontend: candidate decoding, default-unselected state, bbox union, explicit merge, manual add, move/resize geometry, delete, and batch payload.
 - E2E path: upload → auto detect → correct a Provider split with explicit merge → add manual → save batch → public-ID handoff.
 - Existing-asset handoff tests live under the `shi-homework2lark` contract and must prove that opening the route does not call detection, while an explicit teacher action can.

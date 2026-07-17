@@ -47,11 +47,8 @@ describe("api client boundary", () => {
         new Response(
           JSON.stringify({
             problemId: "problem_test",
-            status: "needs_review",
-            futureReuseEligible: false,
             source: {},
             region: {},
-            review: {},
             lineage: {},
             history: {},
             ocr: null,

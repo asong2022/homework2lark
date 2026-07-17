@@ -5,7 +5,7 @@ from dataclasses import replace
 
 from mistake_notebook_api.application.ports import UnitOfWorkFactory
 from mistake_notebook_api.domain.entities import ProblemPublication
-from mistake_notebook_api.domain.enums import PublicationStatus, ReviewStatus
+from mistake_notebook_api.domain.enums import PublicationStatus
 from mistake_notebook_api.domain.errors import AppError, JsonValue
 from mistake_notebook_api.domain.identifiers import new_id
 from mistake_notebook_api.domain.publication import (
@@ -41,7 +41,7 @@ class ProblemPublicationService:
             current = uow.publications.get_by_problem(problem_id)
             publication = ProblemPublication(
                 id=current.id if current else new_id("publication"),
-                reviewed_problem_id=problem_id,
+                problem_id=problem_id,
                 source_asset_id=request.source_asset_id,
                 publisher=self._publisher.name,
                 status=PublicationStatus.PENDING,
@@ -99,15 +99,10 @@ class ProblemPublicationService:
     def _build_request(self, problem_id: str) -> ProblemPublicationRequest:
         with self._uow_factory() as uow:
             problem = uow.problems.get_problem(problem_id)
-            if (
-                problem is None
-                or problem.review_status is not ReviewStatus.REVIEWED
-                or problem.current_revision_id is None
-                or problem.reviewed_at is None
-            ):
+            if problem is None or problem.current_revision_id is None:
                 raise AppError(
                     "problem_not_publishable",
-                    "只有已保存有效教师修订并完成审核的题目才能发布到飞书。",
+                    "请先保存有效的教师修订，再发布到飞书。",
                 )
             region = uow.problems.get_region(problem.problem_region_id)
             revision = uow.problems.get_revision(problem.current_revision_id)
@@ -119,7 +114,7 @@ class ProblemPublicationService:
             ):
                 raise AppError(
                     "problem_not_publishable",
-                    "当前审核版本不完整，请重新保存并审核后再发布。",
+                    "当前人工修订不完整，请重新保存后再发布。",
                 )
             source = uow.assets.get(region.source_asset_id)
             run = uow.problems.get_ocr_run(revision.based_on_ocr_run_id)
@@ -142,7 +137,7 @@ class ProblemPublicationService:
             revision_id=revision.id,
             revision_number=revision.revision_number,
             corrected_text=revision.corrected_text,
-            reviewed_at=problem.reviewed_at,
+            revision_created_at=revision.created_at,
             ocr_provider=run.provider,
         )
 
@@ -161,7 +156,7 @@ class ProblemPublicationService:
         logger.warning(
             "problem_publication_finished problem_id=%s publication_id=%s "
             "publisher=%s status=failed error_code=%s",
-            publication.reviewed_problem_id,
+            publication.problem_id,
             publication.id,
             self._publisher.name,
             category,
@@ -187,7 +182,7 @@ class ProblemPublicationService:
             )
         return AppError(
             "lark_publisher_unavailable",
-            "飞书暂时不可用，本地题目和审核结果已保留，可以稍后重试。",
+            "飞书暂时不可用，本地题目和人工修订已保留，可以稍后重试。",
             True,
             details,
         )

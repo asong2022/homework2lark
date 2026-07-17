@@ -9,7 +9,7 @@ The intake side of `shi-homework2lark` is Agent-first and orchestrates the exist
 | Mode | Detection | Teacher action | Result |
 |---|---|---|---|
 | `web` | optional, only after explicit click | Open returned URL and use manual boxes or automatic candidates | Saved crops and public problem IDs copied back to the Agent |
-| `chat` | configured real detection Provider | Agent shows numbered candidates; teacher explicitly selects IDs | One ProblemRegion/ReviewedProblem shell per selected Provider candidate |
+| `chat` | configured real detection Provider | Agent shows numbered candidates; teacher explicitly selects IDs | One ProblemRegion/ProblemAsset shell per selected Provider candidate |
 | `single` | none | Treat an already-cropped image as one whole-image problem | One manual full-image region |
 
 The normal experience starts in the Agent conversation. `web` is a precision fallback when the teacher wants to edit the bbox; it is not a mandatory first step.
@@ -41,7 +41,6 @@ select --session <json-path> --candidate-id <id>... --output <relative-json>
 ocr --problem-id <problem_xxx>
 get --problem-id <problem_xxx>
 save-revision --problem-id <problem_xxx> --input <json-path|->
-review --problem-id <problem_xxx> [--revision-id <revision_xxx>]
 publish --problem-id <problem_xxx>
 download-evidence --problem-id <problem_xxx> --output-dir <relative-dir>
 validate-metadata --input <json-path|->
@@ -49,11 +48,11 @@ base_metadata.py preview --input <json-path|->
 base_metadata.py apply --input <json-path|->
 ```
 
-`start chat` checks the configured detection Provider before upload. `ocr` rejects a Fake result in normal mode. `--allow-fake` is reserved for automated tests.
+`start chat` checks the configured detection Provider before upload. OCR uses the API's configured real Provider; production configuration does not expose a Fake OCR option.
 
-`get` and `ocr` deliberately expose selected OCR/corrected text to the current Agent for teacher review, but omit raw Provider response and private storage fields. `publish` omits remote record/table/field IDs from CLI output.
+`get` and `ocr` deliberately expose selected OCR/corrected text to the current Agent for teacher confirmation, but omit raw Provider response and private storage fields. `publish` omits remote record/table/field IDs from CLI output.
 
-## Revision And Review Gate
+## Revision And Publication Gate
 
 Revision input contains only:
 
@@ -70,7 +69,7 @@ Revision input contains only:
 
 `basedOnOcrRunId` may be omitted only when the current normalized record has a latest OCR run. Every save appends a ProblemRevision. It never edits `OCRRun.text`.
 
-Review uses a persisted revision ID. Omitting `--revision-id` is allowed only when the record already has a current human revision. Publication is a separate explicit command and the API rejects any record that is not future-reuse eligible.
+Saving the revision makes it the current version immediately. There is no separate review command or review-status transition. Publication remains a separate external write and the API rejects a problem without a valid current revision, source, crop or OCR basis.
 
 ## AI Metadata Boundary
 
@@ -78,9 +77,9 @@ The calling Agent may suggest page fields (`页面名称`, `时间`, `年级`, `
 
 `典型错例` and `错误表现` on the question row are read-only lookups from teacher-confirmed `错题记录` groups. Metadata enrichment never writes them and never fabricates a fallback student response.
 
-When the teacher provides identities for a corrected assignment, prefer matching handwritten student number plus name against the private class roster and store the exact verified roster name only. Base options follow roster-number order, but student numbers remain private. Without a roster, AI visual reading is provisional and uncertain entries stay in a private exception list. After the reviewed question exists in Base, the Agent first records visible real responses, then groups students with the same suggested cause and proposes one `错题记录` row per group. `对应学生` is multi-select, and every group requires a teacher-confirmed batch write.
+When the teacher provides identities for a corrected assignment, prefer matching handwritten student number plus name against the private class roster and store the exact verified roster name only. Base options follow roster-number order, but student numbers remain private. Without a roster, AI visual reading is provisional and uncertain entries stay in a private exception list. After the corrected question exists in Base, the Agent first records visible real responses, then groups students with the same suggested cause and proposes one `错题记录` row per group. `对应学生` is multi-select, and every group requires a teacher-confirmed batch write.
 
-Confirmed enrichment fills empty Base cells only by default. A non-empty cell is a conflict; replacing it requires a separate explicit confirmation. Enrichment failure cannot modify local evidence or undo a successful reviewed publication.
+Confirmed enrichment fills empty Base cells only by default. A non-empty cell is a conflict; replacing it requires a separate explicit confirmation. Enrichment failure cannot modify local evidence or undo a successful publication.
 
 The validator accepts only `problemId`, optional `note`, page fields (`页面名称`, `时间`, `年级`, `页码`, `单元`, `课题名`, `错题来源`, `页面主知识点`, `备注`) and question fields (`题号`, `题目名称`, `分区标题`, `题型`, `对应知识点`, `图表说明`, `标准答案`, `答案备注`). It cannot propose system IDs, attachments, corrected text, review state, grouped-evidence lookups, lookup values or variant cells. It may replace only a numeric or `待整理…` primary-title placeholder; other non-empty teacher titles remain conflicts.
 
@@ -98,8 +97,8 @@ For scanned pages with embedded diagrams, PaddleOCR text/layout output and local
 - Detection failure retains a successfully uploaded SourceAsset when the API returned one; switch to Web/manual if appropriate.
 - Region/OCR failure retains source, selected bbox, crop and prior runs. Retry by the same public ID.
 - Revision failure retains OCR and earlier revisions.
-- Review rejection retains the revision and reports the missing/invalid gate.
-- Publication failure retains the reviewed local asset. Retry the same problem ID; hidden IDs prevent duplicate questions and exact source-file hashes prevent the same image bytes from creating another page row.
+- Publication rejection retains the revision and reports which required source/revision fact is missing.
+- Publication failure retains the corrected local asset. Retry the same problem ID; hidden IDs prevent duplicate questions and exact source-file hashes prevent the same image bytes from creating another page row.
 - Direct `intake.py start` returns `source_requires_page_images` for PDF/DOC/DOCX because `/assets` accepts images. The public Skill supports them by first using MinerU plus PDF/doc rendering to produce page images as defined in `source-routing.md`; never pretend the image API directly stored the original document.
 
 ## Staged Corrected-Work Campaign

@@ -8,12 +8,12 @@ import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 from tests.conftest import image_bytes
+from tests.support.ocr import StubOCRProvider
 
 from mistake_notebook_api.api.runtime import Runtime
 from mistake_notebook_api.domain.errors import OCRProviderError
 from mistake_notebook_api.domain.ocr import OCRInput, OCRResult, ProviderHealth
 from mistake_notebook_api.infrastructure.database.uow import SQLAlchemyUnitOfWork
-from mistake_notebook_api.infrastructure.ocr.fake import FakeOCRProvider
 
 
 @pytest.mark.parametrize(
@@ -130,7 +130,7 @@ def _upload_and_region(client: TestClient) -> tuple[dict[str, object], dict[str,
     return asset, region_response.json()
 
 
-def test_complete_review_flow_preserves_all_versions(client: TestClient) -> None:
+def test_complete_revision_flow_preserves_all_versions(client: TestClient) -> None:
     original = image_bytes()
     upload = client.post(
         "/api/v1/assets",
@@ -155,21 +155,19 @@ def test_complete_review_flow_preserves_all_versions(client: TestClient) -> None
     first_ocr_response = client.post(f"/api/v1/regions/{region['regionId']}/ocr-runs")
     assert first_ocr_response.status_code == 201, first_ocr_response.text
     first_ocr = first_ocr_response.json()
-    assert first_ocr["rawResponse"]["engine"] == "fake"
+    assert first_ocr["rawResponse"]["fixture"] == "test-only"
     assert first_ocr["status"] == "succeeded"
 
     before_revision = client.get(f"/api/v1/problems/{region['problemId']}").json()
-    assert before_revision["status"] == "needs_review"
-    assert before_revision["futureReuseEligible"] is False
     assert before_revision["ocr"]["runId"] == first_ocr["runId"]
-    assert len(before_revision["review"]["statusHistory"]) == 2
-
-    missing_revision = client.post(
-        f"/api/v1/problems/{region['problemId']}/review",
-        json={"revisionId": "revision_missing"},
-    )
-    assert missing_revision.status_code == 409
-    assert missing_revision.json()["error"]["code"] == "review_revision_required"
+    assert before_revision["humanRevision"] is None
+    assert not {
+        "status",
+        "futureReuseEligible",
+        "review",
+        "reviewedAt",
+        "statusHistory",
+    }.intersection(before_revision)
 
     corrected_text = "小明有24本书，平均放在6层书架上，每层放4本。"
     revision_response = client.post(
@@ -184,18 +182,11 @@ def test_complete_review_flow_preserves_all_versions(client: TestClient) -> None
     revision = revision_response.json()
     assert revision["revisionNumber"] == 1
 
-    reviewed_response = client.post(
-        f"/api/v1/problems/{region['problemId']}/review",
-        json={"revisionId": revision["revisionId"]},
-    )
-    assert reviewed_response.status_code == 200, reviewed_response.text
-    reviewed = reviewed_response.json()
-    assert reviewed["status"] == "reviewed"
-    assert reviewed["futureReuseEligible"] is True
-    assert reviewed["humanRevision"]["correctedText"] == corrected_text
-    assert reviewed["ocr"]["text"] == first_ocr["text"]
-    assert reviewed["history"]["ocrRuns"][0]["rawResponse"] == first_ocr["rawResponse"]
-    assert reviewed["lineage"] == {
+    current = client.get(f"/api/v1/problems/{region['problemId']}").json()
+    assert current["humanRevision"]["correctedText"] == corrected_text
+    assert current["ocr"]["text"] == first_ocr["text"]
+    assert current["history"]["ocrRuns"][0]["rawResponse"] == first_ocr["rawResponse"]
+    assert current["lineage"] == {
         "sourceAssetId": asset["assetId"],
         "problemRegionId": region["regionId"],
         "detectionCandidateId": None,
@@ -203,25 +194,15 @@ def test_complete_review_flow_preserves_all_versions(client: TestClient) -> None
         "ocrRunId": first_ocr["runId"],
         "revisionId": revision["revisionId"],
     }
-    assert reviewed["source"]["contentUrl"] == asset["contentUrl"]
-    assert reviewed["region"]["cropContentUrl"] == region["cropContentUrl"]
-    assert reviewed["review"]["statusHistory"][-1]["revisionId"] == revision["revisionId"]
-    assert reviewed["source"]["fileHash"] == asset["fileHash"]
+    assert current["source"]["contentUrl"] == asset["contentUrl"]
+    assert current["region"]["cropContentUrl"] == region["cropContentUrl"]
+    assert current["source"]["fileHash"] == asset["fileHash"]
     assert client.get(asset["contentUrl"]).content == original
-
-    event_count = len(reviewed["review"]["statusHistory"])
-    idempotent = client.post(
-        f"/api/v1/problems/{region['problemId']}/review",
-        json={"revisionId": revision["revisionId"]},
-    )
-    assert idempotent.status_code == 200
-    assert len(idempotent.json()["review"]["statusHistory"]) == event_count
 
     second_ocr_response = client.post(f"/api/v1/regions/{region['regionId']}/ocr-runs")
     assert second_ocr_response.status_code == 201
     second_ocr = second_ocr_response.json()
     after_retry = client.get(f"/api/v1/problems/{region['problemId']}").json()
-    assert after_retry["status"] == "reviewed"
     assert after_retry["ocr"]["runId"] == first_ocr["runId"]
     assert after_retry["latestOcrRun"]["runId"] == second_ocr["runId"]
     assert len(after_retry["history"]["ocrRuns"]) == 2
@@ -236,12 +217,11 @@ def test_complete_review_flow_preserves_all_versions(client: TestClient) -> None
     assert second_revision_response.status_code == 201
     second_revision = second_revision_response.json()
     assert second_revision["revisionNumber"] == 2
-    needs_review = client.get(f"/api/v1/problems/{region['problemId']}").json()
-    assert needs_review["status"] == "needs_review"
-    assert needs_review["review"]["reviewedAt"] is None
-    assert needs_review["futureReuseEligible"] is False
-    assert len(needs_review["history"]["revisions"]) == 2
-    assert needs_review["history"]["revisions"][0]["correctedText"] == corrected_text
+    latest = client.get(f"/api/v1/problems/{region['problemId']}").json()
+    assert latest["humanRevision"]["revisionId"] == second_revision["revisionId"]
+    assert latest["ocr"]["runId"] == second_ocr["runId"]
+    assert len(latest["history"]["revisions"]) == 2
+    assert latest["history"]["revisions"][0]["correctedText"] == corrected_text
 
 
 class FailingProvider:
@@ -294,7 +274,7 @@ def test_ocr_failure_is_persisted_and_retryable(client: TestClient, runtime: Run
     assert client.get(asset["contentUrl"]).status_code == 200
     assert client.get(region["cropContentUrl"]).status_code == 200
 
-    runtime.ocr_provider = FakeOCRProvider()
+    runtime.ocr_provider = StubOCRProvider()
     retry = client.post(f"/api/v1/regions/{region['regionId']}/ocr-runs")
     assert retry.status_code == 201
     record = client.get(f"/api/v1/problems/{region['problemId']}").json()
@@ -319,21 +299,21 @@ def test_cross_region_ocr_and_revision_ids_are_rejected(client: TestClient) -> N
     assert cross_ocr_revision.status_code == 422
     assert cross_ocr_revision.json()["error"]["code"] == "ocr_run_invalid"
 
-    first_revision = client.post(
+    first_revision_response = client.post(
         f"/api/v1/regions/{first_region['regionId']}/revisions",
         json={
             "basedOnOcrRunId": first_ocr["runId"],
             "correctedText": "第一道题的教师修订。",
         },
-    ).json()
-    cross_problem_review = client.post(
-        f"/api/v1/problems/{second_region['problemId']}/review",
-        json={"revisionId": first_revision["revisionId"]},
     )
-    assert cross_problem_review.status_code == 409
-    assert cross_problem_review.json()["error"]["code"] == "review_revision_required"
+    assert first_revision_response.status_code == 201
+    not_publishable = client.post(
+        f"/api/v1/problems/{second_region['problemId']}/publications/lark"
+    )
+    assert not_publishable.status_code == 409
+    assert not_publishable.json()["error"]["code"] == "problem_not_publishable"
     second_record = client.get(f"/api/v1/problems/{second_region['problemId']}").json()
-    assert second_record["status"] == "draft"
+    assert second_record["humanRevision"] is None
     assert second_record["history"]["revisions"] == []
 
 

@@ -29,9 +29,9 @@ apps/web/src/
 
 - `/`: manual-first standalone upload workbench. The primary action starts manual boxing; an explicit secondary action can request automatic candidates.
 - `/intake/[assetId]`: load an already uploaded `SourceAsset`, start with manual drawing active, optionally request automatic candidates, save one or more regions, and return public problem IDs to the AI conversation. It never reuploads the source.
-- Both routes stop after region persistence. OCR, revision, review, publication, and Base work belong to the Agent conversation and FastAPI, not browser routes.
+- Both routes stop after region persistence. OCR, revision, publication, and Base work belong to the Agent conversation and FastAPI, not browser routes.
 
-Do not add review/detail/help, library/list, dashboard, student, login, settings, or admin routes.
+Do not add review/detail, library/list, dashboard, student, login, settings, or admin routes.
 
 ## Naming
 

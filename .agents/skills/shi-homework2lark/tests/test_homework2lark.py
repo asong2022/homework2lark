@@ -36,7 +36,6 @@ class MemoryGateway:
             "页码": "lookup",
             "错题来源": "lookup",
             "本地修订版本": "number",
-            "已审核时间": "datetime",
             homework2lark.TYPICAL_ERROR_FIELD: "lookup",
             homework2lark.ERROR_PATTERN_FIELD: "lookup",
             homework2lark.ERROR_CAUSE_SUMMARY_FIELD: "text",
@@ -82,7 +81,6 @@ class MemoryGateway:
                 "页码": "116",
                 "错题来源": "教材",
                 "本地修订版本": 1,
-                "已审核时间": "2026-07-14 10:30:00",
                 homework2lark.MANUAL_ATTENTION_FIELD: False,
                 homework2lark.REVERSE_VARIANT_LINK_FIELD: ([{"id": "variant_1"}] if linked else []),
                 homework2lark.TYPICAL_ERROR_FIELD: "漏写十位部分积。",
@@ -237,17 +235,16 @@ class Homework2LarkTests(unittest.TestCase):
         for operation in (
             lambda: self.service.write("rec_1", payload, replace_all=False),
             lambda: self.service.attach_diagram("rec_1", 1, "figure.png"),
-            lambda: self.service.review("rec_1"),
             self.service.list_available,
         ):
             with self.assertRaises(homework2lark.SkillError) as captured:
                 operation()
             self.assertEqual(captured.exception.code, "independent_variant_catalog_required")
 
-    def test_source_eligibility_still_requires_local_review_evidence(self) -> None:
+    def test_source_eligibility_requires_a_local_revision(self) -> None:
         record = self.gateway.records["rec_1"].fields
         record["本地修订版本"] = None
-        with self.assertRaisesRegex(homework2lark.SkillError, "缺少本地审核版本"):
+        with self.assertRaisesRegex(homework2lark.SkillError, "缺少有效的本地修订版本"):
             self.service.list_selected()
 
     def test_json_input_accepts_absolute_paths(self) -> None:

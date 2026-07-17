@@ -223,8 +223,7 @@ code {
 }
 
 .upload-form,
-.action-row,
-.review-actions {
+.action-row {
   display: flex;
   align-items: end;
   gap: 0.85rem;
@@ -457,31 +456,7 @@ textarea:focus-visible,
   border-top: 6px solid var(--geometry);
 }
 
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid currentColor;
-  border-radius: 99px;
-  color: var(--geometry);
-  background: var(--geometry-soft);
-  font-size: 0.82rem;
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-.status-reviewed {
-  color: var(--success);
-  background: var(--success-soft);
-}
-
-.status-needs_review {
-  color: var(--teacher-red);
-  background: var(--teacher-red-soft);
-}
-
-.evidence-grid,
-.review-grid {
+.evidence-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1.4rem;
@@ -595,10 +570,6 @@ textarea:focus-visible,
 
 .correction-panel textarea {
   resize: vertical;
-}
-
-.review-actions {
-  margin-top: 1rem;
 }
 
 .inline-warning {
@@ -1396,167 +1367,6 @@ textarea:focus-visible,
   display: block;
 }
 
-.batch-review-header {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.batch-review-counts {
-  display: grid;
-  grid-template-columns: auto auto;
-  gap: 0.25rem 0.55rem;
-  align-items: baseline;
-  padding: 0.8rem 1rem;
-  border: 1px solid var(--graphite);
-  background: var(--geometry-soft);
-}
-
-.batch-review-counts strong {
-  color: var(--geometry);
-  font-size: 1.35rem;
-}
-
-.batch-review-counts span {
-  color: var(--ink-soft);
-  font-size: 0.78rem;
-}
-
-.batch-review-list {
-  display: grid;
-  gap: 1.2rem;
-}
-
-.batch-review-card {
-  padding: 1.1rem;
-  border: 1px solid var(--graphite);
-  border-top: 4px solid var(--geometry);
-  background: #fff;
-  box-shadow: 0 10px 28px rgb(24 49 83 / 7%);
-}
-
-.batch-review-card-header,
-.batch-review-card-header > div,
-.batch-review-item-actions,
-.batch-review-submit {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-}
-
-.batch-review-card-header {
-  justify-content: space-between;
-  margin-bottom: 1rem;
-}
-
-.batch-review-card-header h2 {
-  margin: 0;
-  font-size: 1.1rem;
-}
-
-.batch-review-evidence {
-  display: grid;
-  grid-template-columns: minmax(15rem, 0.8fr) minmax(0, 1.2fr);
-  gap: 1rem;
-}
-
-.batch-review-crop {
-  margin: 0;
-  padding: 0.75rem;
-  border: 1px solid var(--graphite);
-  background: #fbfcfd;
-}
-
-.batch-review-crop figcaption {
-  margin-bottom: 0.55rem;
-  color: var(--ink-soft);
-  font-size: 0.78rem;
-  font-weight: 800;
-}
-
-.batch-review-crop img {
-  display: block;
-  width: 100%;
-  max-height: 24rem;
-  object-fit: contain;
-  background: #fff;
-}
-
-.batch-correction-fields {
-  display: grid;
-  gap: 0.45rem;
-  margin-top: 1rem;
-}
-
-.batch-correction-fields label {
-  margin-top: 0.35rem;
-  color: var(--ink-soft);
-  font-size: 0.8rem;
-  font-weight: 800;
-}
-
-.batch-correction-fields textarea,
-.batch-correction-fields input {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #b9c5d1;
-  border-radius: 3px;
-  color: var(--ink);
-  background: #fff;
-  line-height: 1.7;
-}
-
-.batch-correction-fields textarea {
-  resize: vertical;
-}
-
-.batch-review-item-actions {
-  flex-wrap: wrap;
-  margin-top: 0.8rem;
-}
-
-.batch-review-item-actions .text-button {
-  margin-top: 0;
-}
-
-.item-success,
-.item-error {
-  margin: 0.8rem 0 0;
-  padding: 0.6rem 0.75rem;
-  font-size: 0.85rem;
-  font-weight: 700;
-}
-
-.item-success {
-  color: var(--success);
-  background: var(--success-soft);
-}
-
-.item-error {
-  color: var(--teacher-red);
-  background: var(--teacher-red-soft);
-}
-
-.batch-review-submit {
-  position: sticky;
-  bottom: 0.75rem;
-  z-index: 10;
-  justify-content: space-between;
-  padding: 1rem;
-  border: 1px solid #aebbc8;
-  background: rgb(255 255 255 / 96%);
-  box-shadow: var(--shadow);
-}
-
-.batch-review-submit strong,
-.batch-review-submit p {
-  margin: 0;
-}
-
-.batch-review-submit p {
-  margin-top: 0.25rem;
-  color: var(--ink-soft);
-  font-size: 0.78rem;
-}
-
 .help-page {
   display: grid;
   gap: 1.4rem;
@@ -1709,26 +1519,21 @@ textarea:focus-visible,
     flex-wrap: wrap;
   }
 
-  .batch-review-header,
-  .batch-review-evidence,
   .help-steps ol {
     grid-template-columns: 1fr;
   }
 
-  .batch-review-submit,
   .developer-help {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .batch-review-submit .button,
   .developer-help .button {
     width: 100%;
   }
 
   .workflow-strip,
   .evidence-grid,
-  .review-grid,
   .history-columns,
   .record-facts,
   .publication-panel {
@@ -1750,10 +1555,6 @@ textarea:focus-visible,
 
   .record-header {
     grid-template-columns: 1fr;
-  }
-
-  .status-badge {
-    width: fit-content;
   }
 
   .lineage-rail {

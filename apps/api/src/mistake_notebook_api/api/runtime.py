@@ -18,15 +18,13 @@ from mistake_notebook_api.infrastructure.database.session import (
     create_session_factory,
 )
 from mistake_notebook_api.infrastructure.database.uow import SQLAlchemyUnitOfWorkFactory
-from mistake_notebook_api.infrastructure.detection.fake import (
-    FakeProblemRegionDetectionProvider,
+from mistake_notebook_api.infrastructure.detection.manual import (
+    ManualOnlyRegionDetectionProvider,
 )
-from mistake_notebook_api.infrastructure.ocr.fake import FakeOCRProvider
 from mistake_notebook_api.infrastructure.ocr.paddle import PaddleOCRProvider
 from mistake_notebook_api.infrastructure.ocr.paddle_vl_api import (
     PaddleOCRVLAPIProvider,
 )
-from mistake_notebook_api.infrastructure.publication.fake import FakeProblemPublisher
 from mistake_notebook_api.infrastructure.publication.lark_cli import (
     LarkCliProblemPublisher,
     SubprocessLarkCliRunner,
@@ -80,8 +78,6 @@ class Runtime:
 
 
 def build_ocr_provider(settings: Settings) -> OCRProvider:
-    if settings.ocr_provider == "fake":
-        return FakeOCRProvider()
     if settings.ocr_provider == "paddleocr":
         return PaddleOCRProvider(
             language=settings.paddleocr_language,
@@ -102,13 +98,13 @@ def build_ocr_provider(settings: Settings) -> OCRProvider:
         )
     raise AppError(
         "ocr_provider_configuration_error",
-        "OCR_PROVIDER 必须是 fake、paddleocr 或 paddleocr_vl_api。",
+        "OCR_PROVIDER 必须是 paddleocr 或 paddleocr_vl_api。",
     )
 
 
 def build_region_detection_provider(settings: Settings) -> ProblemRegionDetectionProvider:
-    if settings.region_detection_provider == "fake":
-        return FakeProblemRegionDetectionProvider()
+    if settings.region_detection_provider == "manual":
+        return ManualOnlyRegionDetectionProvider()
     if settings.region_detection_provider == "yescan":
         return YescanQuestionDetectionProvider(
             YescanApiClient(
@@ -124,13 +120,11 @@ def build_region_detection_provider(settings: Settings) -> ProblemRegionDetectio
         )
     raise AppError(
         "region_detection_provider_configuration_error",
-        "REGION_DETECTION_PROVIDER 必须是 fake 或 yescan。",
+        "REGION_DETECTION_PROVIDER 必须是 manual 或 yescan。",
     )
 
 
 def build_problem_publisher(settings: Settings) -> ProblemPublisher:
-    if settings.problem_publisher == "fake":
-        return FakeProblemPublisher()
     if settings.problem_publisher == "lark_cli":
         return LarkCliProblemPublisher(
             runner=SubprocessLarkCliRunner(
@@ -141,7 +135,7 @@ def build_problem_publisher(settings: Settings) -> ProblemPublisher:
         )
     raise AppError(
         "lark_publisher_configuration_error",
-        "PROBLEM_PUBLISHER 必须是 fake 或 lark_cli。",
+        "PROBLEM_PUBLISHER 必须是 lark_cli。",
     )
 
 

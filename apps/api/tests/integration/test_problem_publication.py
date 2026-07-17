@@ -30,23 +30,19 @@ def _create_problem(client: TestClient) -> dict[str, object]:
     return {"asset": asset, "region": region, "ocr": ocr}
 
 
-def _review_problem(client: TestClient, context: dict[str, object]) -> dict[str, object]:
+def _save_revision(client: TestClient, context: dict[str, object]) -> dict[str, object]:
     region = context["region"]
     ocr = context["ocr"]
     assert isinstance(region, dict) and isinstance(ocr, dict)
-    revision = client.post(
+    response = client.post(
         f"/api/v1/regions/{region['regionId']}/revisions",
         json={
             "basedOnOcrRunId": ocr["runId"],
             "correctedText": "24 支铅笔平均分给 6 名学生，每人分到多少支？",
         },
-    ).json()
-    response = client.post(
-        f"/api/v1/problems/{region['problemId']}/review",
-        json={"revisionId": revision["revisionId"]},
     )
-    assert response.status_code == 200, response.text
-    return response.json()
+    assert response.status_code == 201, response.text
+    return client.get(f"/api/v1/problems/{region['problemId']}").json()
 
 
 @dataclass
@@ -71,7 +67,7 @@ class RecordingPublisher:
         )
 
 
-def test_unreviewed_problem_cannot_be_published(client: TestClient) -> None:
+def test_problem_without_revision_cannot_be_published(client: TestClient) -> None:
     context = _create_problem(client)
     region = context["region"]
     assert isinstance(region, dict)
@@ -88,43 +84,41 @@ def test_publish_is_retryable_and_keeps_one_local_state(
     client: TestClient, runtime: Runtime
 ) -> None:
     context = _create_problem(client)
-    reviewed = _review_problem(client, context)
+    problem = _save_revision(client, context)
     publisher = RecordingPublisher()
     runtime.problem_publisher = publisher
 
-    first = client.post(f"/api/v1/problems/{reviewed['problemId']}/publications/lark")
-    second = client.post(f"/api/v1/problems/{reviewed['problemId']}/publications/lark")
+    first = client.post(f"/api/v1/problems/{problem['problemId']}/publications/lark")
+    second = client.post(f"/api/v1/problems/{problem['problemId']}/publications/lark")
 
     assert first.status_code == 200, first.text
     assert second.status_code == 200, second.text
     assert first.json()["publicationId"] == second.json()["publicationId"]
     assert first.json()["questionRecordId"] == second.json()["questionRecordId"]
     assert len(publisher.requests) == 2
-    assert publisher.requests[0].corrected_text == reviewed["humanRevision"]["correctedText"]
+    assert publisher.requests[0].corrected_text == problem["humanRevision"]["correctedText"]
     assert publisher.requests[0].source_image_bytes == image_bytes()
     assert publisher.requests[0].source_file_hash == hashlib.sha256(image_bytes()).hexdigest()
-    record = client.get(f"/api/v1/problems/{reviewed['problemId']}").json()
-    assert record["status"] == "reviewed"
-    assert record["futureReuseEligible"] is True
+    record = client.get(f"/api/v1/problems/{problem['problemId']}").json()
+    assert record["humanRevision"] == problem["humanRevision"]
     assert record["publication"]["status"] == "succeeded"
 
 
-def test_publisher_failure_is_persisted_without_changing_review(
+def test_publisher_failure_is_persisted_without_changing_revision(
     client: TestClient, runtime: Runtime
 ) -> None:
     context = _create_problem(client)
-    reviewed = _review_problem(client, context)
+    problem = _save_revision(client, context)
     runtime.problem_publisher = RecordingPublisher(failure="unavailable")
 
-    response = client.post(f"/api/v1/problems/{reviewed['problemId']}/publications/lark")
+    response = client.post(f"/api/v1/problems/{problem['problemId']}/publications/lark")
 
     assert response.status_code == 503
     error = response.json()["error"]
     assert error["code"] == "lark_publisher_unavailable"
     assert error["retryable"] is True
-    record = client.get(f"/api/v1/problems/{reviewed['problemId']}").json()
-    assert record["status"] == "reviewed"
-    assert record["futureReuseEligible"] is True
+    record = client.get(f"/api/v1/problems/{problem['problemId']}").json()
+    assert record["humanRevision"] == problem["humanRevision"]
     assert record["publication"]["status"] == "failed"
     assert record["publication"]["errorCode"] == "unavailable"
     assert record["publication"]["retryable"] is True

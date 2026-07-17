@@ -346,7 +346,7 @@ class VariantCatalogService:
             limit=2,
         )
         if len(source_matches) != 1:
-            raise core.SkillError("record_not_found", "没有唯一匹配的已审核原题。")
+            raise core.SkillError("record_not_found", "没有唯一匹配的已确认原题。")
         source = source_matches[0]
         core.ensure_source_eligible(source)
 
@@ -360,7 +360,7 @@ class VariantCatalogService:
             entry for entry in existing_entries if entry.source_record_id == source.record_id
         ]
         next_number = max((entry.number for entry in source_entries), default=0) + 1
-        source_name = core._text(source.fields.get("题目名称")) or "已审核错题"
+        source_name = core._text(source.fields.get("题目名称")) or "已确认错题"
         timestamp = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
         rows: list[list[core.JSONValue]] = []
         planned: list[tuple[str, core.Variant]] = []

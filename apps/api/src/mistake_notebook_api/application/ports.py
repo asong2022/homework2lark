@@ -6,16 +6,15 @@ from typing import Protocol, Self
 
 from mistake_notebook_api.domain.entities import (
     OCRRun,
+    ProblemAsset,
     ProblemPublication,
     ProblemRegion,
     ProblemRevision,
     RegionCandidate,
     RegionDetectionRun,
-    ReviewedProblem,
-    ReviewStatusEvent,
     SourceAsset,
 )
-from mistake_notebook_api.domain.enums import OCRRunStatus, ReviewStatus
+from mistake_notebook_api.domain.enums import OCRRunStatus
 from mistake_notebook_api.domain.errors import JsonValue
 
 
@@ -46,11 +45,11 @@ class ProblemRepository(Protocol):
 
     def get_region_by_detection_candidate(self, candidate_id: str) -> ProblemRegion | None: ...
 
-    def add_problem(self, problem: ReviewedProblem) -> None: ...
+    def add_problem(self, problem: ProblemAsset) -> None: ...
 
-    def get_problem(self, problem_id: str) -> ReviewedProblem | None: ...
+    def get_problem(self, problem_id: str) -> ProblemAsset | None: ...
 
-    def get_problem_by_region(self, region_id: str) -> ReviewedProblem | None: ...
+    def get_problem_by_region(self, region_id: str) -> ProblemAsset | None: ...
 
     def list_problem_ids_by_asset(self, asset_id: str) -> list[str]: ...
 
@@ -59,10 +58,8 @@ class ProblemRepository(Protocol):
         problem_id: str,
         *,
         current_revision_id: str | None,
-        review_status: ReviewStatus,
-        reviewed_at: datetime | None,
         updated_at: datetime,
-    ) -> ReviewedProblem: ...
+    ) -> ProblemAsset: ...
 
     def add_ocr_run(self, run: OCRRun) -> None: ...
 
@@ -94,10 +91,6 @@ class ProblemRepository(Protocol):
     def next_revision_number(self, region_id: str) -> int: ...
 
     def list_revisions(self, region_id: str) -> list[ProblemRevision]: ...
-
-    def add_status_event(self, event: ReviewStatusEvent) -> None: ...
-
-    def list_status_events(self, problem_id: str) -> list[ReviewStatusEvent]: ...
 
 
 class ProblemPublicationRepository(Protocol):

@@ -6,25 +6,25 @@
 
 Owns validated JPG/JPEG/PNG upload, immutable source storage, metadata/hash, manual-first teacher region selection, one optional configured automatic detection Provider, correction/editing of manual or multi-candidate detected regions, batch-confirmed canonical crops, and OCR per saved logical problem.
 
-### `problem-review-and-correction`
+### `problem-revision-and-confirmation`
 
-Owns evidence display, append-only human revisions, review state transitions, current revision selection, and teacher-facing retry/error states.
+Owns evidence display, append-only teacher-confirmed revisions, immediate current revision selection, and teacher-facing retry/error states. It does not create a second review status.
 
 ### `mistake-record-storage`
 
-Owns relational lineage, immutable machine/human versions, normalized record reconstruction, and future reuse eligibility.
+Owns relational lineage, immutable machine/human versions, current revision identity, and normalized record reconstruction.
 
-### `reviewed-problem-publication`
+### `problem-asset-publication`
 
-Owns explicit publication of `futureReuseEligible` problems to the approved Lark Base projection, local retry status, stable-ID idempotency, and safe failure recovery. It does not own AI generation or make Base the evidence source.
+Owns explicit publication of problem assets with a valid current teacher revision and complete lineage to the approved Lark Base projection, local retry status, stable-ID idempotency, and safe failure recovery. It does not own AI generation or make Base the evidence source.
 
 ### `agent-assisted-variant-reuse`
 
-Owns the approved `shi-homework2lark` Skill/CLI flow: explicit Base selection, Agent-generated numbered variants, preview, append-only rows in the separate `变式题` table, a single genuine-exception queue, and available-only assembly reads. The original problem still passes local teacher review before Base publication; complete Base variants do not create a second routine approval state. It does not add an LLM Provider to the Web/API backend.
+Owns the approved `shi-homework2lark` Skill/CLI flow: explicit Base selection, Agent-generated numbered variants, preview, append-only rows in the separate `变式题` table, a single genuine-exception queue, and available-only assembly reads. The original problem still requires a teacher-confirmed current revision before Base publication; complete Base variants do not create a routine approval state. It does not add an LLM Provider to the Web/API backend.
 
 ### `agent-assisted-problem-intake`
 
-Owns the approved `shi-homework2lark` intake orchestration: images use Web manual handoff, chat Yescan candidate selection or one-question full-image intake; PDF/Word use Agent-level MinerU plus page rendering before entering the image-only FastAPI. It also owns OCR/revision/review commands, explicit publication, complete-question boundaries and teacher-confirmed Base metadata suggestions. It does not bypass FastAPI domain rules, claim direct PDF/Word API upload, make automatic detection mandatory, or store Provider/Lark/model credentials.
+Owns the approved `shi-homework2lark` intake orchestration: images use Web manual handoff, chat Yescan candidate selection or one-question full-image intake; PDF/Word use Agent-level MinerU plus page rendering before entering the image-only FastAPI. It also owns OCR/revision commands, explicit publication, complete-question boundaries and teacher-confirmed Base metadata suggestions. It does not bypass FastAPI domain rules, claim direct PDF/Word API upload, make automatic detection mandatory, or store Provider/Lark/model credentials.
 
 ### `agent-assisted-learning-loop`
 
@@ -32,7 +32,7 @@ Owns optional variant diagrams on the same `变式题` row, delegation to the re
 
 ### `agent-assisted-student-mistake-groups`
 
-Owns the approved `错题记录` Base projection. One row groups multiple teacher-selected students who share the same error category/pattern for one reviewed question and assignment date. In identified mode, `对应学生` contains exact names from the private roster and its options follow private student-number order; numbers stay outside Base and duplicate names stop. Anonymous or unresolved identity evidence remains private and is not written as a Base option. There is no `学生` table, account, class relation or local student database. The Agent may propose grouping, but it writes only after showing the full student selection, linked question, error category, observed-answer summary, diagnosis and evidence source for teacher confirmation.
+Owns the approved `错题记录` Base projection. One row groups multiple teacher-selected students who share the same error category/pattern for one teacher-confirmed question and assignment date. In identified mode, `对应学生` contains exact names from the private roster and its options follow private student-number order; numbers stay outside Base and duplicate names stop. Anonymous or unresolved identity evidence remains private and is not written as a Base option. There is no `学生` table, account, class relation or local student database. The Agent may propose grouping, but it writes only after showing the full student selection, linked question, error category, observed-answer summary, diagnosis and evidence source for teacher confirmation.
 
 ### `agent-assisted-personal-practice`
 
@@ -48,18 +48,18 @@ Owns a private, resumable intake campaign for one assignment: copy one rendered 
 
 ## Hard Rules
 
-- `ReviewedProblem` and student mistake facts are different concepts. The Base `错题记录` is a teacher-friendly grouping of multiple conceptual occurrences, never the question asset itself.
-- OCR is input assistance; it cannot produce a reviewed/reusable problem.
+- `ProblemAsset` and student mistake facts are different concepts. The Base `错题记录` is a teacher-friendly grouping of multiple conceptual occurrences, never the question asset itself.
+- OCR is input assistance; it cannot produce a teacher-confirmed reusable problem by itself.
 - Original visual evidence is retained even when text exists.
-- AI/Provider output must pass a teacher review gate before future reuse.
+- AI/Provider output must become a teacher-confirmed non-empty revision before publication or reuse.
 
 ## Proposal Triggers
 
-Automatic segmentation was authorized through the `intake-multi-ocr-lark-proposal` parent and is limited to one optional configured detection Provider plus teacher confirmation. Agent-level PDF/Word normalization and `wumu-jihe-html` diagram generation are authorized only by the current Skill task. Student labels are authorized only in the grouped `错题记录.对应学生` multi-select. Stop and create a proposal before adding a second active OCR Provider, multi-detection routing/voting, full PDF parsing inside FastAPI, a student/account/class table, class analytics, bulk/unreviewed AI classification, backend AI/image generation, vector search, queues, multi-tenancy/permissions, or a broad architecture rewrite.
+Automatic segmentation was authorized through the `intake-multi-ocr-lark-proposal` parent and is limited to one optional configured detection Provider plus teacher confirmation. Agent-level PDF/Word normalization and `wumu-jihe-html` diagram generation are authorized only by the current Skill task. Student labels are authorized only in the grouped `错题记录.对应学生` multi-select. Stop and create a proposal before adding a second active OCR Provider, multi-detection routing/voting, full PDF parsing inside FastAPI, a student/account/class table, class analytics, bulk/unconfirmed AI classification, backend AI/image generation, vector search, queues, multi-tenancy/permissions, or a broad architecture rewrite.
 
 A proposal records the problem, why it exceeds Phase 1, recommendation, data/stack impact, estimated cost, and target phase. It is not implementation authorization.
 
-The `reviewed-problem-lark-reuse-loop` proposal was approved on 2026-07-13. Its publication child is limited to one configured `ProblemPublisher` (`fake` or `lark_cli`); its generation child remains Skill/Base-based and cannot add a backend LLM Provider, queue, or student workflow.
+The `reviewed-problem-lark-reuse-loop` proposal was approved on 2026-07-13. Its publication child now has one production `ProblemPublisher` (`lark_cli`); test stubs are injected only from `tests/support`. Its generation child remains Skill/Base-based and cannot add a backend LLM Provider, queue, or student workflow.
 
 The `student-mistake-occurrence-expansion` proposal was partially approved on 2026-07-14 as a smaller Base-only slice: add one grouped `错题记录` table, use a multi-select `对应学生`, and do not add `学生`, `Submission`, local `MistakeOccurrence` persistence, accounts or class analytics.
 
