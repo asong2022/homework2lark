@@ -19,7 +19,7 @@ class ProblemPublicationRequest:
     revision_id: str
     revision_number: int
     corrected_text: str
-    reviewed_at: datetime
+    revision_created_at: datetime
     ocr_provider: str
 
 

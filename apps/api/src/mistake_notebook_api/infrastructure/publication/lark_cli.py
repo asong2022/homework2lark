@@ -6,7 +6,6 @@ import shutil
 import subprocess
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import timedelta, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import ClassVar, Protocol
@@ -18,7 +17,6 @@ from mistake_notebook_api.domain.publication import (
     ProblemPublisherError,
 )
 
-CHINA_STANDARD_TIME = timezone(timedelta(hours=8))
 _RECORD_PAGE_SIZE = 200
 
 
@@ -97,9 +95,7 @@ class LarkCliProblemPublisher:
         "页面唯一ID": "link",
         "图片题目": "attachment",
         "题干文本": "text",
-        "OCR Provider": "select",
         "本地修订版本": "number",
-        "已审核时间": "datetime",
     }
     _TARGET_PAGE_FIELDS: ClassVar[dict[str, str]] = {
         "页面名称": "text",
@@ -114,9 +110,7 @@ class LarkCliProblemPublisher:
         "图片题目": "attachment",
         "题干图片": "attachment",
         "题干文本": "text",
-        "OCR Provider": "select",
         "本地修订版本": "number",
-        "已审核时间": "datetime",
     }
 
     # Kept as a compatibility surface for older contract fixtures.
@@ -217,16 +211,11 @@ class LarkCliProblemPublisher:
                 *((question_table.title_field,) if question_table.title_field is not None else ()),
             ),
         )
-        reviewed_at = request.reviewed_at.astimezone(CHINA_STANDARD_TIME).strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
         question_values: dict[str, JsonValue] = {
             question_table.stable_field: request.problem_id,
             self._required_link_field(question_table): [{"id": page_record_id}],
             "题干文本": request.corrected_text,
-            "OCR Provider": request.ocr_provider,
             "本地修订版本": request.revision_number,
-            "已审核时间": reviewed_at,
         }
         if question_table.title_field is not None and not _has_value(
             question_cells.get(question_table.title_field)
@@ -396,9 +385,7 @@ class LarkCliProblemPublisher:
             link_field: "link",
             "图片题目": "attachment",
             "题干文本": "text",
-            "OCR Provider": "select",
             "本地修订版本": "number",
-            "已审核时间": "datetime",
         }
         if stable_field == "系统题目ID":
             required["题干图片"] = "attachment"

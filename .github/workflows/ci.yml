@@ -29,6 +29,7 @@ jobs:
       - name: Install dependencies
         run: |
           npm ci
+          npm audit --audit-level=moderate
           uv sync --directory apps/api --group dev
 
       - name: Backend checks

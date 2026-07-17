@@ -52,7 +52,7 @@ class PackageBundleTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             bad_path = root / "bad.md"
-            private_path = "C:" + "/Users/" + "ExampleUser/private"
+            private_path = "C:" + "/Users/" + "Administrator/private"
             credential = "a" * 24
             bad_path.write_text(
                 f"workspace = {private_path}\napi_key = '{credential}'\n",

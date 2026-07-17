@@ -4,14 +4,14 @@
 
 Keep one owner for each cross-cutting concept:
 
-- Review and OCR status values: backend domain enums; mirrored once in frontend contracts.
+- OCR and publication status values: backend domain enums; mirrored once in frontend contracts. Do not add a replacement review/readiness enum.
 - Public ID generation: one backend ID helper.
 - UTC creation/serialization: one backend time helper.
 - Normalized-to-pixel conversion: one tested backend function; frontend only produces normalized values.
 - API base URL, JSON/error decoding, and endpoints: `apps/web/src/lib/api-client.ts`.
 - Provider raw-to-normalized conversion: the concrete OCR adapter.
 - Storage traversal protection and atomic writes: the storage adapter.
-- Future reuse eligibility: one domain rule, serialized by the backend.
+- Publication eligibility: one application service rule based on the current revision and complete lineage; it is not serialized as a boolean.
 
 ## Before Creating a Helper
 

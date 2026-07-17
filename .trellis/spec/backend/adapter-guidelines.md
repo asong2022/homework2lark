@@ -17,7 +17,7 @@ Every `OCRBlock` has `type`, `text`, `bbox`, `confidence`, `reading_order`, and 
 
 ## PaddleOCR Adapter
 
-- Dynamically import optional PaddleOCR dependencies so the API runs with the Fake Provider installed.
+- Dynamically import optional local PaddleOCR dependencies so the default hosted provider does not require PaddlePaddle.
 - Use PaddleOCR 3.x `PaddleOCR(...).predict(image)` behind the adapter.
 - On Windows, initialize PaddleOCR with `enable_mkldnn=False`. Paddle 3.x oneDNN/MKLDNN may crash while converting PIR attributes before inference; do not re-enable it without a real Windows regression test.
 - Convert `rec_texts`, `rec_scores`, and `rec_boxes`/`rec_polys` into ordered blocks.
@@ -41,15 +41,11 @@ Every `OCRBlock` has `type`, `text`, `bbox`, `confidence`, `reading_order`, and 
 - Map 401/403 or missing Token to `configuration_error`; 408/504 and total deadline to `timeout`; 429/5xx or remote `failed` to `unavailable`; malformed payloads to `invalid_response`.
 - `health_check()` is configuration-only and network-free. Hosted OCR requires outbound HTTPS and a valid Token, but no local PaddlePaddle, GPU, or model weights.
 
-## Fake Provider
-
-- Must return the same `OCRResult` shape as a real adapter.
-- Must be deterministic and require no network/model files.
-- Tests may inject a failing fake; production routes must not expose test-only failure switches.
-
 ## Provider Selection
 
-Use one configured Provider (`fake`, local `paddleocr`, or hosted `paddleocr_vl_api`) at process composition time. Do not add routing, fallback, voting, or parallel calls in Phase 1.
+Use one configured production Provider (local `paddleocr` or hosted `paddleocr_vl_api`) at process composition time. The default is hosted `paddleocr_vl_api`. Do not add routing, fallback, voting, or parallel calls in Phase 1.
+
+Tests inject a protocol-compatible `StubOCRProvider` from `tests/support` or an HTTP transport fixture. Test stubs must never be imported by production composition, selectable through environment variables, or described to teachers as OCR.
 
 The application calls the synchronous port through a daemon worker and waits at most `OCR_TIMEOUT_SECONDS`. On timeout, the committed run becomes `failed`/`ocr_timeout`; a late SDK result has no persistence callback and cannot overwrite that terminal run. Do not claim that a Python thread cancels the native inference itself.
 

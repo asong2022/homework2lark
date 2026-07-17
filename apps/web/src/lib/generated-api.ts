@@ -166,25 +166,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 把已审核题目发布到飞书 Base */
+        /** 把已整理题目发布到飞书 Base */
         post: operations["publish_problem_api_v1_problems__problem_id__publications_lark_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/problems/{problem_id}/review": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** 确认一个教师修订为已审核题目 */
-        post: operations["review_problem_api_v1_problems__problem_id__review_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -368,8 +351,6 @@ export interface components {
              * Format: date-time
              */
             createdAt: string;
-            /** Futurereuseeligible */
-            futureReuseEligible: boolean;
             history: components["schemas"]["HistoryResponse"];
             humanRevision: components["schemas"]["ProblemRevisionResponse"] | null;
             latestOcrRun: components["schemas"]["OCRRunResponse"] | null;
@@ -379,9 +360,7 @@ export interface components {
             problemId: string;
             publication: components["schemas"]["ProblemPublicationResponse"] | null;
             region: components["schemas"]["ProblemRegionResponse"];
-            review: components["schemas"]["ReviewResponse"];
             source: components["schemas"]["SourceAssetResponse"];
-            status: components["schemas"]["ReviewStatus"];
             /**
              * Updatedat
              * Format: date-time
@@ -636,42 +615,6 @@ export interface components {
          * @enum {string}
          */
         RegionSelectionSource: "manual" | "detected";
-        /** ReviewRequest */
-        ReviewRequest: {
-            /** Revisionid */
-            revisionId: string;
-        };
-        /** ReviewResponse */
-        ReviewResponse: {
-            /** Reviewedat */
-            reviewedAt: string | null;
-            status: components["schemas"]["ReviewStatus"];
-            /** Statushistory */
-            statusHistory: components["schemas"]["ReviewStatusEventResponse"][];
-        };
-        /**
-         * ReviewStatus
-         * @enum {string}
-         */
-        ReviewStatus: "draft" | "ocr_completed" | "needs_review" | "reviewed";
-        /** ReviewStatusEventResponse */
-        ReviewStatusEventResponse: {
-            /**
-             * Createdat
-             * Format: date-time
-             */
-            createdAt: string;
-            /** Eventid */
-            eventId: string;
-            fromStatus: components["schemas"]["ReviewStatus"] | null;
-            /** Ocrrunid */
-            ocrRunId: string | null;
-            /** Reason */
-            reason: string;
-            /** Revisionid */
-            revisionId: string | null;
-            toStatus: components["schemas"]["ReviewStatus"];
-        };
         /** RevisionCreateRequest */
         RevisionCreateRequest: {
             /** Basedonocrrunid */
@@ -1367,77 +1310,6 @@ export interface operations {
             };
             /** @description 外部识别服务运行超时。 */
             504: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-        };
-    };
-    review_problem_api_v1_problems__problem_id__review_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                problem_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ReviewRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NormalizedProblemResponse"];
-                };
-            };
-            /** @description HTTP 请求或上传表单格式错误。 */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description 找不到请求的来源材料或题目记录。 */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description 当前状态不允许执行这个操作。 */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description 请求内容没有通过校验。 */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description 系统内部或本地文件存储发生错误。 */
-            500: {
                 headers: {
                     [name: string]: unknown;
                 };

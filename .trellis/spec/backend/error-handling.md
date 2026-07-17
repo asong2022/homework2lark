@@ -35,9 +35,9 @@ The `code` is stable and testable. `message` is safe, teacher-facing Chinese. `d
 | Invalid/empty/out-of-bounds region | 422 | Source remains unchanged |
 | OCR unavailable | 503 | Failed `OCRRun`, source, region, and crop remain |
 | OCR timeout | 504 | Failed `OCRRun`, source, region, and crop remain |
-| Empty OCR text | 201 with warning | Successful run; an already-reviewed problem remains reviewed, otherwise it stays non-reviewed |
+| Empty OCR text | 201 with warning | Successful run; current revision pointer is unchanged |
 | Invalid revision or missing correction | 422 | Prior OCR/revisions remain |
-| Review without valid revision | 409 | Status remains non-reviewed |
+| Publication without valid current revision/lineage | 409 | Local evidence remains; no Base mutation |
 
 ## Retry Rules
 

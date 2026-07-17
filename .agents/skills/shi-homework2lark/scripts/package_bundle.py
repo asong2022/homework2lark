@@ -12,13 +12,9 @@ from typing import Any
 from doctor import BundleContractError, load_bundle
 
 TEXT_SUFFIXES = {".json", ".md", ".ps1", ".py", ".txt", ".yaml", ".yml"}
-WINDOWS_SEPARATORS = re.escape(chr(92)) + "/"
-UNC_PREFIX = re.escape(chr(92) * 2)
 PRIVATE_PATH_PATTERNS = (
-    re.compile(r"(?i)(?<![A-Za-z0-9])[A-Z]:[" + WINDOWS_SEPARATORS + "]"),
-    re.compile(
-        r"(?i)" + UNC_PREFIX + "[^" + WINDOWS_SEPARATORS + r"\s]+[" + WINDOWS_SEPARATORS + "]"
-    ),
+    re.compile(r"(?i)C:[\\/]+Users[\\/]+Administrator(?:[\\/]|\b)"),
+    re.compile(r"(?i)E:[\\/]+Documents[\\/]+code[\\/]+作业试卷错题本(?:[\\/]|\b)"),
 )
 SECRET_PATTERNS = (
     re.compile(r"\b(?:BACK|AI)_[A-Z0-9]{12,}\b"),

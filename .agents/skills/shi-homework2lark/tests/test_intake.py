@@ -101,8 +101,6 @@ class FakeGateway:
         self.calls.append(("get_problem", problem_id))
         return {
             "problemId": problem_id,
-            "status": "needs_review",
-            "futureReuseEligible": False,
             "source": {
                 "assetId": "asset_1",
                 "fileName": "worksheet.png",
@@ -128,7 +126,6 @@ class FakeGateway:
                 "rawResponse": {"private": True},
             },
             "humanRevision": None,
-            "review": {"status": "needs_review", "reviewedAt": None},
         }
 
     def run_ocr(self, region_id: str):
@@ -150,15 +147,6 @@ class FakeGateway:
             "revisionNumber": 1,
             "correctedText": payload["correctedText"],
             "correctionNote": payload["correctionNote"],
-        }
-
-    def review(self, problem_id: str, revision_id: str):
-        self.calls.append(("review", revision_id))
-        return {
-            "problemId": problem_id,
-            "status": "reviewed",
-            "futureReuseEligible": True,
-            "review": {"status": "reviewed", "reviewedAt": "2026-07-14T00:00:00+08:00"},
         }
 
     def publish(self, problem_id: str):
@@ -225,24 +213,18 @@ class IntakeServiceTest(unittest.TestCase):
         self.assertEqual(regions[0]["selectionSource"], "manual")
         self.assertEqual(regions[0]["bbox"], {"x": 0.0, "y": 0.0, "width": 1.0, "height": 1.0})
 
-    def test_fake_providers_are_rejected_outside_explicit_test_mode(self):
-        gateway = FakeGateway(detection_provider="fake", ocr_provider="fake")
+    def test_chat_rejects_test_detection_provider_before_upload(self):
+        gateway = FakeGateway(detection_provider="fake")
         service = intake.IntakeService(gateway)
         with (
             tempfile.TemporaryDirectory() as directory,
             self.assertRaises(intake.SkillError) as captured,
         ):
-            service.start(self.image(directory), "web")
+            service.start(self.image(directory), "chat")
         self.assertEqual(captured.exception.code, "fake_provider_disabled")
         self.assertNotIn("upload", [call[0] for call in gateway.calls])
 
-        gateway.calls.clear()
-        with self.assertRaises(intake.SkillError) as captured:
-            service.ocr("problem_1")
-        self.assertEqual(captured.exception.code, "fake_provider_disabled")
-        self.assertEqual([call[0] for call in gateway.calls], ["health"])
-
-    def test_revision_review_and_publish_follow_the_review_gate(self):
+    def test_revision_then_publish_has_no_second_review_step(self):
         gateway = FakeGateway()
         service = intake.IntakeService(gateway)
 
@@ -250,16 +232,14 @@ class IntakeServiceTest(unittest.TestCase):
             "problem_1",
             {"correctedText": "教师确认后的完整题目", "correctionNote": "修正单位"},
         )
-        reviewed = service.review("problem_1", revision["revisionId"])
         published = service.publish("problem_1")
 
         self.assertEqual(revision["revisionId"], "revision_1")
-        self.assertTrue(reviewed["futureReuseEligible"])
         self.assertEqual(published["status"], "succeeded")
         self.assertNotIn("questionRecordId", published)
         self.assertEqual(
             [call[0] for call in gateway.calls],
-            ["get_problem", "create_revision", "review", "publish"],
+            ["get_problem", "create_revision", "publish"],
         )
 
     def test_revision_strips_only_the_matching_outer_question_number(self):
@@ -337,7 +317,7 @@ class IntakeServiceTest(unittest.TestCase):
                 service.start(path, "web")
         self.assertEqual(captured.exception.code, "source_requires_page_images")
 
-    def test_metadata_payload_allows_only_reviewable_catalog_fields(self):
+    def test_metadata_payload_allows_only_catalog_fields(self):
         result = intake.validate_metadata_payload(
             {
                 "problemId": "problem_1",

@@ -271,24 +271,14 @@ class ProblemRevisionModel(Base):
     )
 
 
-class ReviewedProblemModel(Base):
-    __tablename__ = "reviewed_problems"
+class ProblemAssetModel(Base):
+    __tablename__ = "problem_assets"
     __table_args__ = (
         ForeignKeyConstraint(
             ["problem_region_id", "current_revision_id"],
             ["problem_revisions.problem_region_id", "problem_revisions.id"],
             ondelete="RESTRICT",
-            name="fk_reviewed_problems_region_current_revision",
-        ),
-        CheckConstraint(
-            "review_status IN ('draft', 'ocr_completed', 'needs_review', 'reviewed')",
-            name="review_status_valid",
-        ),
-        CheckConstraint(
-            "(review_status = 'reviewed' AND current_revision_id IS NOT NULL "
-            "AND reviewed_at IS NOT NULL) OR "
-            "(review_status != 'reviewed' AND reviewed_at IS NULL)",
-            name="reviewed_fields_consistent",
+            name="fk_problem_assets_region_current_revision",
         ),
     )
 
@@ -300,47 +290,10 @@ class ReviewedProblemModel(Base):
         unique=True,
     )
     current_revision_id: Mapped[str | None] = mapped_column(String(64))
-    review_status: Mapped[str] = mapped_column(String(32), nullable=False)
-    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=utc_now
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=utc_now
-    )
-
-
-class ReviewStatusEventModel(Base):
-    __tablename__ = "review_status_events"
-    __table_args__ = (
-        CheckConstraint(
-            "from_status IS NULL OR from_status IN "
-            "('draft', 'ocr_completed', 'needs_review', 'reviewed')",
-            name="from_status_valid",
-        ),
-        CheckConstraint(
-            "to_status IN ('draft', 'ocr_completed', 'needs_review', 'reviewed')",
-            name="to_status_valid",
-        ),
-    )
-
-    id: Mapped[str] = mapped_column(String(64), primary_key=True)
-    reviewed_problem_id: Mapped[str] = mapped_column(
-        String(64),
-        ForeignKey("reviewed_problems.id", ondelete="RESTRICT"),
-        nullable=False,
-        index=True,
-    )
-    from_status: Mapped[str | None] = mapped_column(String(32))
-    to_status: Mapped[str] = mapped_column(String(32), nullable=False)
-    reason: Mapped[str] = mapped_column(String(64), nullable=False)
-    ocr_run_id: Mapped[str | None] = mapped_column(
-        String(64), ForeignKey("ocr_runs.id", ondelete="RESTRICT"), index=True
-    )
-    revision_id: Mapped[str | None] = mapped_column(
-        String(64), ForeignKey("problem_revisions.id", ondelete="RESTRICT"), index=True
-    )
-    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=utc_now
     )
 
@@ -363,9 +316,9 @@ class ProblemPublicationModel(Base):
     )
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
-    reviewed_problem_id: Mapped[str] = mapped_column(
+    problem_id: Mapped[str] = mapped_column(
         String(64),
-        ForeignKey("reviewed_problems.id", ondelete="RESTRICT"),
+        ForeignKey("problem_assets.id", ondelete="RESTRICT"),
         nullable=False,
         unique=True,
     )

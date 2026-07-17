@@ -54,7 +54,6 @@ ERROR_STATUS_CODES: dict[str, int] = {
     "ocr_run_invalid": 422,
     "revision_not_found": 404,
     "revision_invalid": 422,
-    "review_revision_required": 409,
     "problem_not_publishable": 409,
     "ocr_provider_configuration_error": 503,
     "ocr_provider_unavailable": 503,

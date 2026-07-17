@@ -6,7 +6,7 @@
 - Pydantic v2 models validate every HTTP boundary and serialize camelCase API fields.
 - SQLAlchemy 2.x `select()` style and explicit session/transaction ownership.
 - Repository, `StorageAdapter`, and `OCRProvider` ports separate business rules from technology.
-- Dependency injection allows Fake Provider and temporary storage/database in tests.
+- Dependency injection allows test-only OCR stubs/transports and temporary storage/database in tests without exposing them in production configuration.
 - Public timestamps are timezone-aware UTC; JSON and raw Provider output are serializable primitives.
 - Image intake checks header dimensions against `MAX_IMAGE_PIXELS` before `ImageOps.exif_transpose()` or `load()`; a safety limit enforced after decode does not prevent decompression memory pressure.
 
@@ -16,7 +16,7 @@
 - Route functions containing SQL, image crop logic, or PaddleOCR parsing.
 - Mutable default arguments, naive timestamps, silent exception swallowing, or secrets in source.
 - Updating an existing OCR run/revision to represent a retry/edit.
-- Declaring a problem reusable from OCR success alone.
+- Publishing or reusing a problem from OCR success alone, without a valid current teacher revision.
 - Adding Roadmap infrastructure without an active proposal/task.
 
 ## Tests Required by Change Type
@@ -28,7 +28,7 @@
 - Lineage/normalized record change: full-flow round-trip assertion.
 - Bug fix: regression test that fails before the fix.
 
-The baseline suite must cover valid image upload, coordinate conversion/crop, successful and failed OCR, repeated OCR, repeated revisions, review gate rejection, reviewed eligibility, and normalized record retrieval.
+The baseline suite must cover valid image upload, coordinate conversion/crop, successful and failed OCR, repeated OCR, repeated revisions, current-revision publication rejection/success, migration preservation, and normalized record retrieval without review fields.
 
 ## Tooling
 

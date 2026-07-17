@@ -2,7 +2,7 @@
 
 ## Identity
 
-One logical elementary-math question becomes one `ReviewedProblem`. Text and visual representation are components of the same asset, not separate questions.
+One logical elementary-math question becomes one `ProblemAsset`. Text and visual representation are components of the same asset, not separate questions.
 
 ```text
 CompleteQuestion
@@ -34,9 +34,9 @@ OCR supplies text and layout evidence; it does not have final authority over vis
 4. Inspect both assets locally at readable scale before upload. Reject clipped labels, missing conditions, neighboring-question text and accidental blank output.
 5. After upload, download/read back both Base attachments and inspect them again. A successful API response alone is not visual verification.
 
-The complete crop and stem image have different jobs: `图片题目` is the audit-ready original question, while `题干图片` is the clean non-text fragment used for reuse and layout. Neither may be inferred only from PaddleOCR block boxes.
+The complete crop and stem image have different jobs: `图片题目` is the traceable original question, while `题干图片` is the clean non-text fragment used for reuse and layout. Neither may be inferred only from PaddleOCR block boxes.
 
-## Teacher Review View
+## Teacher Confirmation View
 
 Show together:
 
@@ -47,11 +47,11 @@ Show together:
 5. embedded visual description;
 6. optional student response and teacher diagnosis with source labels.
 
-Review confirms the whole asset. It does not certify OCR accuracy alone.
+Teacher confirmation applies to the whole asset, not OCR text alone. Saving the confirmed correction makes it current; no separate review status is persisted.
 
 ## Base Projection
 
-- one question row per ReviewedProblem;
+- one question row per ProblemAsset;
 - `题目名称` is a short teacher-readable summary, not a numeric index or stable key;
 - `题号` contains the outer printed question number;
 - `题干文本` contains corrected text and all textual choices, but never repeats the outer printed question label such as `12.` or `第12题`;
@@ -72,7 +72,7 @@ diagram block -> question row B
 Correct:
 
 ```text
-text + options + diagram -> one complete crop -> one reviewed question row
+text + options + diagram -> one complete crop -> one corrected question row
 ```
 
 Also correct:

@@ -18,7 +18,6 @@ from mistake_notebook_api.domain.entities import (
     ProblemRegion,
     ProblemRevision,
     RegionCandidate,
-    ReviewStatusEvent,
     SourceAsset,
 )
 from mistake_notebook_api.domain.enums import (
@@ -27,9 +26,7 @@ from mistake_notebook_api.domain.enums import (
     PublicationStatus,
     RegionDetectionRunStatus,
     RegionSelectionSource,
-    ReviewStatus,
 )
-from mistake_notebook_api.domain.review_rules import is_future_reuse_eligible
 
 
 class ApiModel(BaseModel):
@@ -87,10 +84,6 @@ class RevisionCreateRequest(ApiModel):
     based_on_ocr_run_id: str = Field(min_length=1, max_length=64)
     corrected_text: str = Field(min_length=1, max_length=50_000)
     correction_note: str | None = Field(default=None, max_length=2_000)
-
-
-class ReviewRequest(ApiModel):
-    revision_id: str = Field(min_length=1, max_length=64)
 
 
 class PixelBBoxResponse(ApiModel):
@@ -350,34 +343,6 @@ class ProblemRevisionResponse(ApiModel):
         )
 
 
-class ReviewStatusEventResponse(ApiModel):
-    event_id: str
-    from_status: ReviewStatus | None
-    to_status: ReviewStatus
-    reason: str
-    ocr_run_id: str | None
-    revision_id: str | None
-    created_at: datetime
-
-    @classmethod
-    def from_entity(cls, event: ReviewStatusEvent) -> Self:
-        return cls(
-            event_id=event.id,
-            from_status=event.from_status,
-            to_status=event.to_status,
-            reason=event.reason,
-            ocr_run_id=event.ocr_run_id,
-            revision_id=event.revision_id,
-            created_at=event.created_at,
-        )
-
-
-class ReviewResponse(ApiModel):
-    status: ReviewStatus
-    reviewed_at: datetime | None
-    status_history: list[ReviewStatusEventResponse]
-
-
 class LineageResponse(ApiModel):
     source_asset_id: str
     problem_region_id: str
@@ -438,14 +403,11 @@ class ProblemPublicationResponse(ApiModel):
 
 class NormalizedProblemResponse(ApiModel):
     problem_id: str
-    status: ReviewStatus
-    future_reuse_eligible: bool
     source: SourceAssetResponse
     region: ProblemRegionResponse
     ocr: OCRRunResponse | None
     latest_ocr_run: OCRRunResponse | None
     human_revision: ProblemRevisionResponse | None
-    review: ReviewResponse
     lineage: LineageResponse
     history: HistoryResponse
     publication: ProblemPublicationResponse | None
@@ -465,22 +427,11 @@ class NormalizedProblemResponse(ApiModel):
         )
         return cls(
             problem_id=view.problem.id,
-            status=view.problem.review_status,
-            future_reuse_eligible=is_future_reuse_eligible(
-                view.problem.review_status, view.problem.current_revision_id
-            ),
             source=SourceAssetResponse.from_entity(view.source),
             region=ProblemRegionResponse.from_entity(view.region),
             ocr=selected,
             latest_ocr_run=latest,
             human_revision=revision,
-            review=ReviewResponse(
-                status=view.problem.review_status,
-                reviewed_at=view.problem.reviewed_at,
-                status_history=[
-                    ReviewStatusEventResponse.from_entity(event) for event in view.status_events
-                ],
-            ),
             lineage=LineageResponse(
                 source_asset_id=view.source.id,
                 problem_region_id=view.region.id,

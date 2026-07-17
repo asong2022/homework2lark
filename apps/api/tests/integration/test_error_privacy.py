@@ -45,7 +45,7 @@ def test_storage_compensation_error_does_not_log_paths_or_exception_text(
     caplog: pytest.LogCaptureFixture,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    sensitive_path = "E:" + r"\private\student-name\worksheet.png"
+    sensitive_path = r"E:\private\student-name\worksheet.png"
 
     def fail_delete(_: str) -> None:
         raise AppError("storage_unavailable", f"cannot delete {sensitive_path}")

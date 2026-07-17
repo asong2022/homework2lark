@@ -82,15 +82,6 @@ function isEvidencePath(value: unknown): value is string {
   return isString(value) && value.startsWith("/api/v1/");
 }
 
-function isReviewStatus(value: unknown): boolean {
-  return (
-    value === "draft" ||
-    value === "ocr_completed" ||
-    value === "needs_review" ||
-    value === "reviewed"
-  );
-}
-
 function isPublicationStatus(value: unknown): boolean {
   return value === "pending" || value === "succeeded" || value === "failed";
 }
@@ -313,29 +304,6 @@ function isLineage(value: unknown): boolean {
   );
 }
 
-function isStatusEvent(value: unknown): boolean {
-  return (
-    isRecord(value) &&
-    isNonEmptyString(value.eventId) &&
-    (value.fromStatus === null || isReviewStatus(value.fromStatus)) &&
-    isReviewStatus(value.toStatus) &&
-    isNonEmptyString(value.reason) &&
-    isNullableString(value.ocrRunId) &&
-    isNullableString(value.revisionId) &&
-    isTimestamp(value.createdAt)
-  );
-}
-
-function isReview(value: unknown): boolean {
-  return (
-    isRecord(value) &&
-    isReviewStatus(value.status) &&
-    isNullableTimestamp(value.reviewedAt) &&
-    Array.isArray(value.statusHistory) &&
-    value.statusHistory.every(isStatusEvent)
-  );
-}
-
 function isHistory(value: unknown): boolean {
   return (
     isRecord(value) &&
@@ -370,11 +338,8 @@ function isProblemRecord(value: unknown): value is NormalizedProblemRecord {
   return (
     isRecord(value) &&
     isNonEmptyString(value.problemId) &&
-    isReviewStatus(value.status) &&
-    typeof value.futureReuseEligible === "boolean" &&
     isSourceAsset(value.source) &&
     isProblemRegion(value.region) &&
-    isReview(value.review) &&
     isLineage(value.lineage) &&
     isHistory(value.history) &&
     (value.ocr === null || isOCRRun(value.ocr)) &&
@@ -540,17 +505,6 @@ export async function createRevision(
     body: JSON.stringify(request),
   });
   return isRevision(payload) ? payload : invalidResponse();
-}
-
-export async function reviewProblem(
-  problemId: string,
-  revisionId: string,
-): Promise<NormalizedProblemRecord> {
-  const payload = await requestJson(`/problems/${encodeURIComponent(problemId)}/review`, {
-    method: "POST",
-    body: JSON.stringify({ revisionId }),
-  });
-  return isProblemRecord(payload) ? payload : invalidResponse();
 }
 
 export async function publishProblem(problemId: string): Promise<ProblemPublication> {

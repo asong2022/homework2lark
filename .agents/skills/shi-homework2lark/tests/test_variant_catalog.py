@@ -134,7 +134,6 @@ class MemoryCatalogGateway:
             "页码": "lookup",
             "错题来源": "lookup",
             "本地修订版本": "number",
-            "已审核时间": "datetime",
             "需人工处理": "checkbox",
             variant_catalog.REVERSE_LINK_FIELD: "link",
         }
@@ -148,7 +147,6 @@ class MemoryCatalogGateway:
                 "核心素养": ["运算能力", "推理意识"],
                 "设计意图": "理解部分积与数位意义。",
                 "本地修订版本": 1,
-                "已审核时间": "2026-07-15 09:00:00",
                 "需人工处理": False,
                 variant_catalog.REVERSE_LINK_FIELD: [],
             }

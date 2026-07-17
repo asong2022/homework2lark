@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000"
     log_level: str = "INFO"
 
-    ocr_provider: str = "fake"
+    ocr_provider: str = "paddleocr_vl_api"
     ocr_timeout_seconds: int = Field(default=120, gt=0)
     paddleocr_language: str = "ch"
     paddleocr_model_name: str = "PP-OCRv5_server_rec"
@@ -36,13 +36,13 @@ class Settings(BaseSettings):
     paddleocr_api_request_timeout_seconds: int = Field(default=30, gt=0)
     paddleocr_api_poll_interval_seconds: float = Field(default=5, gt=0)
 
-    region_detection_provider: str = "fake"
+    region_detection_provider: str = "manual"
     yescan_api_key_id: str | None = None
     yescan_api_key: SecretStr | None = None
     yescan_api_base_url: str = "https://scan-business.quark.cn/vision"
     yescan_timeout_seconds: int = Field(default=120, gt=0)
 
-    problem_publisher: str = "fake"
+    problem_publisher: str = "lark_cli"
     lark_base_title: str = "小学数学错题学习库"
     lark_cli_command: str = "lark-cli"
     lark_publish_timeout_seconds: int = Field(default=120, gt=0)

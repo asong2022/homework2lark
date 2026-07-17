@@ -2,7 +2,7 @@
 
 ## Assembly
 
-Only separate `变式题` rows with non-empty `题干文本`, a valid source relation and a non-empty `设计意图` are eligible. Answer analysis is optional and never blocks a student-facing practice item. Use `variant_catalog.py list-available`; old same-row fields are gone and `homework2lark.py list-reviewed` deliberately redirects callers to the independent catalog. Select explicit Base rows and never traverse the entire library by default.
+Only separate `变式题` rows with non-empty `题干文本`, a valid source relation and a non-empty `设计意图` are eligible. Answer analysis is optional and never blocks a student-facing practice item. Use `variant_catalog.py list-available`; old same-row fields and the legacy `list-reviewed` alias are gone. Select explicit Base rows and never traverse the entire library by default.
 
 Before creating a new row, follow [题生变式生成协议](variant-generation-prompt.md). The next generation uses the latest observed retry response and teacher judgment as targeted evidence, while keeping them distinct from the original problem and from unverified AI inference. A retry failure should change the next variation axis or trigger condition, not merely produce another set of substituted numbers.
 

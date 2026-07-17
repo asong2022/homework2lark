@@ -106,8 +106,6 @@ class Gateway(Protocol):
         self, region_id: str, payload: dict[str, JSONValue]
     ) -> dict[str, JSONValue]: ...
 
-    def review(self, problem_id: str, revision_id: str) -> dict[str, JSONValue]: ...
-
     def publish(self, problem_id: str) -> dict[str, JSONValue]: ...
 
     def download(self, path: str) -> bytes: ...
@@ -157,13 +155,6 @@ class HttpGateway:
             "POST",
             f"/regions/{urllib.parse.quote(region_id)}/revisions",
             payload=payload,
-        )
-
-    def review(self, problem_id: str, revision_id: str) -> dict[str, JSONValue]:
-        return self._json(
-            "POST",
-            f"/problems/{urllib.parse.quote(problem_id)}/review",
-            payload={"revisionId": revision_id},
         )
 
     def publish(self, problem_id: str) -> dict[str, JSONValue]:
@@ -233,11 +224,9 @@ class IntakeService:
         gateway: Gateway,
         *,
         web_url: str = DEFAULT_WEB_URL,
-        allow_fake: bool = False,
     ) -> None:
         self.gateway = gateway
         self.web_url = web_url.rstrip("/")
-        self.allow_fake = allow_fake
 
     def health(self) -> dict[str, JSONValue]:
         health = self.gateway.health()
@@ -250,21 +239,15 @@ class IntakeService:
             "database": _string(health.get("database"), "database"),
             "ocrProvider": ocr_provider,
             "regionDetectionProvider": detection_provider,
-            "realOcrReady": ocr_provider != "fake",
             "realChatDetectionReady": detection_provider != "fake",
         }
 
     def start(self, path: Path, mode: str) -> dict[str, JSONValue]:
         self._validate_image(path)
         health = self.health()
-        self._require_real_provider(
-            _string(health["ocrProvider"], "ocrProvider"),
-            "OCR",
-        )
         if mode == "chat":
-            self._require_real_provider(
-                _string(health["regionDetectionProvider"], "regionDetectionProvider"),
-                "对话候选检测",
+            self._require_real_detection_provider(
+                _string(health["regionDetectionProvider"], "regionDetectionProvider")
             )
         source = self.gateway.upload(path)
         asset_id = _string(source.get("assetId"), "assetId")
@@ -287,7 +270,7 @@ class IntakeService:
         if mode == "chat":
             detection = self.gateway.detect(asset_id)
             provider = _string(detection.get("provider"), "provider")
-            self._require_real_provider(provider, "对话候选检测")
+            self._require_real_detection_provider(provider)
             raw_candidates = _list(detection.get("candidates"), "candidates")
             candidates = [self._candidate(item) for item in raw_candidates]
             manifest["detection"] = {
@@ -350,16 +333,10 @@ class IntakeService:
         }
 
     def ocr(self, problem_id: str) -> dict[str, JSONValue]:
-        health = self.health()
-        self._require_real_provider(
-            _string(health["ocrProvider"], "ocrProvider"),
-            "OCR",
-        )
         record = self.gateway.get_problem(problem_id)
         region = _object(record.get("region"), "region")
         run = self.gateway.run_ocr(_string(region.get("regionId"), "regionId"))
         provider = _string(run.get("provider"), "provider")
-        self._require_real_provider(provider, "OCR")
         return {
             "problemId": problem_id,
             "runId": _string(run.get("runId"), "runId"),
@@ -412,19 +389,6 @@ class IntakeService:
             "correctionNote": _optional_string(revision.get("correctionNote")),
         }
 
-    def review(self, problem_id: str, revision_id: str | None) -> dict[str, JSONValue]:
-        if revision_id is None:
-            record = self.gateway.get_problem(problem_id)
-            revision = _object(record.get("humanRevision"), "humanRevision")
-            revision_id = _string(revision.get("revisionId"), "revisionId")
-        reviewed = self.gateway.review(problem_id, revision_id)
-        return {
-            "problemId": problem_id,
-            "status": _string(reviewed.get("status"), "status"),
-            "futureReuseEligible": reviewed.get("futureReuseEligible") is True,
-            "reviewedAt": _object(reviewed.get("review"), "review").get("reviewedAt"),
-        }
-
     def publish(self, problem_id: str) -> dict[str, JSONValue]:
         publication = self.gateway.publish(problem_id)
         return {
@@ -456,11 +420,12 @@ class IntakeService:
             "files": [source_name, crop_name],
         }
 
-    def _require_real_provider(self, provider: str, action: str) -> None:
-        if provider == "fake" and not self.allow_fake:
+    @staticmethod
+    def _require_real_detection_provider(provider: str) -> None:
+        if provider == "fake":
             raise SkillError(
                 "fake_provider_disabled",
-                f"{action} 当前配置为 Fake Provider；请启用真实 Provider 后重试。",
+                "对话候选检测当前配置为测试 Provider；请启用真实检测 Provider 后重试。",
             )
 
     @staticmethod
@@ -512,11 +477,8 @@ def _project_problem(record: dict[str, JSONValue]) -> dict[str, JSONValue]:
     region = _object(record.get("region"), "region")
     latest_ocr = record.get("latestOcrRun")
     revision = record.get("humanRevision")
-    review = _object(record.get("review"), "review")
     return {
         "problemId": _string(record.get("problemId"), "problemId"),
-        "status": _string(record.get("status"), "status"),
-        "futureReuseEligible": record.get("futureReuseEligible") is True,
         "source": {
             "assetId": _string(source.get("assetId"), "assetId"),
             "fileName": _string(source.get("fileName"), "fileName"),
@@ -531,10 +493,6 @@ def _project_problem(record: dict[str, JSONValue]) -> dict[str, JSONValue]:
         },
         "ocr": _project_ocr(latest_ocr),
         "humanRevision": _project_revision(revision),
-        "review": {
-            "status": review.get("status"),
-            "reviewedAt": review.get("reviewedAt"),
-        },
     }
 
 
@@ -792,7 +750,7 @@ def _start_summary(manifest: dict[str, JSONValue], output: str) -> dict[str, JSO
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Collect reviewed math mistakes into Lark Base")
+    parser = argparse.ArgumentParser(description="Collect corrected math problems into Lark Base")
     parser.add_argument(
         "--api-url",
         default=os.environ.get("SHI_HOMEWORK2LARK_API_URL", DEFAULT_API_URL),
@@ -800,11 +758,6 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--web-url",
         default=os.environ.get("SHI_HOMEWORK2LARK_WEB_URL", DEFAULT_WEB_URL),
-    )
-    parser.add_argument(
-        "--allow-fake",
-        action="store_true",
-        default=os.environ.get("SHI_HOMEWORK2LARK_ALLOW_FAKE") == "1",
     )
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("health")
@@ -830,10 +783,6 @@ def build_parser() -> argparse.ArgumentParser:
     revision.add_argument("--problem-id", required=True)
     revision.add_argument("--input", required=True)
 
-    review = commands.add_parser("review")
-    review.add_argument("--problem-id", required=True)
-    review.add_argument("--revision-id")
-
     download = commands.add_parser("download-evidence")
     download.add_argument("--problem-id", required=True)
     download.add_argument("--output-dir", required=True)
@@ -842,9 +791,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    service = IntakeService(
-        HttpGateway(args.api_url), web_url=args.web_url, allow_fake=args.allow_fake
-    )
+    service = IntakeService(HttpGateway(args.api_url), web_url=args.web_url)
     try:
         if args.command == "health":
             result: JSONValue = service.health()
@@ -869,8 +816,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             result = service.get(args.problem_id)
         elif args.command == "save-revision":
             result = service.save_revision(args.problem_id, _load_json(args.input))
-        elif args.command == "review":
-            result = service.review(args.problem_id, args.revision_id)
         elif args.command == "publish":
             result = service.publish(args.problem_id)
         elif args.command == "download-evidence":

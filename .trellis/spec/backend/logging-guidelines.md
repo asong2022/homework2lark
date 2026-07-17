@@ -7,7 +7,7 @@ Use Python `logging` with structured key/value context. Every request log includ
 ## Levels
 
 - `DEBUG`: local diagnostic decisions without user content; disabled by default.
-- `INFO`: upload metadata summary, region creation, OCR/revision/review state changes, and request completion.
+- `INFO`: upload metadata summary, region creation, OCR/revision/publication changes, and request completion.
 - `WARNING`: expected invalid input, empty OCR output, or recoverable Provider failure.
 - `ERROR`: unexpected infrastructure/application failure with request ID and exception class only. Do not include exception messages or traceback text at this boundary because SQL/SDK exceptions can embed private parameters.
 

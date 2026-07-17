@@ -11,7 +11,6 @@ _ALLOWED_PREFIXES = {
     "revision",
     "problem",
     "publication",
-    "review_event",
     "req",
 }
 

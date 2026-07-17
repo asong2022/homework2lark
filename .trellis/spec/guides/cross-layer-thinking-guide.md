@@ -25,7 +25,7 @@ For every changed field, trace both write and read directions through this whole
 | Vendor result → OCR contract | OCR adapter | Preserve raw JSON-safe output and expose normalized text/blocks |
 | Database rows → public record | normalized-record assembler | Frontend never infers joins or current versions |
 | Error → teacher message | API error mapper | Stable code and safe Chinese message; no vendor/path/secret leakage |
-| Review status → eligibility | domain rule | Only `reviewed` plus valid current revision is reusable |
+| Current revision → publication eligibility | publication service | Require a same-region non-empty revision plus complete source/crop/OCR lineage |
 
 ## Failure Walkthrough
 
@@ -42,7 +42,7 @@ Examples:
 - Crop failure: keep source; create no region/problem row; delete only a newly partial crop.
 - OCR failure: keep source, region, crop, and a failed OCR attempt; allow another run.
 - Revision failure: keep all OCR runs and earlier revisions.
-- Review rejection: keep current revision/status and explain the missing/invalid revision.
+- Publication rejection: keep the current revision and explain the missing revision or lineage.
 
 ## Contract Change Checklist
 

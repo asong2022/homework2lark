@@ -89,12 +89,12 @@ class OCRBlock:
 - 使用 PaddleOCR 3.x 本地推理接口：`PaddleOCR(...).predict(image)`。
 - 初始化关闭当前流程不需要的文档方向分类、去扭曲和文本行方向流水线，除非配置明确启用。
 - 对每页/图结果读取 `rec_texts`、`rec_scores`、`rec_boxes` 或 `rec_polys`，转换为 `OCRBlock`。
-- Adapter 动态导入 `paddleocr`/`paddle`，使 Fake 模式无需安装重型依赖。
+- Adapter 动态导入 `paddleocr`/`paddle`，使默认托管 API 路径无需安装本地重型依赖。
 - 模型实例在进程内惰性创建并复用；并发和进程模型在未来性能任务中再评估。
 
 ### 6.2 当前运行条件
 
-- 项目 Python 固定 3.11；真实运行通过 `uv sync --extra paddleocr` 安装 PaddlePaddle 3.x 与 PaddleOCR 3.x。Fake 环境可以不安装该 extra。
+- 项目 Python 固定 3.11；本地运行通过 `uv sync --extra paddleocr` 安装 PaddlePaddle 3.x 与 PaddleOCR 3.x。默认托管 API 路径不安装该 extra。
 - 首次真实运行需要下载检测/识别模型的网络和足够磁盘/内存；后续从用户 Paddle 模型缓存加载。
 - Windows 下强制 `enable_mkldnn=False`，规避 Paddle 3.x oneDNN/PIR 属性转换崩溃；重新开启前必须增加 Windows 真实回归测试。
 - PaddleOCR 3.7 的结果对象虽实现 Mapping，但可能包含不可 JSON 序列化的可视化 `Font` 对象；Adapter 必须优先调用结果的 `.json()`/`to_dict()` 再做通用 JSON-safe 转换。
@@ -122,13 +122,12 @@ class OCRBlock:
 - 启用时会把教师已确认的题目裁图发送给 PaddleOCR/AI Studio 官方云服务；不发 SourceAsset ID、本地 storage key、教师元数据或学生身份字段。
 - 已使用用户授权的 `image2.png` 通过实际 API 纵向流程验证：Provider/model 正确，文本非空，raw 证据持久化，source/crop 仍可读。
 
-## 8. FakeOCRProvider
+## 8. 测试边界
 
-- 默认返回固定、可辨识的中文小学数学题文本、blocks、raw response 和确定性置信度。
-- 不访问网络或磁盘模型。
-- 与真实 Provider 运行同一合约测试。
-- 失败/超时 Fake 只通过测试依赖注入使用，生产 HTTP API 不接受“模拟失败”开关。
-- 默认开发配置为 `OCR_PROVIDER=fake`，让教师可先验证整个资料闭环，再安装真实 OCR。
+- 生产包只暴露 `paddleocr_vl_api` 与本地 `paddleocr` 两个 OCR 配置值，不包含伪造识别结果的 Provider。
+- 普通单元/集成测试从 `tests/support` 注入最小确定性 `StubOCRProvider`，用于验证应用层追加历史、超时和错误持久化；它不在生产源码、环境变量或健康检查中出现。
+- PaddleOCR-VL HTTP 提交、轮询和 JSONL 标准化通过可注入 transport 做离线合约测试。
+- 真实云端冒烟测试只有在显式设置 `RUN_LIVE_PADDLEOCR=1`、`PADDLEOCR_ACCESS_TOKEN` 和 `PADDLEOCR_LIVE_IMAGE` 时运行。公开 CI 不读取私人 Token，也不把网络或额度稳定性当作代码正确性的前提。
 
 ## 9. 错误模型
 
@@ -145,7 +144,7 @@ class OCRBlock:
 ## 10. Provider 配置
 
 ```env
-OCR_PROVIDER=fake
+OCR_PROVIDER=paddleocr_vl_api
 OCR_TIMEOUT_SECONDS=300
 
 # 官方托管 PaddleOCR-VL-1.6
@@ -160,7 +159,7 @@ PADDLEOCR_LANGUAGE=ch
 PADDLEOCR_MODEL_NAME=PP-OCRv5_server_rec
 ```
 
-只有一个 Provider 在应用组合阶段被选中。未知名称导致启动/请求配置错误，不自动回退到 Fake，避免教师误以为正在使用真实识别。
+只有一个 Provider 在应用组合阶段被选中。未知名称或缺少托管 Token 会返回明确配置错误，不自动切换 Provider，避免教师误以为正在使用真实识别。
 
 ## 11. 未来兼容
 
@@ -171,4 +170,4 @@ PADDLEOCR_MODEL_NAME=PP-OCRv5_server_rec
 
 ## 12. 未来图像端口概念
 
-`ImageGenerationProvider` 与 `DiagramProvider` 只作为 Roadmap 概念。它们未来也必须返回原始响应、派生图像 lineage 和教师审核状态；Phase 1 不创建接口或空实现。
+`ImageGenerationProvider` 与 `DiagramProvider` 只作为 Roadmap 概念。它们未来也必须返回原始响应、派生图像 lineage 和教师确认结果；Phase 1 不创建接口或空实现。

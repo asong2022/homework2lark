@@ -31,7 +31,7 @@ Read, in order:
 - Run `npm run typecheck --workspace @mistake-notebook/web`.
 - Run `npm run test --workspace @mistake-notebook/web`.
 - Run `npm run build --workspace @mistake-notebook/web`.
-- Run the Playwright framing flow with the API configured to `fake`.
+- Run the Playwright framing flow with hosted OCR configured but unused; the Web path must not make an OCR request.
 - Verify keyboard focus, visible labels, responsive layouts, detection recovery, and the AI handoff result.
 
 Documentation under `.trellis/spec/` is English; teacher-facing UI copy is concise Chinese.

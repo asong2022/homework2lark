@@ -1,22 +1,22 @@
 {
   "schemaVersion": "shi-skill-bundle-v1",
   "name": "shi-homework2lark",
-  "version": "2.1.2",
+  "version": "2.3.0",
   "entrySkill": "shi-homework2lark",
   "architecture": "single-entry-progressive-disclosure",
   "description": "小学数学错题收集、错情分组、飞书 Base、题生变式、精准练习与再练反馈整包。",
   "dependencies": {
     "requiredCommands": [
       "python",
+      "uv",
       "lark-cli"
     ],
     "requiredPythonModules": [
       "docx"
     ],
-    "requiredSkills": [
-      "lark-base"
-    ],
+    "requiredSkills": [],
     "recommendedSkills": [
+      "lark-base",
       "shi-shared",
       "shi-ocr"
     ],
@@ -59,10 +59,9 @@
         "references/staged-intake.md",
         "references/base-contract.md"
       ],
-      "requiredSkills": [
-        "lark-base"
-      ],
+      "requiredSkills": [],
       "recommendedSkills": [
+        "lark-base",
         "shi-ocr"
       ],
       "optionalSkills": [
@@ -83,10 +82,10 @@
         "references/variant-generation-prompt.md",
         "references/diagram-contract.md"
       ],
-      "requiredSkills": [
+      "requiredSkills": [],
+      "recommendedSkills": [
         "lark-base"
       ],
-      "recommendedSkills": [],
       "optionalSkills": [
         "wumu-jihe-html"
       ],
@@ -104,10 +103,10 @@
         "references/practice-sheet-template.md",
         "references/personal-practice.md"
       ],
-      "requiredSkills": [
+      "requiredSkills": [],
+      "recommendedSkills": [
         "lark-base"
       ],
-      "recommendedSkills": [],
       "optionalSkills": [],
       "requiredCommands": [
         "python",
@@ -125,10 +124,9 @@
         "references/retry-feedback.md",
         "references/base-contract.md"
       ],
-      "requiredSkills": [
-        "lark-base"
-      ],
+      "requiredSkills": [],
       "recommendedSkills": [
+        "lark-base",
         "shi-ocr"
       ],
       "optionalSkills": [
@@ -149,19 +147,25 @@
       "agents/openai.yaml",
       "evals/evals.json",
       "references/orchestration-and-handoffs.md",
+      "references/setup-guide.md",
       "references/collection-modes.md",
       "references/retry-feedback.md",
       "scripts/workflow.py",
       "scripts/retry_batch.py",
       "scripts/doctor.py",
+      "scripts/onboarding.py",
       "scripts/package_bundle.py",
-      "scripts/publish_bundle.py"
+      "scripts/publish_bundle.py",
+      "templates/homework2lark-empty.base",
+      "templates/base-schema.json",
+      "templates/base-views.json"
     ],
     "includeDirectories": [
       "agents",
       "evals",
       "references",
       "scripts",
+      "templates",
       "tests"
     ],
     "excludeNames": [

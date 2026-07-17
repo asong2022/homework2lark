@@ -2,16 +2,16 @@
 
 ## Purpose
 
-The local mistake notebook keeps immutable source, OCR, revision, and review evidence. The Feishu Base `小学数学错题学习库` is the teacher and Agent reuse catalog. This Skill reads reviewed originals from `错题题目`; every generated variant is a separate row in `变式题` linked back to exactly one original. Legacy same-row variant fields have been migrated and deleted.
+The local mistake notebook keeps immutable source, OCR, and revision evidence. The Feishu Base `小学数学错题学习库` is the teacher and Agent reuse catalog. This Skill reads corrected originals from `错题题目`; every generated variant is a separate row in `变式题` linked back to exactly one original. Legacy same-row variant fields have been migrated and deleted.
 
 ## Required Source Fields
 
 | Field | Type | Rule |
 |---|---|---|
-| `系统题目ID` | text | Stable local `ReviewedProblem.id`; hidden exact business key. Legacy alias: `题目唯一ID` |
+| `系统题目ID` | text | Stable local `ProblemAsset.id`; hidden exact business key. Legacy alias: `题目唯一ID` |
 | `题目名称` | text | Teacher-readable one-sentence primary name; never used as the sync key. A numeric/`待整理题目·…` placeholder may be replaced by AI enrichment |
 | `收录序号` | auto_number | Read-only stable insertion order. Existing and future rows are numbered automatically; sort ascending to restore collection order |
-| `图片题目` | attachment | Original reviewed crop; optional only when text is complete |
+| `图片题目` | attachment | Original teacher-selected crop; optional only when text is complete |
 | `题干文本` | text | Teacher-corrected original text, including textual choices; excludes the outer printed label stored in `题号` |
 | `题干图片` | attachment | Optional non-text visual inside the question: table, diagram, number line, chart or image choices; never a second question |
 | `标准答案` | text | Optional context |
@@ -23,8 +23,7 @@ The local mistake notebook keeps immutable source, OCR, revision, and review evi
 | `年级` | lookup | Read-only grade selected from `错题页面.年级` through `所属错题页面` |
 | `页码` | lookup | Read-only value selected from `错题页面.页码` through `所属错题页面` |
 | `错题来源` | lookup | Read-only value selected from `错题页面.错题来源` through `所属错题页面` |
-| `本地修订版本` | number | Positive integer identifying the reviewed local revision projected by the publisher |
-| `已审核时间` | datetime | Non-empty timestamp projected from the local reviewed problem |
+| `本地修订版本` | number | Positive integer identifying the current corrected revision projected by the publisher |
 | `需人工处理` | checkbox | The single Base exception flag. Normal catalog and generated content use `false`; only incomplete, contradictory or unresolved records use `true` |
 | `典型错例` | lookup | Read-only raw-value lookup of all linked `错题记录.典型错例` values |
 | `错误表现` | lookup | Read-only raw-value lookup of all linked `错题记录.错误表现` values |
@@ -41,15 +40,15 @@ After an original is published, the Agent may fill these empty catalog fields th
 
 Catalog enrichment never writes `典型错例`, `错误表现`, or `错误原因`. Without teacher-confirmed grouped evidence, the two lookups remain empty; the Skill must not fabricate a student response merely to populate them.
 
-`错题来源` is restricted to `教材 / 作业本 / 试卷 / 其他`; `年级` is restricted to `一年级 / 二年级 / 三年级 / 四年级 / 五年级 / 六年级`. `题型` is restricted to `选择题 / 填空题 / 判断题 / 计算题 / 解答题 / 操作题 / 应用题 / 开放题 / 其他`. `核心素养` is restricted to `数感 / 量感 / 符号意识 / 运算能力 / 几何直观 / 空间观念 / 推理意识 / 数据意识 / 模型意识 / 应用意识 / 创新意识`. The Skill must not create new select options as a side effect of enrichment. Question-side `时间`, `年级`, `页码`, `错题来源` and all downstream `核心素养` fields are calculated lookups and must never be included in a downstream patch. Page/record `备注` remains an optional teacher escape hatch and is never AI-filled by default.
+`错题来源` is restricted to `教材 / 作业本 / 试卷 / 其他`; `年级` is restricted to `一年级 / 二年级 / 三年级 / 四年级 / 五年级 / 六年级`. `题型` is restricted to `选择题 / 填空题 / 判断题 / 计算题 / 解答题 / 操作题 / 应用题 / 开放题 / 其他`. `核心素养` is restricted to `数感 / 量感 / 符号意识 / 运算能力 / 几何直观 / 空间观念 / 推理意识 / 数据意识 / 模型意识 / 应用意识 / 创新意识`. The Skill must not create new select options as a side effect of enrichment. Question-side `时间`, `年级`, `页码`, `错题来源` and all downstream `核心素养` fields are calculated lookups and must never be included in a downstream patch. The public template omits generic `备注` columns; essential teacher facts belong in the specific teaching field they describe.
 
 `preview` is read-only and exposes field names rather than cell contents or remote IDs. `apply` rejects the entire plan when any proposed field differs from a non-empty Base value. Empty values are filled and equal values are idempotent. A normal successful enrichment is immediately usable and does not create another review state. There is no broad overwrite flag. The Agent must independently solve before proposing `标准答案`, and may leave semantically inapplicable fields empty.
 
-The local reviewed original remains the quality gate before Base publication. The publisher rejects an unreviewed problem before any Base write, then projects its stable problem ID, reviewed revision number and reviewed time. Inside Base, normal catalog enrichment and complete variants do not require repeated approval columns. Eligibility depends on that local review evidence, actual content completeness and the single `需人工处理` exception flag. The redundant Base fields `审核状态`, `是否待复核`, `AI整理状态`, and `举一反三状态` are not part of the schema.
+The teacher-confirmed current revision remains the content gate before Base publication. The publisher rejects a problem without a valid current revision before any Base write, then projects its stable problem ID and revision number. There is no local or Base review status and no reviewed timestamp. Eligibility depends on actual content completeness and the single `需人工处理` exception flag. The redundant Base fields `审核状态`, `是否待复核`, `AI整理状态`, and `举一反三状态` are not part of the schema.
 
 ## Variant Catalog
 
-`错题题目` uses the reverse relation `关联变式题`; no separate selection checkbox is stored. A reviewed original with an empty relation is a candidate for new variants. Canonical generated assets live in `变式题`:
+`错题题目` uses the reverse relation `关联变式题`; no separate selection checkbox is stored. A corrected original with an empty relation is a candidate for new variants. Canonical generated assets live in `变式题`:
 
 The Base contract owns storage and idempotency; pedagogical generation quality is owned by [题生变式生成协议](variant-generation-prompt.md). The Agent completes that fact card, variation design and independent quality gate before creating the JSON accepted by `variant_catalog.py`.
 
@@ -85,7 +84,7 @@ Repeated retry events remain append-only local JSONL entries keyed by `系统题
 The approved third table is `错题记录`. It is a teacher-facing grouped projection, not one row per student:
 
 ```text
-one row = one reviewed question + one assignment date
+one row = one corrected question + one assignment date
         + one shared error cause + multiple selected students
 ```
 
@@ -108,7 +107,6 @@ Required schema:
 | `再练反馈` | text | Current group feedback summary |
 | `最近再练时间` | datetime | Latest group retry time |
 | `系统记录ID` | text | Agent idempotency key without plaintext student names |
-| `备注` | text | Optional teacher note; AI leaves it empty unless the teacher provides an essential note |
 
 `错误分类` is restricted to `审题与信息提取 / 概念理解 / 方法与策略 / 运算与计算 / 图形与表征 / 推理与表达 / 作答规范 / 其他/待判断`. AI clusters are proposals only. Before the external write, the teacher sees the linked question, observed real-response summary, suggested cause, category, group count, selected-student list and evidence source. Confirmation authorizes the write itself; no second persistent `审核状态` column is created afterward. Rejected candidates are not written.
 
@@ -142,7 +140,6 @@ On Windows, private JSON containing Chinese student work is read directly as UTF
 | `错题题目` | `需人工处理` | `需人工处理=true` only |
 | `错题记录` | `错误分组` / `共性问题` / `按学生查询` / `再练跟踪` | Group causes, rank impact, filter by student and follow unresolved mastery respectively |
 | `变式题` | `全部变式题` | Teacher-readable catalog, `收录序号` ascending |
-| `变式题` | `可组卷` | `题干文本` non-empty |
 
 Filters may return field IDs or names. Resolve IDs through the current field list before comparison; never hardcode them.
 

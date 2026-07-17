@@ -31,14 +31,13 @@ def create_app(*, settings: Settings | None = None, runtime: Runtime | None = No
         version="0.1.0",
         description=(
             "这是提供给 AI 与开发者的配置接口，不是教师日常操作页面。"
-            "当前支持：上传单页图片、教师框题、OCR、人工修订、审核、来源追溯和发布飞书 Base。"
+            "当前支持：上传单页图片、教师框题、OCR、人工修订、来源追溯和发布飞书 Base。"
         ),
         openapi_tags=[
             {"name": "来源图片", "description": "保存和读取不可覆盖的原始作业图片。"},
             {"name": "题目录入", "description": "保存教师确认的题目区域与裁图。"},
             {"name": "OCR 与修订", "description": "保留机器识别证据并追加教师修订版本。"},
-            {"name": "题目审核", "description": "读取来源页题目并执行教师审核门槛。"},
-            {"name": "飞书 Base", "description": "显式发布已经审核的题目资产。"},
+            {"name": "飞书 Base", "description": "显式发布教师确认修订后的题目资产。"},
             {"name": "系统状态", "description": "供 AI 或开发者诊断本地服务。"},
         ],
     )

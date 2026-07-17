@@ -8,13 +8,12 @@ from sqlalchemy.orm import Session
 
 from mistake_notebook_api.domain.entities import (
     OCRRun,
+    ProblemAsset,
     ProblemPublication,
     ProblemRegion,
     ProblemRevision,
     RegionCandidate,
     RegionDetectionRun,
-    ReviewedProblem,
-    ReviewStatusEvent,
     SourceAsset,
 )
 from mistake_notebook_api.domain.enums import (
@@ -22,20 +21,18 @@ from mistake_notebook_api.domain.enums import (
     PublicationStatus,
     RegionDetectionRunStatus,
     RegionSelectionSource,
-    ReviewStatus,
 )
 from mistake_notebook_api.domain.errors import JsonValue
 from mistake_notebook_api.domain.time import ensure_utc
 from mistake_notebook_api.infrastructure.database.models import (
     OCRRunModel,
+    ProblemAssetModel,
     ProblemPublicationModel,
     ProblemRegionCandidateSourceModel,
     ProblemRegionModel,
     ProblemRevisionModel,
     RegionCandidateModel,
     RegionDetectionRunModel,
-    ReviewedProblemModel,
-    ReviewStatusEventModel,
     SourceAssetModel,
 )
 
@@ -145,35 +142,20 @@ def _revision(model: ProblemRevisionModel) -> ProblemRevision:
     )
 
 
-def _problem(model: ReviewedProblemModel) -> ReviewedProblem:
-    return ReviewedProblem(
+def _problem(model: ProblemAssetModel) -> ProblemAsset:
+    return ProblemAsset(
         id=model.id,
         problem_region_id=model.problem_region_id,
         current_revision_id=model.current_revision_id,
-        review_status=ReviewStatus(model.review_status),
-        reviewed_at=ensure_utc(model.reviewed_at),
         created_at=_required_utc(model.created_at),
         updated_at=_required_utc(model.updated_at),
-    )
-
-
-def _event(model: ReviewStatusEventModel) -> ReviewStatusEvent:
-    return ReviewStatusEvent(
-        id=model.id,
-        reviewed_problem_id=model.reviewed_problem_id,
-        from_status=ReviewStatus(model.from_status) if model.from_status else None,
-        to_status=ReviewStatus(model.to_status),
-        reason=model.reason,
-        ocr_run_id=model.ocr_run_id,
-        revision_id=model.revision_id,
-        created_at=_required_utc(model.created_at),
     )
 
 
 def _publication(model: ProblemPublicationModel) -> ProblemPublication:
     return ProblemPublication(
         id=model.id,
-        reviewed_problem_id=model.reviewed_problem_id,
+        problem_id=model.problem_id,
         source_asset_id=model.source_asset_id,
         publisher=model.publisher,
         status=PublicationStatus(model.status),
@@ -294,37 +276,35 @@ class SQLAlchemyProblemRepository:
             return None
         return self.get_region(model.id)
 
-    def add_problem(self, problem: ReviewedProblem) -> None:
-        values = asdict(problem)
-        values["review_status"] = problem.review_status.value
-        self._session.add(ReviewedProblemModel(**values))
+    def add_problem(self, problem: ProblemAsset) -> None:
+        self._session.add(ProblemAssetModel(**asdict(problem)))
         # These aggregate rows have no ORM relationships by design; flush the
         # region/problem pair before an event references the problem.
         self._session.flush()
 
-    def get_problem(self, problem_id: str) -> ReviewedProblem | None:
-        model = self._session.get(ReviewedProblemModel, problem_id)
+    def get_problem(self, problem_id: str) -> ProblemAsset | None:
+        model = self._session.get(ProblemAssetModel, problem_id)
         return _problem(model) if model else None
 
-    def get_problem_by_region(self, region_id: str) -> ReviewedProblem | None:
+    def get_problem_by_region(self, region_id: str) -> ProblemAsset | None:
         model = self._session.scalar(
-            select(ReviewedProblemModel).where(ReviewedProblemModel.problem_region_id == region_id)
+            select(ProblemAssetModel).where(ProblemAssetModel.problem_region_id == region_id)
         )
         return _problem(model) if model else None
 
     def list_problem_ids_by_asset(self, asset_id: str) -> list[str]:
         return list(
             self._session.scalars(
-                select(ReviewedProblemModel.id)
+                select(ProblemAssetModel.id)
                 .join(
                     ProblemRegionModel,
-                    ProblemRegionModel.id == ReviewedProblemModel.problem_region_id,
+                    ProblemRegionModel.id == ProblemAssetModel.problem_region_id,
                 )
                 .where(ProblemRegionModel.source_asset_id == asset_id)
                 .order_by(
                     ProblemRegionModel.y,
                     ProblemRegionModel.x,
-                    ReviewedProblemModel.id,
+                    ProblemAssetModel.id,
                 )
             ).all()
         )
@@ -334,16 +314,12 @@ class SQLAlchemyProblemRepository:
         problem_id: str,
         *,
         current_revision_id: str | None,
-        review_status: ReviewStatus,
-        reviewed_at: datetime | None,
         updated_at: datetime,
-    ) -> ReviewedProblem:
-        model = self._session.get(ReviewedProblemModel, problem_id)
+    ) -> ProblemAsset:
+        model = self._session.get(ProblemAssetModel, problem_id)
         if model is None:
             raise LookupError(problem_id)
         model.current_revision_id = current_revision_id
-        model.review_status = review_status.value
-        model.reviewed_at = reviewed_at
         model.updated_at = updated_at
         self._session.flush()
         return _problem(model)
@@ -427,20 +403,6 @@ class SQLAlchemyProblemRepository:
         ).all()
         return [_revision(model) for model in models]
 
-    def add_status_event(self, event: ReviewStatusEvent) -> None:
-        values = asdict(event)
-        values["from_status"] = event.from_status.value if event.from_status else None
-        values["to_status"] = event.to_status.value
-        self._session.add(ReviewStatusEventModel(**values))
-
-    def list_status_events(self, problem_id: str) -> list[ReviewStatusEvent]:
-        models = self._session.scalars(
-            select(ReviewStatusEventModel)
-            .where(ReviewStatusEventModel.reviewed_problem_id == problem_id)
-            .order_by(ReviewStatusEventModel.created_at, ReviewStatusEventModel.id)
-        ).all()
-        return [_event(model) for model in models]
-
 
 class SQLAlchemyProblemPublicationRepository:
     def __init__(self, session: Session) -> None:
@@ -453,9 +415,7 @@ class SQLAlchemyProblemPublicationRepository:
 
     def get_by_problem(self, problem_id: str) -> ProblemPublication | None:
         model = self._session.scalar(
-            select(ProblemPublicationModel).where(
-                ProblemPublicationModel.reviewed_problem_id == problem_id
-            )
+            select(ProblemPublicationModel).where(ProblemPublicationModel.problem_id == problem_id)
         )
         return _publication(model) if model else None
 
@@ -463,6 +423,7 @@ class SQLAlchemyProblemPublicationRepository:
         model = self._session.get(ProblemPublicationModel, publication.id)
         if model is None:
             raise LookupError(publication.id)
+        model.problem_id = publication.problem_id
         model.source_asset_id = publication.source_asset_id
         model.publisher = publication.publisher
         model.status = publication.status.value

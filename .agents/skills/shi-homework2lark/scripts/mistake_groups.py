@@ -73,7 +73,6 @@ EXPECTED_FIELD_TYPES = {
     "再练反馈": "text",
     "最近再练时间": "datetime",
     "系统记录ID": "text",
-    "备注": "text",
 }
 
 

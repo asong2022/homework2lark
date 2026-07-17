@@ -11,7 +11,6 @@ from tests.conftest import image_bytes
 from mistake_notebook_api.domain.errors import OCRProviderError
 from mistake_notebook_api.domain.ocr import OCRInput
 from mistake_notebook_api.infrastructure.ocr import paddle as paddle_module
-from mistake_notebook_api.infrastructure.ocr.fake import FakeOCRProvider
 from mistake_notebook_api.infrastructure.ocr.paddle import (
     PaddleOCRProvider,
     normalize_paddle_results,
@@ -36,22 +35,6 @@ class PaddleResultLike(dict[str, object]):
                 "rec_boxes": [[1, 2, 50, 20]],
             }
         }
-
-
-def test_fake_provider_fulfills_contract() -> None:
-    provider = FakeOCRProvider()
-    result = provider.recognize(
-        OCRInput(
-            source_asset_id="asset_1",
-            problem_region_id="region_1",
-            image_bytes=image_bytes(),
-        )
-    )
-    assert result.provider == provider.name
-    assert result.text
-    assert result.raw_response
-    assert result.processing_time_ms >= 0
-    assert result.blocks[0].reading_order == 0
 
 
 def test_paddle_result_is_normalized_and_json_safe() -> None:

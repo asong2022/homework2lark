@@ -23,4 +23,4 @@
 
 ## Trellis
 
-编码与审查规则位于 `.trellis/spec/`。公开发行快照不包含本地任务历史和工作日志；新的开发任务应在各自环境中按 Trellis 工作流创建。
+编码与审查规则位于 `.trellis/spec/`；当前双入口与 Base 闭环任务位于 `.trellis/tasks/07-13-skill-intake-reviewed-problem-to-lark/`。

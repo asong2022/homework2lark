@@ -4,13 +4,12 @@ from dataclasses import dataclass
 
 from mistake_notebook_api.domain.entities import (
     OCRRun,
+    ProblemAsset,
     ProblemPublication,
     ProblemRegion,
     ProblemRevision,
     RegionCandidate,
     RegionDetectionRun,
-    ReviewedProblem,
-    ReviewStatusEvent,
     SourceAsset,
 )
 
@@ -24,7 +23,7 @@ class AssetUploadResult:
 @dataclass(frozen=True, slots=True)
 class RegionCreateResult:
     region: ProblemRegion
-    problem: ReviewedProblem
+    problem: ProblemAsset
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,7 +41,7 @@ class RegionDetectionView:
 
 @dataclass(frozen=True, slots=True)
 class NormalizedProblemView:
-    problem: ReviewedProblem
+    problem: ProblemAsset
     source: SourceAsset
     region: ProblemRegion
     selected_ocr_run: OCRRun | None
@@ -50,5 +49,4 @@ class NormalizedProblemView:
     current_revision: ProblemRevision | None
     ocr_runs: list[OCRRun]
     revisions: list[ProblemRevision]
-    status_events: list[ReviewStatusEvent]
     publication: ProblemPublication | None

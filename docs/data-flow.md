@@ -46,9 +46,9 @@ SourceAsset
 → canonical pixel_top_left bbox
 → server-side PNG crop
 → StorageAdapter.write(one crop per selected logical problem)
-→ ProblemRegion + candidate-source links + ReviewedProblem(draft) + ReviewStatusEvent
+→ ProblemRegion + candidate-source links + ProblemAsset
 → commit
-→ ordered review queue
+→ return ordered public problem IDs
 ```
 
 前端人工框题是 Web 主线，自动检测不是必经步骤。Yescan Adapter 只在 chat/兼容入口使用：它对每个 group-level `StructureInfo` 一对一创建候选，不会把题内 `Detail` 文字、公式、表格或插图再次拆题，也不会在本地跨框猜测合并。Provider 偶发误切时才由教师显式调整或合并。坐标转换只由后端实现；裁图和原图分别保存。
@@ -65,13 +65,10 @@ ProblemRegion
 → Provider raw result
 → adapter normalization (Markdown/text, blocks, confidence, JSON-safe raw)
 → finish OCRRun(succeeded)
-→ append ReviewStatusEvent
-→ if not already reviewed: status needs_review (non-empty) or ocr_completed (empty)
-→ if already reviewed: preserve reviewed until a new human revision is saved
 → return 201 OCR run
 ```
 
-异常路径：Adapter 映射安全错误分类，完成同一 OCRRun 为 `failed`；Review status 保持原值；按原因返回 502/503/504。业务层有总截止时间，托管 Adapter 内的轮询截止时间略短；超时或远端 Job 失败不影响原图、区域和裁图，教师重试时追加新 OCRRun。
+异常路径：Adapter 映射安全错误分类，完成同一 OCRRun 为 `failed`，按原因返回 502/503/504。业务层有总截止时间，托管 Adapter 内的轮询截止时间略短；超时或远端 Job 失败不影响原图、区域、裁图或当前人工修订，教师重试时追加新 OCRRun。
 
 托管隐私边界：仅题目裁图和固定模型/处理选项发往 PaddleOCR/AI Studio；不发本地路径、SourceAsset ID、教师元数据或学生身份字段。Token 只用于 Job 提交/查询，不转发给结果 URL，不进入日志或 raw response。
 
@@ -84,65 +81,44 @@ OCRRun(succeeded)
 → validate run belongs to region + correctedText non-empty
 → calculate next revisionNumber
 → create ProblemRevision
-→ ReviewedProblem.current_revision_id = new revisionId
-→ set ReviewedProblem status needs_review
-→ clear reviewed_at when revising a reviewed problem
-→ append ReviewStatusEvent when status changed
+→ ProblemAsset.current_revision_id = new revisionId
+→ ProblemAsset.updated_at = UTC now
 → commit
 ```
 
-旧 OCRRun 和旧 Revision 始终保留。对已审核题保存新修订会撤销其复用资格，要求重新审核。
+旧 OCRRun 和旧 Revision 始终保留。新修订保存成功后立即成为当前版本，不再执行第二次审核命令。
 
-## 6. 审核流程
-
-```text
-ProblemRevision
-→ Teacher confirms
-→ POST /api/v1/problems/{problemId}/review
-→ validate revision belongs to problem and text is non-empty
-→ ReviewedProblem.current_revision_id = revisionId
-→ review_status = reviewed
-→ reviewed_at/updated_at = UTC now
-→ append ReviewStatusEvent(teacher_reviewed)
-→ commit
-→ normalized problem record
-```
-
-没有有效修订时返回 `review_revision_required`，不改变状态。
-
-### 来源页批量审核
+## 6. 当前修订门
 
 ```text
-GET /assets/{assetId}/problems
-→ Web 同屏展示本页全部 crop + OCR baseline/latest attempt + teacher draft
-→ Teacher 明确点击“保存并批量审核 N 道”
-→ 对每个有效条目按顺序：必要时 POST revision → POST review
-→ 单题成功立即持久化，单题失败保留输入与请求编号
-→ 重新读取来源页集合
+SourceAsset + ProblemRegion + successful OCRRun
+→ Teacher confirms complete corrected content
+→ POST /api/v1/regions/{regionId}/revisions
+→ current revision becomes available immediately
+→ publication may proceed when source/crop/OCR lineage is complete
 ```
 
-批量审核不是一个跨题数据库事务，也不是自动审核。空教师文本或没有成功 OCR 基线的题目保持待处理；其他题目的成功修订和审核不回滚。单题详细页继续承担完整 lineage、历史和飞书发布。
+没有有效当前修订时发布返回 `problem_not_publishable`。教师确认仍是内容质量门，但它通过保存修订表达，不再生成状态字段、审核时间或状态事件。
 
 ## 7. 读取流程
 
 ```text
 GET /api/v1/problems/{problemId}
-→ Repository loads problem + region + source + OCR runs + revisions + status events
+→ Repository loads problem + region + source + OCR runs + revisions + publication
 → assembler selects current revision and its OCR baseline
-→ compute futureReuseEligible from domain rule
 → emit NormalizedProblemRecord
-→ UI renders source overlay, crop, machine text, human text, status and lineage
+→ Agent renders source/crop, machine text, current human text and lineage
 ```
 
 原图和裁图分别通过受控内容端点读取，不把绝对路径或 base64 放入规范化 JSON。
 
-单题或批量审核返回 `/intake/{assetId}`。Web 重新读取 SourceAsset 和来源页题目集合，把持久化像素 bbox 投影为只读叠加框，并显示本页题目/OCR/审核状态；只有教师显式点击“继续为本页补框”才进入新的手动框选状态。
+Web 重新打开 `/intake/{assetId}` 时读取 SourceAsset 和来源页题目集合，把持久化像素 bbox 投影为只读叠加框；只有教师显式点击“继续为本页补框”才进入新的手动框选状态。Web 在返回 public problem IDs 后结束，不承担 OCR、修订或发布。
 
 ## 8. 发布到飞书 Base
 
 ```text
-ReviewedProblem(reviewed + current revision)
-→ Teacher explicitly clicks 发布到飞书
+ProblemAsset(current revision present)
+→ Teacher/Agent explicitly requests 发布到飞书
 → POST /api/v1/problems/{problemId}/publications/lark
 → persist ProblemPublication(pending)
 → read immutable source page + crop
@@ -158,9 +134,9 @@ ReviewedProblem(reviewed + current revision)
 → normalized record exposes publication state
 ```
 
-发布失败不改变 `ReviewedProblem.review_status`、`futureReuseEligible`、原图、裁图、OCR 或修订。`lark-cli` 重试必须先按系统页面 ID 查找，未找到时再按源文件 SHA-256 查找；唯一哈希匹配直接复用页面，多条匹配安全失败。附件上传是追加语义，单元格已有不可变附件时跳过，避免重复。
+发布失败不改变当前修订、原图、裁图或 OCR。`lark-cli` 重试必须先按系统页面 ID 查找，未找到时再按源文件 SHA-256 查找；唯一哈希匹配直接复用页面，多条匹配安全失败。附件上传是追加语义，单元格已有不可变附件时跳过，避免重复。
 
-Base 是教师与 Agent 的整理、筛选、变式和组卷中转核心，但不保存 OCR raw 或审核事件的唯一副本。教师常用视图显示可读的 `页面名称`/`题目名称`，稳定键保存在隐藏的 `系统页面ID`、`源文件哈希`、`系统题目ID`。`错题页面.页码` 与 `错题页面.错题来源` 是唯一事实来源，`错题题目` 的同名字段通过 `所属错题页面` 查找引用。`题干文本` 包含文字选项，`题干图片` 保存非文本视觉，`图片题目` 保留完整裁图。发布端只更新本地证据拥有的字段，不清空教师在 Base 补充的单元、课题、题型、知识点、答案或已有变式。
+Base 是教师与 Agent 的整理、筛选、变式和组卷中转核心，但不保存 OCR raw 或本地修订历史的唯一副本。教师常用视图显示可读的 `页面名称`/`题目名称`，稳定键保存在隐藏的 `系统页面ID`、`源文件哈希`、`系统题目ID`。`错题页面.页码` 与 `错题页面.错题来源` 是唯一事实来源，`错题题目` 的同名字段通过 `所属错题页面` 查找引用。`题干文本` 包含文字选项，`题干图片` 保存非文本视觉，`图片题目` 保留完整裁图。发布端只更新本地证据拥有的字段，不清空教师在 Base 补充的单元、课题、题型、知识点、答案或已有变式。
 
 发布后的 Agent 目录整理是默认闭环的一部分：
 
@@ -196,7 +172,7 @@ Blank PDF/page
 ## 10. 同题同错因学生分组
 
 ```text
-Reviewed 错题题目
+教师确认修订并已发布的错题题目
 → Teacher provides corrected-work pages / student labels / observations
 → Agent records one/few group-level 典型错例 from real responses first
 → Agent proposes groups and 错误原因 from the observed evidence
@@ -218,7 +194,7 @@ Reviewed 错题题目
 ```text
 Teacher chooses an original from `待生成变式` (`关联变式题` empty)
 → Codex/Hermes runs shi-homework2lark list-selected
-→ read reviewed original text + crop context + questionStemImageCount
+→ read teacher-confirmed original text + crop context + questionStemImageCount
   + grouped 典型错例 / 错误表现 / 错误原因汇总
 → fill the 题生变式事实卡: 年级 / 数学本质 / 教师意图 / 再练反馈
 → Agent independently solves the original and designs 1～5 numbered variants
@@ -226,7 +202,7 @@ Teacher chooses an original from `待生成变式` (`关联变式题` empty)
 → each item passes math / condition / answer / grade / difficulty / data checks
 → text-only original defaults to text-only variants
 → when a variant still needs or intentionally introduces a diagram, invoke wumu-jihe-html
-  and review editable HTML + exported PNG
+  and inspect editable HTML + exported PNG
 → deterministic payload validation
 → teacher-visible preview (no Base mutation)
 → explicit write confirmation
@@ -238,11 +214,11 @@ Teacher chooses an original from `待生成变式` (`关联变式题` empty)
 → available variants become eligible for assembly
 ```
 
-题目与答案解析分列保存，但题目是必需资产，答案解析是可选教师辅助；设计意图是每道变式的必填教学信息。`questionImageCount` 表示完整题目裁图，`questionStemImageCount` 才表示题内非文本视觉；Agent 不得把前者当成配图依据。文本原题默认生成纯文本变式，原题含图也只在新题仍依赖视觉条件时配图；教师明确要求改变表征时可以例外。题图直接附在同一道变式记录，不再维护题图说明或变式复核列。生成统一称为变式题，不建立固定“巩固/拓展/提升/挑战”枚举。原题审核是进入 Base 的质量门；未通过数学或图文检查的内容不写回。
+题目与答案解析分列保存，但题目是必需资产，答案解析是可选教师辅助；设计意图是每道变式的必填教学信息。`questionImageCount` 表示完整题目裁图，`questionStemImageCount` 才表示题内非文本视觉；Agent 不得把前者当成配图依据。文本原题默认生成纯文本变式，原题含图也只在新题仍依赖视觉条件时配图；教师明确要求改变表征时可以例外。题图直接附在同一道变式记录，不再维护题图说明或变式复核列。生成统一称为变式题，不建立固定“巩固/拓展/提升/挑战”枚举。教师确认的当前修订是进入 Base 的内容门；未通过数学或图文检查的内容不写回。
 
 典型错例只用于帮助 Agent 针对错误表现设计变式；`【AI模拟典型错例】` 不能当作真实学情证据，也不能在输出中改写成“学生实际这样做过”。
 
-顺序不可颠倒：原错题必须先审核并发布到 `错题题目`，Agent 再从 Base 选题生成；每道变式题写入独立的 `变式题` 行，并通过 `来源错题` 关联唯一原题。答案解析与题干分列但可空，不再向原题行追加 `变式题1～5` 新内容。
+顺序不可颠倒：原错题必须先经教师确认修订并发布到 `错题题目`，Agent 再从 Base 选题生成；每道变式题写入独立的 `变式题` 行，并通过 `来源错题` 关联唯一原题。答案解析与题干分列但可空，不再向原题行追加 `变式题1～5` 新内容。
 
 脚本写回前按实时 schema 解析唯一 Base，写回后逐项核对每条变式的稳定键、来源关系、题干、可选答案与题图状态，确保原题文本、图片、学情和页面关系未被改写。相同原题与规范化题干生成同一 `系统变式ID`，原样重跑复用既有行；新内容只追加，不静默覆盖旧变式。
 
@@ -317,9 +293,8 @@ Teacher describes observed retry response + teacher judgment
 | OCR 超时 | 504 `ocr_timeout` | 同上 | 显式重试，创建新 run |
 | OCR 空文本 | 201 + warning | 完整 OCRRun/raw | 教师手工填修订或重试 |
 | 修订保存失败 | 4xx/500 稳定错误 | Source、Region、全部 OCR/旧修订 | 修正输入/重试 |
-| 审核无有效修订 | 409 `review_revision_required` | 全部数据，状态不变 | 先保存修订 |
-| 未审核题发布 | 409 `problem_not_publishable` | 全部本地证据 | 完成修订与审核 |
-| 飞书不可用/超时 | 503 `lark_publisher_unavailable` | reviewed 状态、复用资格和失败发布记录 | 显式重试同一稳定 ID |
+| 缺少有效当前修订 | 409 `problem_not_publishable` | 全部本地证据 | 先保存教师确认修订 |
+| 飞书不可用/超时 | 503 `lark_publisher_unavailable` | 当前修订和失败发布记录 | 显式重试同一稳定 ID |
 | 飞书字段/登录配置错误 | 503 `lark_publisher_configuration_error` | 同上 | 修复 lark-cli 登录或 Base schema |
 | 飞书存在重复稳定 ID | 502 `lark_publisher_invalid_response` | 同上；不猜测目标行 | 人工清理重复远端行后重试 |
 | 飞书主字段缺少 `页面名称`/`题目名称` 或类型错误 | 503 `lark_publisher_configuration_error` | 同上；不创建无标题行 | 修复 Base schema 后重试 |
@@ -335,11 +310,10 @@ Teacher describes observed retry response + teacher judgment
 ## 13. 隐私流向
 
 - 浏览器 → 本地 FastAPI：完整上传图片、bbox、修订文本。
-- FastAPI → Fake Provider：本地内存数据，不离开进程。
 - FastAPI → 托管 PaddleOCR-VL（当前真实默认）：只发送教师所选题目裁图到官方 Job API，Token 只来自环境变量；Provider raw 与人工修订分层保存。本地 PaddleOCR Adapter 仍可作为隔离配置，但不是当前默认。
 - FastAPI → Yescan（仅 chat/兼容检测入口）：按教师已授权范围发送整页图片；完整返回写入私有 evidence storage，API/日志不返回 Base64 或完整识别文本。
-- FastAPI → Lark Base（仅教师显式发布）：发送来源整页、题目裁图、教师修订文本及最小发布元数据；不发送 OCR raw response、API Key、完整审核历史或本机绝对路径。
+- FastAPI → Lark Base（仅教师显式发布）：发送来源整页、题目裁图、教师修订文本及最小发布元数据；不发送 OCR raw response、API Key、完整本地修订历史或本机绝对路径。
 - Codex/Hermes → MinerU/PDF/doc（仅 PDF/Word 路径）：告知教师后发送或渲染材料，保留逐页视觉；结构化文本只辅助识别，不能替代原页。
-- Codex/Hermes Skill ↔ Lark Base（明确发布/选题/写回）：先把审核原题发布为目录记录；教师确认后可按共同错误建立 `错题记录` 并在 `对应学生` 多选中保存姓名/代号；以后只读取教师选中的原题、错误组和必要图片上下文，写入编号变式题、可选答案解析、同编号题图及当前再练摘要。不遍历整库，不把学生名单发给 OCR Provider，也不内置模型或飞书密钥。
+- Codex/Hermes Skill ↔ Lark Base（明确发布/选题/写回）：先把教师确认修订的原题发布为目录记录；教师确认后可按共同错误建立 `错题记录` 并在 `对应学生` 多选中保存姓名/代号；以后只读取教师选中的原题、错误组和必要图片上下文，写入编号变式题、可选答案解析、同编号题图及当前再练摘要。不遍历整库，不把学生名单发给 OCR Provider，也不内置模型或飞书密钥。
 - 日志：只含 ID、状态、长度、耗时和安全错误码。
 - MinerU 在当前仅承担 Agent 层 PDF/Word 结构辅助；若未来让 MinerU/Doc2X 成为 FastAPI 正式 OCR Provider，仍需独立任务记录运行、原始响应和教师选择规则。

@@ -46,14 +46,14 @@ def test_detection_persists_private_raw_evidence_and_returns_ordered_candidates(
     asset = _upload(client)
     detection = _detect(client, asset["assetId"])
 
-    assert detection["provider"] == "fake"
+    assert detection["provider"] == "test_stub"
     assert detection["status"] == "succeeded"
     assert detection["errorCode"] is None
     assert [candidate["readingOrder"] for candidate in detection["candidates"]] == [0, 1, 2]
     assert [candidate["providerCandidateId"] for candidate in detection["candidates"]] == [
-        "fake-1",
-        "fake-2",
-        "fake-3",
+        "test-1",
+        "test-2",
+        "test-3",
     ]
     assert "rawResponse" not in detection
     assert "rawResponseStorageKey" not in detection
@@ -67,12 +67,7 @@ def test_detection_persists_private_raw_evidence_and_returns_ordered_candidates(
     )
     assert evidence_path.is_file()
     evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
-    assert evidence == {
-        "engine": "fake",
-        "candidateCount": 3,
-        "sourceWidth": 600,
-        "sourceHeight": 900,
-    }
+    assert evidence == {"fixture": "test-only", "candidateCount": 3}
 
 
 class FailingDetectionProvider:
@@ -172,7 +167,7 @@ def test_batch_creates_only_confirmed_regions_with_selection_lineage(
         record = client.get(f"/api/v1/problems/{item['problemId']}")
         assert record.status_code == 200
         assert record.json()["region"]["selectionSource"] == item["selectionSource"]
-        assert record.json()["status"] == "draft"
+        assert record.json()["humanRevision"] is None
 
 
 def test_multiple_detection_fragments_create_one_problem_with_complete_lineage(
