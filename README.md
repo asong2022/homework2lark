@@ -4,7 +4,7 @@
 
 把作业图片、PDF、Word 或单题截图发给 AI，经过教师确认后保存到飞书多维表格；以后继续让 AI 从错题库生成变式题、个人精准练习和再练内容。
 
-教师不用手工建表，不用理解 OCR、FastAPI、字段 ID 或命令行。Codex、Hermes 等能操作电脑的 AI 是主入口，Web 只是需要时打开的手动画框工具。
+教师不用手工建表，使用Codex、Hermes 等能操作电脑的 AI 是主入口。
 
 ## 最简单的安装方式
 
@@ -14,7 +14,7 @@
 
 然后把下面这段话原样发给它：
 
-> 请帮我安装并初始化 homework2lark。先阅读仓库的 README、AI_INSTALL.md 和 shi-homework2lark/SKILL.md，使用仓库内置的 onboarding.py 一直处理到 verify 返回 ready。每次只问我一个真正缺失的信息；默认使用官方托管 PaddleOCR-VL-1.6，默认由教师在对话中选题或手动框题，不强制配置 Yescan；用内置空白模板创建我的飞书 Base。密钥不要出现在命令参数、聊天回显、日志或 Git 中。不要先给我讲开发、测试和技术架构，配置完成后直接告诉我“可以开始发作业了”。
+> 请帮我安装并初始化 homework2lark。先阅读仓库的 README、AI_INSTALL.md 和 shi-homework2lark/SKILL.md，使用仓库内置的 onboarding.py 一直处理到 verify 返回 ready。每次只问我一个真正缺失的信息；默认使用 PaddleOCR-VL-1.6，默认由教师在对话中选题或手动框题，不强制配置 Yescan；用内置空白模板创建我的飞书 Base。配置完成后直接告诉我“可以开始发作业了”。
 
 首次使用通常只需要教师完成两件事：
 
