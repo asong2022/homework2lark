@@ -100,8 +100,9 @@ class MemoryGateway:
         view_id: str | None = None,
         filter_json=None,
         limit: int = 200,
+        paginate: bool = False,
     ):
-        del limit
+        del limit, paginate
         records = list(self.records.values())
         if view_id == self._schema.views[homework2lark.SELECTED_VIEW].view_id:
             records = [
@@ -289,6 +290,86 @@ class Homework2LarkTests(unittest.TestCase):
 
         gateway = homework2lark.LarkCliGateway(DuplicateTitleRunner())
         self.assertEqual(gateway.resolved_table_name, "错题题目")
+
+
+class PaginationTests(unittest.TestCase):
+    def test_paginate_accumulates_records_across_has_more_boundary(self) -> None:
+        class PagingRunner:
+            def __init__(self) -> None:
+                self.list_offsets: list[str | None] = []
+
+            def run(self, args: Sequence[str], *, retry_read: bool = False):
+                command = args[1]
+                if command == "+title-resolve":
+                    return {"ok": True, "data": {"base_token": "base_x"}}
+                if command == "+table-list":
+                    return {
+                        "ok": True,
+                        "data": {"tables": [{"id": "tbl_x", "name": "错题题目"}]},
+                    }
+                if command == "+record-list":
+                    offset = None
+                    if "--offset" in args:
+                        offset = args[args.index("--offset") + 1]
+                    self.list_offsets.append(offset)
+                    if offset is None:  # first page: full, more remaining
+                        rows = [[f"problem_{i:03d}", "题"] for i in range(200)]
+                        ids = [f"rec_{i:03d}" for i in range(200)]
+                        return {
+                            "ok": True,
+                            "data": {
+                                "fields": ["题目唯一ID", "题干文本"],
+                                "data": rows,
+                                "record_id_list": ids,
+                                "has_more": True,
+                            },
+                        }
+                    return {  # second page: the overflow tail
+                        "ok": True,
+                        "data": {
+                            "fields": ["题目唯一ID", "题干文本"],
+                            "data": [["problem_200", "题"], ["problem_201", "题"]],
+                            "record_id_list": ["rec_200", "rec_201"],
+                            "has_more": False,
+                        },
+                    }
+                raise AssertionError(f"Unexpected command: {command}")
+
+        runner = PagingRunner()
+        gateway = homework2lark.LarkCliGateway(runner)
+        records = gateway.list_records(("题目唯一ID", "题干文本"), paginate=True)
+
+        self.assertEqual(len(records), 202)
+        self.assertEqual(records[-1].record_id, "rec_201")
+        self.assertEqual(runner.list_offsets, [None, "200"])
+
+    def test_non_paginated_overflow_still_raises(self) -> None:
+        class OverflowRunner:
+            def run(self, args: Sequence[str], *, retry_read: bool = False):
+                command = args[1]
+                if command == "+title-resolve":
+                    return {"ok": True, "data": {"base_token": "base_x"}}
+                if command == "+table-list":
+                    return {
+                        "ok": True,
+                        "data": {"tables": [{"id": "tbl_x", "name": "错题题目"}]},
+                    }
+                if command == "+record-list":
+                    return {
+                        "ok": True,
+                        "data": {
+                            "fields": ["题目唯一ID"],
+                            "data": [["problem_a"]],
+                            "record_id_list": ["rec_a"],
+                            "has_more": True,
+                        },
+                    }
+                raise AssertionError(f"Unexpected command: {command}")
+
+        gateway = homework2lark.LarkCliGateway(OverflowRunner())
+        with self.assertRaises(homework2lark.SkillError) as captured:
+            gateway.list_records(("题目唯一ID",))
+        self.assertEqual(captured.exception.code, "result_too_large")
 
 
 if __name__ == "__main__":

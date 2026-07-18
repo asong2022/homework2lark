@@ -16,6 +16,18 @@ from typing import Protocol
 
 JSONValue = None | bool | int | float | str | list["JSONValue"] | dict[str, "JSONValue"]
 
+
+def force_utf8_stdio() -> None:
+    """Windows 控制台/管道默认 GBK；AI 消费的中文 JSON 必须始终按 UTF-8 输出。"""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is None:
+            continue
+        try:
+            reconfigure(encoding="utf-8")
+        except (ValueError, OSError):
+            pass
+
 DEFAULT_BASE_TITLE = "小学数学错题学习库"
 DEFAULT_TABLE_NAME = "错题题目"
 TABLE_NAME_ALIASES = ("错题题目", "questions")
@@ -189,6 +201,7 @@ class Gateway(Protocol):
         view_id: str | None = None,
         filter_json: dict[str, JSONValue] | None = None,
         limit: int = 200,
+        paginate: bool = False,
     ) -> list[BaseRecord]: ...
 
     def get_record(self, record_id: str, fields: Sequence[str]) -> BaseRecord: ...
@@ -503,32 +516,59 @@ class LarkCliGateway:
         view_id: str | None = None,
         filter_json: dict[str, JSONValue] | None = None,
         limit: int = 200,
+        paginate: bool = False,
     ) -> list[BaseRecord]:
         base_token, table_id = self._context()
-        args = [
-            "base",
-            "+record-list",
-            "--base-token",
-            base_token,
-            "--table-id",
-            table_id,
-            "--as",
-            "user",
-            "--limit",
-            str(limit),
-        ]
-        for field_name in fields:
-            args.extend(("--field-id", field_name))
-        if view_id is not None:
-            args.extend(("--view-id", view_id))
-        if filter_json is not None:
-            args.extend(("--filter-json", _compact_json(filter_json)))
-        args.extend(("--format", "json"))
-        envelope = self.runner.run(args, retry_read=True)
-        data = _require_object(envelope, "data")
-        if data.get("has_more") is True:
-            raise SkillError("result_too_large", "目标范围超过 200 条，请缩小视图或筛选范围。")
-        return parse_columnar_records(data)
+
+        def _page(offset: int, page_limit: int) -> tuple[list[BaseRecord], bool]:
+            args = [
+                "base",
+                "+record-list",
+                "--base-token",
+                base_token,
+                "--table-id",
+                table_id,
+                "--as",
+                "user",
+                "--limit",
+                str(page_limit),
+            ]
+            if offset:
+                args.extend(("--offset", str(offset)))
+            for field_name in fields:
+                args.extend(("--field-id", field_name))
+            if view_id is not None:
+                args.extend(("--view-id", view_id))
+            if filter_json is not None:
+                args.extend(("--filter-json", _compact_json(filter_json)))
+            args.extend(("--format", "json"))
+            envelope = self.runner.run(args, retry_read=True)
+            data = _require_object(envelope, "data")
+            page_records = parse_columnar_records(data)
+            return page_records, data.get("has_more") is True
+
+        if not paginate:
+            records, has_more = _page(0, limit)
+            if has_more:
+                raise SkillError(
+                    "result_too_large", "目标范围超过 200 条，请缩小视图或筛选范围。"
+                )
+            return records
+
+        # 全量扫描：按 offset 翻页累积，避免题库/变式表超过单页上限后
+        # 静默漏读，把有错题的学生误判为“无题”。
+        page_size = 200
+        collected: list[BaseRecord] = []
+        offset = 0
+        while True:
+            page_records, has_more = _page(offset, page_size)
+            collected.extend(page_records)
+            if not has_more and len(page_records) < page_size:
+                break
+            if not page_records:
+                break
+            offset += len(page_records)
+        return collected
 
     def get_record(self, record_id: str, fields: Sequence[str]) -> BaseRecord:
         base_token, table_id = self._context()
@@ -669,7 +709,9 @@ class Homework2LarkService:
     def list_selected(self) -> list[dict[str, JSONValue]]:
         schema = self._validated_schema()
         records = self.gateway.list_records(
-            read_fields(schema), view_id=schema.views[SELECTED_VIEW].view_id
+            read_fields(schema),
+            view_id=schema.views[SELECTED_VIEW].view_id,
+            paginate=True,
         )
         for record in records:
             ensure_source_eligible(record)
@@ -1142,6 +1184,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    force_utf8_stdio()
     args = build_parser().parse_args(argv)
     try:
         if args.command == "validate":

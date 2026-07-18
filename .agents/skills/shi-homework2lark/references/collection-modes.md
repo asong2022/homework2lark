@@ -17,13 +17,13 @@
 无选择时读取选项，不产生文件：
 
 ```powershell
-python <skill-root>/scripts/workflow.py choices
+python -X utf8 <skill-root>/scripts/workflow.py choices
 ```
 
 用户选择后创建状态：
 
 ```powershell
-python <skill-root>/scripts/workflow.py start `
+python -X utf8 <skill-root>/scripts/workflow.py start `
   --collection-mode 1|2|3 `
   --output <私有任务状态.json>
 ```

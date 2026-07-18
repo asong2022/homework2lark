@@ -141,6 +141,33 @@ def validate_feedback_schema(schema: core.BaseSchema) -> None:
         )
 
 
+CONSERVATIVE_MASTERY = {
+    "correct": "练习中",
+    "partial": "需再练",
+    "incorrect": "需再练",
+    "not_observed": None,
+}
+
+
+def _guard_mastery_against_result(result: str, mastery: str, teacher_judgment: str) -> None:
+    """强制“一次正确不自动等同已掌握”：偏离保守默认的掌握状态必须有教师判断支撑。
+
+    与 retry_batch._mastery 保持一致：correct 默认练习中、partial/incorrect 默认需再练；
+    任何偏离（尤其是 已掌握），或 not_observed 下的任何主动结论，都必须提供 teacherJudgment。
+    """
+    if mastery == "已掌握" and not teacher_judgment:
+        raise core.SkillError(
+            "invalid_feedback", "标记已掌握时必须提供教师判断；一次正确不能自动宣称已掌握。"
+        )
+    default = CONSERVATIVE_MASTERY.get(result)
+    if mastery != default and not teacher_judgment:
+        raise core.SkillError(
+            "invalid_feedback",
+            f"result={result} 的保守掌握状态是 {default or '不自动改变'}；"
+            "要覆盖为其它状态必须提供教师判断。",
+        )
+
+
 def validate_feedback_payload(raw: core.JSONValue) -> FeedbackEvent:
     obj = core._as_object(raw, "再练反馈")
     allowed = {
@@ -179,6 +206,7 @@ def validate_feedback_payload(raw: core.JSONValue) -> FeedbackEvent:
     mastery = core._require_nonempty_text(obj.get("mastery"), "mastery", maximum=20)
     if mastery not in MASTERY_OPTIONS:
         raise core.SkillError("invalid_feedback", "mastery 取值无效。")
+    _guard_mastery_against_result(result, mastery, teacher.strip())
     summary = core._require_nonempty_text(obj.get("summary"), "summary", maximum=2_000)
     occurred_at = core._require_nonempty_text(obj.get("occurredAt"), "occurredAt", maximum=50)
     parse_datetime(occurred_at)
@@ -304,6 +332,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    core.force_utf8_stdio()
     args = build_parser().parse_args(argv)
     try:
         if args.command == "schema-check":

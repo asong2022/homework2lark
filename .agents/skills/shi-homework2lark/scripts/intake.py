@@ -677,9 +677,12 @@ def _question_number(value: JSONValue) -> str | None:
 
 
 def _strip_matching_question_number(text: str, question_number: str) -> str:
+    # 只在题号带明确分隔标点（1. / 1、 / 1：）或“第N题”标签时剥离。
+    # 裸数字+空格（如“1 与 2 哪个大？”“3 个苹果…”）可能是题干本身的数量，
+    # 宁可保留也不误删（SKILL.md 规则 2）。
     escaped = re.escape(question_number)
     prefix = re.compile(
-        rf"^(?:{escaped}\s*[.．、]\s*|{escaped}\s+|第\s*{escaped}\s*题(?:\s+|[.．、:：]\s*))"
+        rf"^(?:{escaped}\s*[.．、:：]\s*|第\s*{escaped}\s*题(?:\s+|[.．、:：]\s*|$))"
     )
     normalized = prefix.sub("", text, count=1).strip()
     if not normalized:
@@ -789,7 +792,20 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _force_utf8_stdio() -> None:
+    """Windows 控制台/管道默认 GBK；AI 消费的中文 JSON 必须始终按 UTF-8 输出。"""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is None:
+            continue
+        try:
+            reconfigure(encoding="utf-8")
+        except (ValueError, OSError):
+            pass
+
+
 def main(argv: Sequence[str] | None = None) -> int:
+    _force_utf8_stdio()
     args = build_parser().parse_args(argv)
     service = IntakeService(HttpGateway(args.api_url), web_url=args.web_url)
     try:

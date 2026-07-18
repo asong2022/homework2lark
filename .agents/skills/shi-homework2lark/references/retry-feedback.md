@@ -37,7 +37,7 @@ AI/Hermes 或 `shi-ocr` 负责从教师批改后的图片/PDF观察：
 ```
 
 ```powershell
-python <skill-root>/scripts/retry_batch.py prepare `
+python -X utf8 <skill-root>/scripts/retry_batch.py prepare `
   --manifest <单份manifest.json或整班批次目录> `
   --input <AI/OCR观察.json> `
   --output <新的私有反馈计划.json>
@@ -67,8 +67,8 @@ Word 自然分页时，manifest 不预估哪道题在第几页；因此页面码
 先验证计划，再追加本地事件：
 
 ```powershell
-python <skill-root>/scripts/retry_batch.py validate --plan <反馈计划.json>
-python <skill-root>/scripts/retry_batch.py commit `
+python -X utf8 <skill-root>/scripts/retry_batch.py validate --plan <反馈计划.json>
+python -X utf8 <skill-root>/scripts/retry_batch.py commit `
   --plan <反馈计划.json> `
   --event-store <私有再练事件.jsonl>
 ```

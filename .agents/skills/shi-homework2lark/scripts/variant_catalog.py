@@ -291,7 +291,7 @@ class VariantCatalogGateway:
         )
 
     def list_entries(self) -> list[CatalogEntry]:
-        records = self.variants.list_records(VARIANT_FIELDS, limit=200)
+        records = self.variants.list_records(VARIANT_FIELDS, paginate=True)
         entries: list[CatalogEntry] = []
         for record in records:
             stable_id = core._text(record.fields.get(SYSTEM_ID_FIELD))
@@ -448,7 +448,7 @@ class VariantCatalogService:
             for field in (*core.QUESTION_ID_FIELDS, "题目名称")
             if field in question_schema.fields
         )
-        questions = self.gateway.questions.list_records(question_fields, limit=200)
+        questions = self.gateway.questions.list_records(question_fields, paginate=True)
         source_ids = {record.record_id: core.question_id(record) for record in questions}
         result: list[dict[str, core.JSONValue]] = []
         for entry in sorted(entries, key=lambda item: (item.source_record_id, item.number)):
@@ -526,6 +526,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    core.force_utf8_stdio()
     args = build_parser().parse_args(argv)
     try:
         runner = core.SubprocessRunner(args.lark_cli_command)
@@ -563,7 +564,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(_json({"ok": True, "data": data}))
         return 0
     except core.SkillError as exc:
-        print(_json({"ok": False, "error": exc.public()}))
+        error: dict[str, core.JSONValue] = {
+            "code": exc.code,
+            "message": exc.message,
+            "retryable": exc.retryable,
+        }
+        if exc.upstream_code is not None:
+            error["upstreamCode"] = exc.upstream_code
+        print(_json({"ok": False, "error": error}))
         return 1
 
 

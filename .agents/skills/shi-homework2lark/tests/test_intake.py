@@ -271,6 +271,21 @@ class IntakeServiceTest(unittest.TestCase):
                 self.assertEqual(create_call[1]["correctedText"], expected)
                 self.assertNotIn("questionNumber", create_call[1])
 
+    def test_revision_keeps_bare_leading_number_that_is_part_of_the_stem(self):
+        # 裸数字+空格可能是题干本身的数量（如“1 与 2 哪个大”“3 个苹果……”），
+        # 即便与 questionNumber 相同也不能剥离，否则会改错题目内容。
+        cases = (
+            ({"correctedText": "1 与 2 哪个大？", "questionNumber": "1"}, "1 与 2 哪个大？"),
+            (
+                {"correctedText": "3 个苹果加 2 个共几个？", "questionNumber": "3"},
+                "3 个苹果加 2 个共几个？",
+            ),
+        )
+        for payload, expected in cases:
+            with self.subTest(payload=payload):
+                result = intake.IntakeService(FakeGateway()).save_revision("problem_1", payload)
+                self.assertEqual(result["correctedText"], expected)
+
     def test_revision_keeps_content_number_without_a_matching_outer_number(self):
         cases = (
             (

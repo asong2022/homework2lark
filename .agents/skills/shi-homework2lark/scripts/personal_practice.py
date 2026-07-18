@@ -675,7 +675,7 @@ class LarkPersonalPracticeGateway:
         records = self.groups.list_records(
             group_fields,
             filter_json=student_filter(student_name),
-            limit=200,
+            paginate=True,
         )
         evidence_by_question: dict[str, list[MistakeEvidence]] = {}
         skipped = 0
@@ -798,6 +798,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    core.force_utf8_stdio()
     args = build_parser().parse_args(argv)
     try:
         gateway = LarkPersonalPracticeGateway(

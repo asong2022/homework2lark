@@ -42,13 +42,13 @@
 先检查真实 Base 契约：
 
 ```powershell
-python <skill-root>/scripts/personal_practice.py schema-check
+python -X utf8 <skill-root>/scripts/personal_practice.py schema-check
 ```
 
 确认学生学号、练习日期和目标题量后生成本地快照：
 
 ```powershell
-python <skill-root>/scripts/personal_practice.py plan `
+python -X utf8 <skill-root>/scripts/personal_practice.py plan `
   --roster <私有班级名单.json> `
   --student-number <学号> `
   --batch-code 20260715-01 `
@@ -65,7 +65,7 @@ python <skill-root>/scripts/personal_practice.py plan `
 再生成 Word：
 
 ```powershell
-python <skill-root>/scripts/practice_sheet.py `
+python -X utf8 <skill-root>/scripts/practice_sheet.py `
   --manifest session/personal/20260715-01-S001/manifest.json `
   --output session/personal/20260715-01-S001/7月15日个人练习纸.docx
 ```
@@ -75,8 +75,8 @@ python <skill-root>/scripts/practice_sheet.py `
 批量命令复用同一逐生选题规则，不建立第二套“班级选题”逻辑：
 
 ```powershell
-python <skill-root>/scripts/class_practice.py schema-check
-python <skill-root>/scripts/class_practice.py build `
+python -X utf8 <skill-root>/scripts/class_practice.py schema-check
+python -X utf8 <skill-root>/scripts/class_practice.py build `
   --roster <私有班级名单.json> `
   --batch-code 20260715-01 `
   --question-count 6 `

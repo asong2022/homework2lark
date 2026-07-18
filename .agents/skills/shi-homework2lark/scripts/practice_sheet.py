@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
@@ -162,7 +163,9 @@ def _configure_styles(document: Document) -> None:
     _set_style_font(answer, font_name=BODY_FONT, size=10)
     answer.paragraph_format.left_indent = Mm(8)
     answer.paragraph_format.right_indent = Mm(2)
-    answer.paragraph_format.space_before = Pt(1)
+    # 小学生手写一行约需 9mm；space_before 拉开相邻横线（12+10+3=25pt≈8.8mm），
+    # 也让第一条横线与题干/题图留出书写起笔空间。
+    answer.paragraph_format.space_before = Pt(12)
     answer.paragraph_format.space_after = Pt(3)
     answer.paragraph_format.line_spacing = 1.0
     answer.paragraph_format.keep_together = True
@@ -747,7 +750,20 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _force_utf8_stdio() -> None:
+    """Windows 控制台/管道默认 GBK；AI 消费的中文 JSON 必须始终按 UTF-8 输出。"""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is None:
+            continue
+        try:
+            reconfigure(encoding="utf-8")
+        except (ValueError, OSError):
+            pass
+
+
 def main(argv: Sequence[str] | None = None) -> int:
+    _force_utf8_stdio()
     args = build_parser().parse_args(argv)
     try:
         manifest_path = Path(args.manifest).resolve()

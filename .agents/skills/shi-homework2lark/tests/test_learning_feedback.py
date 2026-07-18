@@ -203,6 +203,42 @@ class LearningFeedbackTests(unittest.TestCase):
                 }
             )
 
+    def test_correct_cannot_auto_claim_mastered_without_teacher_judgment(self):
+        with self.assertRaisesRegex(feedback.core.SkillError, "已掌握"):
+            payload(
+                result="correct",
+                mastery="已掌握",
+                teacherJudgment="",
+                observedResponse="算对了",
+            )
+
+    def test_correct_with_teacher_judgment_may_mark_mastered(self):
+        event = payload(
+            result="correct",
+            mastery="已掌握",
+            teacherJudgment="连续三次稳定正确，确认已掌握。",
+            observedResponse="算对了",
+        )
+        self.assertEqual(event.mastery, "已掌握")
+
+    def test_conservative_default_mastery_needs_no_judgment(self):
+        event = payload(
+            result="correct",
+            mastery="练习中",
+            teacherJudgment="",
+            observedResponse="算对了",
+        )
+        self.assertEqual(event.mastery, "练习中")
+
+    def test_mastery_departing_from_default_requires_judgment(self):
+        with self.assertRaises(feedback.core.SkillError):
+            payload(
+                result="incorrect",
+                mastery="练习中",
+                teacherJudgment="",
+                observedResponse="写错了",
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

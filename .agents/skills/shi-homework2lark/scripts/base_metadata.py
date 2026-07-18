@@ -518,6 +518,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    homework2lark.force_utf8_stdio()
     args = build_parser().parse_args(argv)
     service = BaseMetadataService(
         LarkMetadataGateway(

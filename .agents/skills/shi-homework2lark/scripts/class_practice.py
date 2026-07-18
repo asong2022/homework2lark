@@ -238,6 +238,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    core.force_utf8_stdio()
     args = build_parser().parse_args(argv)
     try:
         gateway = personal_practice.LarkPersonalPracticeGateway(

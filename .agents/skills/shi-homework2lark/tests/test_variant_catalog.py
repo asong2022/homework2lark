@@ -83,8 +83,9 @@ class MemoryTable:
         view_id: str | None = None,
         filter_json=None,
         limit: int = 200,
+        paginate: bool = False,
     ):
-        del view_id, limit
+        del view_id, limit, paginate
         records = list(self.records.values())
         if filter_json:
             for field_name, operator, expected in filter_json["conditions"]:
@@ -338,6 +339,30 @@ class VariantCatalogTests(unittest.TestCase):
         available = service.list_available()
         self.assertEqual(available[0]["diagramAttachmentCount"], 1)
         self.assertEqual(available[0]["designIntent"], "改变表征，促进图形关系理解。")
+
+
+class MainErrorEnvelopeTest(unittest.TestCase):
+    def test_skill_error_prints_structured_envelope(self) -> None:
+        import io
+        import json
+        from contextlib import redirect_stdout
+
+        with tempfile.TemporaryDirectory() as raw_dir:
+            payload_path = Path(raw_dir) / "payload.json"
+            payload_path.write_text(
+                json.dumps({"questionId": "not_problem_prefixed", "variants": []}),
+                encoding="utf-8",
+            )
+            captured = io.StringIO()
+            with redirect_stdout(captured):
+                exit_code = variant_catalog.main(["validate", "--input", str(payload_path)])
+
+        self.assertEqual(exit_code, 1)
+        envelope = json.loads(captured.getvalue())
+        self.assertFalse(envelope["ok"])
+        self.assertEqual(envelope["error"]["code"], "invalid_payload")
+        self.assertIn("message", envelope["error"])
+        self.assertFalse(envelope["error"]["retryable"])
 
 
 if __name__ == "__main__":
