@@ -34,6 +34,29 @@ storage/crops/*
 storage/provider-evidence/*
 !storage/provider-evidence/.gitkeep
 
+# Practice outputs and local artifacts: real batches carry student names and
+# numbers in manifest/selection/CSV. Only anonymized samples and the packaged
+# skill bundle may enter Git.
+artifacts/*
+!artifacts/skills/
+!artifacts/daily-practice-template/
+!artifacts/personal-practice-sample/
+output/
+tmp/
+.codex-remote-attachments/
+.playwright-cli/
+
+# Teacher source materials dropped into the repo root (scanned homework,
+# blank papers, single-question shots) must never be committed.
+/*.pdf
+/*.doc
+/*.docx
+/*.jpg
+/*.jpeg
+/*.png
+/*.heic
+/*.webp
+
 # Editor / OS
 .DS_Store
 Thumbs.db
