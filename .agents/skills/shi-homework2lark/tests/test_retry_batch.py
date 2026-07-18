@@ -76,6 +76,31 @@ def observations() -> dict:
 
 
 class RetryBatchTests(unittest.TestCase):
+    def test_event_id_is_stable_across_roster_name_corrections(self) -> None:
+        # 同一份练习、同一次观察：名单里姓名/学号被更正后重跑，
+        # 事件 ID 必须不变（Sxxx 才是身份），否则会追加重复事件行。
+        plans = []
+        for name, number in (("学生甲", "01"), ("学生甲改", "0001")):
+            with tempfile.TemporaryDirectory() as temp_dir:
+                manifest_path = Path(temp_dir) / "manifest.json"
+                manifest_path.write_text(
+                    json.dumps(manifest(name=name, number=number), ensure_ascii=False),
+                    encoding="utf-8",
+                )
+                plans.append(retry.build_plan(manifest_path, observations()))
+        first_ids = [event["eventId"] for event in plans[0]["events"]]
+        second_ids = [event["eventId"] for event in plans[1]["events"]]
+        self.assertEqual(first_ids, second_ids)
+
+        # 观察事实不同则 ID 必须不同
+        changed = observations()
+        changed["pages"][0]["items"][0]["observedResponse"] = "71"
+        with tempfile.TemporaryDirectory() as temp_dir:
+            manifest_path = Path(temp_dir) / "manifest.json"
+            manifest_path.write_text(json.dumps(manifest(), ensure_ascii=False), encoding="utf-8")
+            other = retry.build_plan(manifest_path, changed)
+        self.assertNotEqual(first_ids[0], other["events"][0]["eventId"])
+
     def test_maps_page_and_numbers_to_exact_manifest_sources(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             manifest_path = Path(temp_dir) / "manifest.json"

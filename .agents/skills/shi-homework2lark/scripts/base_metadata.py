@@ -333,24 +333,30 @@ class LarkMetadataGateway:
 
     def _patch(self, table_name: str, record_id: str, patch: dict[str, JSONValue]) -> None:
         base_token, tables = self._context()
-        self.runner.run(
-            [
-                "base",
-                "+record-upsert",
-                "--base-token",
-                base_token,
-                "--table-id",
-                tables[table_name].table_id,
-                "--record-id",
-                record_id,
-                "--as",
-                "user",
-                "--json",
-                _compact_json(patch),
-                "--format",
-                "json",
-            ]
-        )
+        try:
+            self.runner.run(
+                [
+                    "base",
+                    "+record-upsert",
+                    "--base-token",
+                    base_token,
+                    "--table-id",
+                    tables[table_name].table_id,
+                    "--record-id",
+                    record_id,
+                    "--as",
+                    "user",
+                    "--json",
+                    _compact_json(patch),
+                    "--format",
+                    "json",
+                ]
+            )
+        except homework2lark.SkillError as exc:
+            # 重复补全相同元数据时飞书返回 800070003；apply 后的回读校验
+            # 仍会确认目标值，无变化不算失败。
+            if exc.code != "lark_no_change":
+                raise
 
 
 def _validate_live_schema(tables: dict[str, _TableContext]) -> None:

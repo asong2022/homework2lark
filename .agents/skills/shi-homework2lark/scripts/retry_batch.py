@@ -52,8 +52,16 @@ class RetryEvent:
 
     @property
     def event_id(self) -> str:
+        # 事件身份 = 批次、匿名实例、页码、Rxx、来源、观察事实、教师判断和时间。
+        # 姓名/学号不参与哈希：Sxxx 才是稳定身份，名单更正姓名不得让同一
+        # 事件生成新 ID 而追加重复行（retry-feedback.md 合约）。
+        identity = {
+            key: value
+            for key, value in asdict(self).items()
+            if key not in ("student_name", "student_number")
+        }
         encoded = json.dumps(
-            asdict(self), ensure_ascii=False, sort_keys=True, separators=(",", ":")
+            identity, ensure_ascii=False, sort_keys=True, separators=(",", ":")
         ).encode("utf-8")
         return "retry_" + hashlib.sha256(encoded).hexdigest()[:24]
 

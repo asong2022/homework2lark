@@ -275,6 +275,15 @@ class SubprocessRunner:
             ) from exc
 
         raw = completed.stdout if completed.returncode == 0 else completed.stderr
+        if "�" in raw:
+            # errors="replace" 解码出 U+FFFD 说明 lark-cli 输出被编码破坏；
+            # 继续解析会把乱码文本当真实内容读走并可能写回 Base（base-contract：
+            # 回读出现替换乱码必须失败，不得扩散损坏）。
+            raise SkillError(
+                "lark_output_mojibake",
+                "飞书返回文本包含替换乱码（U+FFFD），已停止以避免损坏内容扩散；"
+                "请检查 lark-cli 版本与终端编码。",
+            )
         try:
             decoded = json.loads(raw)
         except json.JSONDecodeError as exc:

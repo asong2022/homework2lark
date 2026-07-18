@@ -460,6 +460,35 @@ class MistakeGroupContractTest(unittest.TestCase):
         unchanged = mistake_groups.write_confirmed_group(gateway, expanded)
         self.assertEqual((unchanged.status, unchanged.student_count), ("no_change", 3))
 
+    def test_idempotent_rerun_swallows_lark_no_change_on_upsert(self) -> None:
+        class NoChangeRunner:
+            def run(
+                self, args: Sequence[str], *, retry_read: bool = False
+            ) -> dict[str, core.JSONValue]:
+                del retry_read
+                if args[1] == "+record-upsert":
+                    raise core.SkillError(
+                        "lark_no_change", "飞书记录已是目标状态。", upstream_code=800070003
+                    )
+                raise AssertionError(f"unexpected command: {args[1]}")
+
+        gateway = mistake_groups.LarkGroupSchemaGateway(NoChangeRunner())
+        gateway.update_question_projection(valid_schema(), "rec_question_alpha", {"统计批次": "x"})
+
+        class FailingRunner:
+            def run(
+                self, args: Sequence[str], *, retry_read: bool = False
+            ) -> dict[str, core.JSONValue]:
+                del retry_read
+                raise core.SkillError("lark_rate_limited", "限流", retryable=True)
+
+        failing = mistake_groups.LarkGroupSchemaGateway(FailingRunner())
+        with self.assertRaises(core.SkillError) as captured:
+            failing.update_question_projection(
+                valid_schema(), "rec_question_alpha", {"统计批次": "x"}
+            )
+        self.assertEqual(captured.exception.code, "lark_rate_limited")
+
     def test_live_gateway_filters_by_stable_key_instead_of_scanning_table(self) -> None:
         class FakeRunner:
             def __init__(self) -> None:

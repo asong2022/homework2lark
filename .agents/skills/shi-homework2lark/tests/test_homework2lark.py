@@ -292,6 +292,39 @@ class Homework2LarkTests(unittest.TestCase):
         self.assertEqual(gateway.resolved_table_name, "错题题目")
 
 
+class MojibakeGuardTests(unittest.TestCase):
+    def test_runner_rejects_replacement_characters_in_cli_output(self) -> None:
+        import subprocess
+        from unittest.mock import patch
+
+        corrupted = subprocess.CompletedProcess(
+            args=["lark-cli"],
+            returncode=0,
+            stdout='{"ok": true, "data": {"text": "��"}}',
+            stderr="",
+        )
+        runner = homework2lark.SubprocessRunner("lark-cli")
+        with patch.object(homework2lark.subprocess, "run", return_value=corrupted):
+            with self.assertRaises(homework2lark.SkillError) as captured:
+                runner.run(["base", "+record-get"])
+        self.assertEqual(captured.exception.code, "lark_output_mojibake")
+
+    def test_runner_accepts_clean_chinese_output(self) -> None:
+        import subprocess
+        from unittest.mock import patch
+
+        clean = subprocess.CompletedProcess(
+            args=["lark-cli"],
+            returncode=0,
+            stdout='{"ok": true, "data": {"text": "同一道题的典型错例"}}',
+            stderr="",
+        )
+        runner = homework2lark.SubprocessRunner("lark-cli")
+        with patch.object(homework2lark.subprocess, "run", return_value=clean):
+            envelope = runner.run(["base", "+record-get"])
+        self.assertEqual(envelope["data"]["text"], "同一道题的典型错例")
+
+
 class PaginationTests(unittest.TestCase):
     def test_paginate_accumulates_records_across_has_more_boundary(self) -> None:
         class PagingRunner:

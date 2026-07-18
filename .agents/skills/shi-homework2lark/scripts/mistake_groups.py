@@ -622,7 +622,13 @@ class LarkGroupSchemaGateway:
         if record_id is not None:
             arguments.extend(("--record-id", record_id))
         arguments.extend(("--as", "user", "--format", "json"))
-        self.runner.run(arguments)
+        try:
+            self.runner.run(arguments)
+        except core.SkillError as exc:
+            # 幂等重跑写入相同值时飞书返回 800070003；目标状态已达成，
+            # 由调用方的回读校验兜底，不作为失败。
+            if exc.code != "lark_no_change":
+                raise
 
 
 def validate_schema(schema: GroupSchema) -> None:
