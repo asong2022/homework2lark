@@ -37,17 +37,21 @@ Skill 有三个入口，但上传后共用同一个 `SourceAsset`：
 → 全部记为 baseline_excluded
 → 下载 0 张图片，创建 0 个 SourceAsset/ProblemAsset/Base 记录
 
-以后同步
-→ sync 只把未见过的题目 ID 记为 pending
-→ Agent 在对话中展示安全摘要
-→ 教师明确选择
-→ import 下载该题原图到临时文件
+以后教师说“新增/收录今天或本次新增题”
+→ collect-new 一次读取目录
+→ 未见过的题目 ID 先记为 pending
+→ 当前全部 pending 逐题下载到临时文件
 → 复用 single 入口创建 SourceAsset、完整区域和 ProblemAsset
 → 删除临时文件
 → 后续 OCR、修订和发布流程保持不变
+
+教师只说“查看/列出新增题”
+→ sync 只把未见 ID 记为 pending
+→ status 展示安全摘要
+→ 不下载、不建题、不写飞书
 ```
 
-状态文件只保存夸克题目 ID、首次/最近发现时间、`baseline_excluded | pending | imported | ignored` 和已导入题目的公共 `problemId`。它不保存 Cookie、`QK_UT/QK_KP`、题干、图片 URL、图片字节或学生身份；凭证只从进程环境读取。已经处于 `baseline_excluded` 的历史题不会被自动升级为 `pending`，需要收录时应由教师另行发送单题图片走普通入口。
+状态文件只保存夸克题目 ID、首次/最近发现时间、`baseline_excluded | pending | imported | ignored` 和已导入题目的公共 `problemId`。它不保存 Cookie、`QK_UT/QK_KP`、题干、图片 URL、图片字节或学生身份；凭证只从进程环境读取。已经处于 `baseline_excluded` 的历史题不会被自动升级为 `pending`，需要收录时应由教师另行发送单题图片走普通入口。“今天”表示本地基线或上次同步后尚未处理的增量，不依据未承诺稳定的远端创建时间。
 
 ## 3. 人工框题与可选自动候选流程
 

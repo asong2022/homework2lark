@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The intake side of `shi-homework2lark` is Agent-only and orchestrates the local FastAPI from the conversation. The Agent chooses manual framing, configured candidate detection, a whole-image single-question route, or teacher-selected baseline-new Quark wrongbook images after the teacher selects the collection mode and questions. FastAPI remains the only writer of local evidence; Lark Base receives only eligible catalog projections.
+The intake side of `shi-homework2lark` is Agent-only and orchestrates the local FastAPI from the conversation. The Agent chooses manual framing, configured candidate detection, a whole-image single-question route, or teacher-authorized baseline-new Quark wrongbook images after the teacher selects the collection mode. FastAPI remains the only writer of local evidence; Lark Base receives only eligible catalog projections.
 
 ## Entry Modes
 
@@ -48,6 +48,7 @@ validate-metadata --input <json-path|->
 base_metadata.py preview --input <json-path|->
 base_metadata.py apply --input <json-path|->
 quark_wrongbook.py baseline|sync|status
+quark_wrongbook.py collect-new
 quark_wrongbook.py ignore --question-id <id>...
 quark_wrongbook.py import (--all-pending | --question-id <id>...)
 ```
@@ -66,7 +67,7 @@ Manual frame input contains only:
 
 The Agent derives these values from the original-resolution page after the teacher selects the question. A successful frame result returns the public problem IDs in reading order; OCR does not begin implicitly.
 
-Quark wrongbook is a pre-`single` source adapter. Its first baseline stores current IDs as `baseline_excluded` with zero downloads and zero local/Base writes. Later sync stores only unseen IDs as pending. Import requires the teacher's explicit pending selection, downloads into a temporary file, and calls the same `single` path; it stops with public problem IDs and does not run OCR or publish implicitly. The full state/privacy contract is in `quark-wrongbook.md`.
+Quark wrongbook is a pre-`single` source adapter. Its first baseline stores current IDs as `baseline_excluded` with zero downloads and zero local/Base writes. Later sync stores only unseen IDs as pending. A teacher add/collect request authorizes `collect-new` to download every pending image into a temporary file and call the same `single` path; a read-only request does not download, while an explicit partial range still uses selected import. These commands stop with public problem IDs and do not themselves run OCR or publish. The full state/privacy contract is in `quark-wrongbook.md`.
 
 `get` and `ocr` deliberately expose selected OCR/corrected text to the current Agent for teacher confirmation, but omit raw Provider response and private storage fields. `publish` omits remote record/table/field IDs from CLI output.
 
@@ -88,6 +89,8 @@ Revision input contains only:
 `basedOnOcrRunId` may be omitted only when the current normalized record has a latest OCR run. Every save appends a ProblemRevision. It never edits `OCRRun.text`.
 
 Saving the revision makes it the current version immediately. There is no separate review command or review-status transition. Publication remains a separate external write and the API rejects a problem without a valid current revision, source, crop or OCR basis.
+
+For the Quark source, “新增/收录/加入飞书今天或本次新增题” is explicit scope authorization for every current pending item. The Agent runs `collect-new` and does not ask for an item-by-item selection again. “查看/列出/有多少新增” runs only `sync/status`; a partial explicit range continues to use selected `import`. `collect-new` requires an existing baseline, lists the remote catalog once, durably discovers unseen IDs before downloads, and imports pending items one at a time through `single`.
 
 ## AI Metadata Boundary
 

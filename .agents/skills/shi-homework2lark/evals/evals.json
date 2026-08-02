@@ -347,6 +347,20 @@
         "Does not turn baseline history into pending on a later sync or repeated baseline",
         "Requires explicit teacher selection before a pending image enters the existing single intake path"
       ]
+    },
+    {
+      "id": 30,
+      "prompt": "新增今天夸克扫描王里的错题，直接整理后加进飞书；以前基线里的旧题不要，我也不想再逐题选一遍。",
+      "expected_output": "Treats the teacher's sentence as scope authorization for every pending baseline-new Quark item, runs collect-new once without another item-by-item selection, then continues the returned problem IDs through the existing OCR, correction and authorized Base workflow while never importing baseline history.",
+      "files": [],
+      "expectations": [
+        "Loads quark-wrongbook.md and routes the write-intent phrase to collect-new rather than read-only sync/status",
+        "Treats the teacher-curated Quark source as the user's explicit teacher-selected collection mode instead of presenting the 1/2/3 menu again",
+        "Requires an existing baseline and never reclassifies baseline_excluded history",
+        "Imports all current pending items, including additions previously found by a read-only sync, without asking the teacher to choose each one",
+        "Lists the private remote catalog once, persists discoveries before downloads, and keeps per-item partial-success recovery",
+        "Continues OCR, complete-question checking and Base publication for the authorized set, pausing only affected items with genuine content or provider failures"
+      ]
     }
   ]
 }

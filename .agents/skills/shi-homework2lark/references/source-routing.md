@@ -12,10 +12,10 @@ The public Skill accepts images, PDF, Word, teacher descriptions and baseline-ne
 | full-page JPG/PNG | Yescan or AI preview | original page | `chat` or `manual` + `frame` |
 | PDF | MinerU Markdown/JSON | render every selected PDF page to PNG | page-by-page `chat`/`manual` |
 | DOC/DOCX | doc render and optional MinerU | render to PDF, then page PNG | page-by-page `chat`/`manual` |
-| Quark wrongbook new item | private catalog sync; no OCR yet | selected `original_image_url` downloaded temporarily | `quark_wrongbook.py import` -> existing `single` |
+| Quark wrongbook new item | private catalog sync; no OCR yet | authorized pending `original_image_url` downloaded temporarily | `quark_wrongbook.py collect-new` or selected `import` -> existing `single` |
 | teacher description only | none | none | allow catalog draft only; request a question image before claiming visual completeness |
 
-Quark wrongbook first use is special: `baseline` records every currently existing question ID as excluded and downloads nothing. Only IDs first seen by a later `sync` may become pending, and only a teacher-selected pending ID may be downloaded. Load `quark-wrongbook.md` before using this route.
+Quark wrongbook first use is special: `baseline` records every currently existing question ID as excluded and downloads nothing. Only IDs first seen later may become pending. A teacher request to “新增/收录今天或本次新增题” authorizes all pending through `collect-new` without a second item-by-item choice; “查看/列出新增” remains `sync/status` only, while explicit partial selection still uses `import`. Load `quark-wrongbook.md` before using this route.
 ## Blank Template Plus Corrected Copies
 
 When one blank worksheet/test is paired with many corrected copies, treat the blank page as the unique printed-question source:

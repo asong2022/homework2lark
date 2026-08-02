@@ -129,6 +129,166 @@ class WrongbookServiceTests(unittest.TestCase):
         self.assertEqual(status["ignoredCount"], 1)
         self.assertEqual(status["pending"][0]["questionId"], "new_2")
 
+    def test_collect_new_imports_existing_pending_and_new_items_with_one_listing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = wrongbook.StateStore(Path(directory) / "state.json")
+            client = StubClient([question("old")])
+            service = wrongbook.WrongbookService(store, client=client, now=lambda: NOW)
+            service.baseline()
+            client.questions = [
+                question("old"),
+                question("pending_1"),
+                question("ignored_1"),
+                question("imported_1"),
+            ]
+            service.sync()
+            service.ignore(["ignored_1"])
+            wrongbook.WrongbookService(
+                store,
+                client=client,
+                importer=StubImporter(),
+                now=lambda: NOW,
+            ).import_questions(["imported_1"])
+
+            client.questions = [
+                question("old"),
+                question("pending_1"),
+                question("ignored_1"),
+                question("imported_1"),
+                question("new_1"),
+                question("new_2"),
+            ]
+            client.list_calls = 0
+            client.download_calls = []
+            importer = StubImporter()
+            importer.calls = 100
+            result = wrongbook.WrongbookService(
+                store,
+                client=client,
+                importer=importer,
+                now=lambda: NOW,
+            ).collect_new()
+
+        self.assertEqual(result["status"], "imported")
+        self.assertEqual(result["discoveredCount"], 2)
+        self.assertEqual(
+            [item["questionId"] for item in result["imported"]],
+            ["pending_1", "new_1", "new_2"],
+        )
+        self.assertEqual(result["baselineExcludedCount"], 1)
+        self.assertEqual(result["pendingCount"], 0)
+        self.assertEqual(result["importedCount"], 4)
+        self.assertEqual(result["ignoredCount"], 1)
+        self.assertEqual(client.list_calls, 1)
+        self.assertEqual(client.download_calls, ["pending_1", "new_1", "new_2"])
+        self.assertEqual(importer.calls, 103)
+
+    def test_collect_new_without_new_or_pending_items_is_a_download_free_noop(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = wrongbook.StateStore(Path(directory) / "state.json")
+            client = StubClient([question("old")])
+            service = wrongbook.WrongbookService(store, client=client, now=lambda: NOW)
+            service.baseline()
+            client.list_calls = 0
+            importer = StubImporter()
+
+            result = wrongbook.WrongbookService(
+                store,
+                client=client,
+                importer=importer,
+                now=lambda: NOW,
+            ).collect_new()
+
+        self.assertEqual(result["status"], "no_change")
+        self.assertEqual(result["discoveredCount"], 0)
+        self.assertEqual(result["downloadedCount"], 0)
+        self.assertEqual(result["problemCreatedCount"], 0)
+        self.assertEqual(client.list_calls, 1)
+        self.assertEqual(client.download_calls, [])
+        self.assertEqual(importer.calls, 0)
+
+    def test_collect_new_requires_existing_baseline_without_remote_access(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = wrongbook.StateStore(Path(directory) / "state.json")
+            client = StubClient([question("current")])
+
+            with self.assertRaises(wrongbook.WrongbookError) as captured:
+                wrongbook.WrongbookService(
+                    store,
+                    client=client,
+                    importer=StubImporter(),
+                    now=lambda: NOW,
+                ).collect_new()
+
+        self.assertEqual(captured.exception.code, "baseline_required")
+        self.assertEqual(client.list_calls, 0)
+        self.assertEqual(client.download_calls, [])
+
+    def test_collect_new_partial_failure_preserves_success_and_pending_remainder(self):
+        class SecondImportFails(StubImporter):
+            def import_image(self, image):
+                if self.calls == 1:
+                    raise wrongbook.WrongbookError("import_failed", "第二题失败。")
+                return super().import_image(image)
+
+        with tempfile.TemporaryDirectory() as directory:
+            store = wrongbook.StateStore(Path(directory) / "state.json")
+            client = StubClient([question("old")])
+            service = wrongbook.WrongbookService(store, client=client, now=lambda: NOW)
+            service.baseline()
+            client.questions = [question("old"), question("new_1"), question("new_2")]
+
+            with self.assertRaises(wrongbook.WrongbookError):
+                wrongbook.WrongbookService(
+                    store,
+                    client=client,
+                    importer=SecondImportFails(),
+                    now=lambda: NOW,
+                ).collect_new()
+            status = service.status()
+
+        self.assertEqual(status["baselineExcludedCount"], 1)
+        self.assertEqual(status["importedCount"], 1)
+        self.assertEqual(status["pendingCount"], 1)
+
+    def test_collect_new_commits_available_items_before_a_missing_pending_item(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = wrongbook.StateStore(Path(directory) / "state.json")
+            client = StubClient([question("old")])
+            service = wrongbook.WrongbookService(store, client=client, now=lambda: NOW)
+            service.baseline()
+            client.questions = [
+                question("old"),
+                question("available_1"),
+                question("missing_1"),
+            ]
+            service.sync()
+            client.questions = [
+                question("old"),
+                question("available_1"),
+                question("available_2"),
+            ]
+
+            with self.assertRaises(wrongbook.WrongbookError) as captured:
+                wrongbook.WrongbookService(
+                    store,
+                    client=client,
+                    importer=StubImporter(),
+                    now=lambda: NOW,
+                ).collect_new()
+            status = service.status()
+
+        self.assertEqual(captured.exception.code, "question_unavailable")
+        self.assertEqual(captured.exception.details, {"questionId": "missing_1"})
+        self.assertEqual(client.download_calls, ["available_1"])
+        self.assertEqual(status["importedCount"], 1)
+        self.assertEqual(status["pendingCount"], 2)
+
+    def test_parser_exposes_collect_new_as_a_no_selection_command(self):
+        parsed = wrongbook.build_parser().parse_args(["collect-new"])
+
+        self.assertEqual(parsed.command, "collect-new")
+
     def test_import_selected_is_idempotent_and_leaves_unselected_pending(self):
         with tempfile.TemporaryDirectory() as directory:
             store = wrongbook.StateStore(Path(directory) / "state.json")

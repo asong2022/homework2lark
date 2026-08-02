@@ -147,7 +147,7 @@ Word 不预估物理页，不插人工分页符；实际页面码由 Word `PAGE`
 
 进入阶段时，按以下顺序加载，避免把所有文档一次塞入上下文：
 
-整页材料先由教师在对话中点名题号或选择候选；Agent 保存完整题目区域并取得公开 `problemId`，OCR、修订、质量门与 Base 操作继续在同一对话推进。夸克错题本来源先读 `quark-wrongbook.md`，只列出基线后新增 pending，教师选择后才转成同一 `single` problem ID。
+整页材料先由教师在对话中点名题号或选择候选；Agent 保存完整题目区域并取得公开 `problemId`，OCR、修订、质量门与 Base 操作继续在同一对话推进。夸克错题本来源先读 `quark-wrongbook.md`：教师说“新增/收录”时通过 `collect-new` 把全部 pending 直接转成同一 `single` problem ID 集合；只有“查看/列出”才停在只读 pending，明确部分范围才逐题选择。
 
 ### 收集入库
 

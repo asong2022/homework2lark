@@ -429,25 +429,42 @@ class WrongbookService:
     def sync(self) -> dict[str, JSONValue]:
         state = self._store.load()
         questions = self._require_client().list_questions()
-        items = _state_items(state)
-        now = self._now()
-        discovered = 0
-        for question in questions:
-            if question.question_id in items:
-                continue
-            items[question.question_id] = {
-                "status": "pending",
-                "firstSeenAt": now,
-                "updatedAt": now,
-            }
-            discovered += 1
-        if discovered:
-            state["updatedAt"] = now
-            self._store.save(state)
+        discovered = self._discover(state, questions)
         return {
             "status": "synced" if discovered else "no_change",
             "discoveredCount": discovered,
             **_state_summary(state),
+        }
+
+    def collect_new(self) -> dict[str, JSONValue]:
+        state = self._store.load()
+        questions = self._require_client().list_questions()
+        discovered = self._discover(state, questions)
+        pending = [
+            question_id
+            for question_id, value in _state_items(state).items()
+            if _item(value)["status"] == "pending"
+        ]
+        if not pending:
+            return {
+                "status": "no_change",
+                "discoveredCount": discovered,
+                "downloadedCount": 0,
+                "problemCreatedCount": 0,
+                "imported": [],
+                "unchanged": [],
+                **_state_summary(state),
+            }
+        result = self._import_from_state(
+            state,
+            pending,
+            catalog=_question_catalog(questions),
+        )
+        return {
+            **result,
+            "discoveredCount": discovered,
+            "downloadedCount": len(pending),
+            "problemCreatedCount": len(pending),
         }
 
     def status(self) -> dict[str, JSONValue]:
@@ -491,6 +508,38 @@ class WrongbookService:
             if all_pending
             else _selected_ids(question_ids)
         )
+        return self._import_from_state(state, selected)
+
+    def _discover(
+        self,
+        state: dict[str, JSONValue],
+        questions: Sequence[RemoteQuestion],
+    ) -> int:
+        items = _state_items(state)
+        now = self._now()
+        discovered = 0
+        for question in questions:
+            if question.question_id in items:
+                continue
+            items[question.question_id] = {
+                "status": "pending",
+                "firstSeenAt": now,
+                "updatedAt": now,
+            }
+            discovered += 1
+        if discovered:
+            state["updatedAt"] = now
+            self._store.save(state)
+        return discovered
+
+    def _import_from_state(
+        self,
+        state: dict[str, JSONValue],
+        selected: Sequence[str],
+        *,
+        catalog: dict[str, RemoteQuestion] | None = None,
+    ) -> dict[str, JSONValue]:
+        items = _state_items(state)
         if not selected:
             return {
                 "status": "no_change",
@@ -521,21 +570,19 @@ class WrongbookService:
                 "unchanged": unchanged,
                 **_state_summary(state),
             }
-
-        catalog = {
-            question.question_id: question
-            for question in self._require_client().list_questions()
-        }
-        missing = [question_id for question_id in pending if question_id not in catalog]
-        if missing:
-            raise WrongbookError(
-                "question_unavailable",
-                "所选新增错题已不在夸克当前列表中，请重新同步后选择。",
-            )
+        if catalog is None:
+            catalog = _question_catalog(self._require_client().list_questions())
         importer = self._require_importer()
         imported: list[dict[str, JSONValue]] = []
         for question_id in pending:
-            image = self._require_client().download_image(catalog[question_id])
+            question = catalog.get(question_id)
+            if question is None:
+                raise WrongbookError(
+                    "question_unavailable",
+                    "待收录错题已不在夸克当前列表中，请稍后重试或明确忽略该题。",
+                    details={"questionId": question_id},
+                )
+            image = self._require_client().download_image(question)
             problem_id = importer.import_image(image)
             now = self._now()
             next_state = _copy_state(state)
@@ -697,6 +744,18 @@ def _merge_duplicate(first: RemoteQuestion, second: RemoteQuestion) -> RemoteQue
     return first if first.image_url else second
 
 
+def _question_catalog(
+    questions: Sequence[RemoteQuestion],
+) -> dict[str, RemoteQuestion]:
+    catalog: dict[str, RemoteQuestion] = {}
+    for question in questions:
+        existing = catalog.get(question.question_id)
+        catalog[question.question_id] = (
+            question if existing is None else _merge_duplicate(existing, question)
+        )
+    return catalog
+
+
 def _question_id(value: JSONValue) -> str:
     if isinstance(value, int) and not isinstance(value, bool):
         value = str(value)
@@ -802,6 +861,7 @@ def build_parser() -> argparse.ArgumentParser:
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("baseline")
     commands.add_parser("sync")
+    commands.add_parser("collect-new")
     commands.add_parser("status")
 
     ignore = commands.add_parser("ignore")
@@ -838,6 +898,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                 result = WrongbookService(store, client=client).baseline()
             elif args.command == "sync":
                 result = WrongbookService(store, client=client).sync()
+            elif args.command == "collect-new":
+                result = WrongbookService(
+                    store,
+                    client=client,
+                    importer=SingleIntakeImporter(args.api_url),
+                ).collect_new()
             else:
                 result = WrongbookService(
                     store,

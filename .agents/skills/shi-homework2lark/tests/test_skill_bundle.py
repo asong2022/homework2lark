@@ -45,7 +45,7 @@ class BundleManifestTests(unittest.TestCase):
             },
         )
         self.assertNotIn("version", top_level_keys)
-        self.assertIn('version: "3.1.0"', frontmatter)
+        self.assertIn('version: "3.1.1"', frontmatter)
 
     def test_bundle_declares_one_entry_and_five_stages(self) -> None:
         manifest = doctor.load_bundle(SKILL_ROOT)
@@ -70,6 +70,7 @@ class BundleManifestTests(unittest.TestCase):
         self.assertIn("shi-ocr", skill)
         self.assertIn("wumu-jihe-html", skill)
         self.assertIn("quark-wrongbook.md", skill)
+        self.assertIn("collect-new", skill)
         for block in (
             "task",
             "source",

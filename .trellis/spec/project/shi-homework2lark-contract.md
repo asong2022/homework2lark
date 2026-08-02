@@ -14,7 +14,7 @@ There are three Agent-controlled image paths but one business core:
 - `chat`: call the configured Yescan detection adapter, present group-level candidates in the conversation, and create only the candidates the teacher selects.
 - `single`: treat a teacher-provided one-question image as one full-image region.
 
-Quark Scan King wrongbook is an optional pre-`single` source, not a fourth region mode. First use records every current private question ID as `baseline_excluded` with zero downloads and zero local/Base writes. Later syncs mark only unseen IDs pending; explicit teacher selection is required before a temporary image download enters `single`.
+Quark Scan King wrongbook is an optional pre-`single` source, not a fourth region mode. First use records every current private question ID as `baseline_excluded` with zero downloads and zero local/Base writes. Later syncs mark only unseen IDs pending. A teacher add/collect request authorizes every pending addition through `collect-new` without item-by-item selection; a view/list request remains read-only, and an explicitly partial range still uses selected import.
 
 For one blank template plus many corrected copies, the blank page is the unique printed-question source. The Agent may call Yescan AI Agent `scene=question-ocr` once per blank page, confirms the complete questions, then locally registers corrected pages to those regions. It does not repeat printed-stem OCR for every student copy.
 
@@ -34,6 +34,7 @@ python scripts/intake.py publish --problem-id problem_xxx
 python scripts/intake.py download-evidence --problem-id problem_xxx --output-dir <dir>
 python scripts/intake.py validate-metadata --input <json-path|->
 python scripts/quark_wrongbook.py [--state <private.json>] baseline|sync|status
+python scripts/quark_wrongbook.py [--state <private.json>] collect-new
 python scripts/quark_wrongbook.py [--state <private.json>] ignore --question-id <id>...
 python scripts/quark_wrongbook.py [--state <private.json>] import (--all-pending | --question-id <id>...)
 python scripts/base_metadata.py preview --input <json-path|->
@@ -53,6 +54,7 @@ Backend operations remain the existing typed HTTP API; the Skill is a client/orc
 - `single` creates a normalized full-image bbox without detection. OCR, revision, and publication gates are unchanged.
 - Quark wrongbook credentials come only from the private process environment as `QK_UT/QK_KP`. They never enter argv, manifests, state, output, logs, Base or Git. The versioned atomic state stores only question ID, `baseline_excluded|pending|imported|ignored`, timestamps, and the public local problem ID after successful import; it stores no question text, image URL, student identity or remote Base ID.
 - Repeated Quark baseline is a local no-op and never reclassifies later additions as history. Repeated import of an imported ID returns the same problem ID without network/download. Pending items remain visible until explicitly imported or ignored. The adapter is documented as a changeable private App interface, never an official stable API.
+- Quark write-intent phrases such as “新增/收录/加入飞书今天或本次新增题” authorize all current pending IDs. `collect-new` requires an existing baseline, lists the private catalog once, persists unseen IDs before downloads, then imports every pending item through `single` with per-item durable progress. “查看/列出/有多少新增” uses `sync/status` only. “Today” means locally unseen/unhandled increment, not an uncontracted remote creation timestamp.
 - After `frame`, `select`, or `single` creates regions, the command returns saved crops and public problem IDs, then stops. It must not call OCR, revision, publication, or Base operations implicitly.
 - Reopening an existing manual session is local manifest reuse. Repeating a confirmed frame request must not be described as idempotent unless the API returns the existing public problem; the Agent first reads the source-scoped problem collection and avoids duplicate creation.
 - `get` and `ocr` return curated fields. Provider raw response, storage keys, absolute paths, image Base64, attachment URLs, remote record IDs, CLI stderr, and credentials never appear in normal output or manifests.
@@ -93,7 +95,7 @@ Teaching priority is a scoped view, not a durable question attribute. Every prio
 | PDF/Word passed directly to image CLI | `source_requires_page_images` | public Skill normalizes to page images first; no hidden direct upload |
 | manual session asset missing | `asset_not_found` | no region or replacement upload |
 | malformed, empty, duplicate or out-of-bounds manual boxes | `invalid_regions` | source retained; no region request |
-| Quark baseline absent before sync/import | `baseline_required` | no download or local/Base mutation |
+| Quark baseline absent before sync/import/collect-new | `baseline_required` | no remote list, download or local/Base mutation |
 | Quark private response/pagination invalid | stable `quark_*` error | prior atomic state retained; no guessed complete catalog |
 | selected Quark image missing/damaged/unavailable | stable `quark_image_*` error | item remains pending; no ProblemAsset |
 | chat mode with a test-only detection provider active | local configuration rejection | source is not described as truly detected |
@@ -110,14 +112,14 @@ Teaching priority is a scoped view, not a durable question attribute. Every prio
 ### 5. Good / Base / Bad Cases
 
 - Good: the Agent uploads `image1.png` in `manual` mode, the teacher confirms two complete question boxes in the conversation, `frame` returns public problem IDs, and the Agent then performs OCR, correction, the local quality gate, and explicit Base publication.
-- Good: first Quark use excludes all current IDs without downloads; a later sync finds two new pending IDs, the teacher chooses one, and only that image enters `single` while the other remains pending.
+- Good: first Quark use excludes all current IDs without downloads; later the teacher says to add today's new wrongbook questions, `collect-new` lists once and sends all pending additions into `single` without another selection while baseline history remains excluded.
 - Base: the Agent receives `image2.png` in chat mode; Yescan returns whole-question candidates, the teacher selects one, hosted PaddleOCR-VL-1.6 recognizes it, and the teacher corrects the flattened table text before saving the current revision.
 - Bad: infer unconfirmed manual boxes, couple framing to OCR/publication, treat nested Yescan details as separate questions, silently treat AI text as teacher-confirmed, or write directly to Base before the current-revision gate.
 
 ### 6. Tests Required
 
 - CLI unit: health, manual/chat/single manifests, strict manual-frame validation, candidate selection, safe HTTP errors, production test-provider rejection, OCR retry IDs, revision/publication gates, safe projections, and metadata whitelist.
-- Quark unit: baseline zero side effects, repeated local no-op, new-only sync, ignored/imported stability, selected/all-pending import, same-problem idempotency, repeated pagination, corrupt response/image, atomic state replacement failure, and credential/URL/path privacy.
+- Quark unit: baseline zero side effects, repeated local no-op, new-only read-only sync, collect-new all-pending authorization with one catalog call, ignored/imported stability, selected/all-pending import, partial-success recovery, same-problem idempotency, repeated pagination, corrupt response/image, atomic state replacement failure, and credential/URL/path privacy.
 - Metadata unit: typical-error lookup immutability, absolute input paths inside/outside the repository, empty-field apply, idempotent readback, non-empty conflict, and preview output without full private text.
 - Backend: Provider contracts, immutable retry history, current-revision publication eligibility, hidden-ID plus source-hash page idempotency, readable sequence allocation, and privacy-safe errors.
 - Agent integration: manual manifest -> strict `frame` payload -> saved crops/public IDs -> source-scoped readback, with no implicit downstream call.

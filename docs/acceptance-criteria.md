@@ -86,6 +86,12 @@
 
 **Given** 任意成功或失败路径，**When** 检查状态文件、命令输出和错误信息，**Then** 只包含安全 ID、时间、状态和公共 `problemId`，不含 `QK_UT/QK_KP`、Cookie、题干、图片 URL、图片字节或学生身份。状态文件使用原子替换；远端下载失败不改变原状态，若本地题目已创建但状态落盘失败，错误返回安全的 `questionId + problemId` 供恢复。
 
+## AC-022 夸克新增题整批授权
+
+**Given** 已建立基线且教师说“新增/收录今天或本次的夸克错题”，**When** 执行 `collect-new`，**Then** 一次读取远端目录，将未见 ID 先保存为 `pending`，再直接导入当前全部 pending（包括之前只查看留下的题），不再逐题询问；`baseline_excluded/ignored/imported` 不变。没有 pending 时下载和建题均为 0；批量后续题失败时前面成功题保持 `imported`，其余保持 `pending`。
+
+**Given** 教师只说“查看/列出/有多少新增题”，**When** 执行只读路由，**Then** 仅运行 `sync/status`，不下载图片、不创建题目、不写飞书。
+
 ## 补充质量标准
 
 - Provider raw NumPy 值必须可 JSON 序列化。
