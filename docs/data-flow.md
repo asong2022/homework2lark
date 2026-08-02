@@ -29,6 +29,26 @@ Skill 有三个入口，但上传后共用同一个 `SourceAsset`：
 - `chat`：上传后调用一次已配置的 Yescan 题目检测，在对话里展示整题候选，由教师选择。
 - `single`：教师直接给出一题一图，以整图作为一道题，不调用检测。
 
+夸克扫描王错题本是 `single` 之前的可选来源，不是第四套题目模型：
+
+```text
+首次连接夸克错题本
+→ baseline 只读取当前题目 ID
+→ 全部记为 baseline_excluded
+→ 下载 0 张图片，创建 0 个 SourceAsset/ProblemAsset/Base 记录
+
+以后同步
+→ sync 只把未见过的题目 ID 记为 pending
+→ Agent 在对话中展示安全摘要
+→ 教师明确选择
+→ import 下载该题原图到临时文件
+→ 复用 single 入口创建 SourceAsset、完整区域和 ProblemAsset
+→ 删除临时文件
+→ 后续 OCR、修订和发布流程保持不变
+```
+
+状态文件只保存夸克题目 ID、首次/最近发现时间、`baseline_excluded | pending | imported | ignored` 和已导入题目的公共 `problemId`。它不保存 Cookie、`QK_UT/QK_KP`、题干、图片 URL、图片字节或学生身份；凭证只从进程环境读取。已经处于 `baseline_excluded` 的历史题不会被自动升级为 `pending`，需要收录时应由教师另行发送单题图片走普通入口。
+
 ## 3. 人工框题与可选自动候选流程
 
 ```text

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The intake side of `shi-homework2lark` is Agent-only and orchestrates the local FastAPI from the conversation. The Agent chooses manual framing, configured candidate detection, or a whole-image single-question route after the teacher selects the collection mode and questions. FastAPI remains the only writer of local evidence; Lark Base receives only eligible catalog projections.
+The intake side of `shi-homework2lark` is Agent-only and orchestrates the local FastAPI from the conversation. The Agent chooses manual framing, configured candidate detection, a whole-image single-question route, or teacher-selected baseline-new Quark wrongbook images after the teacher selects the collection mode and questions. FastAPI remains the only writer of local evidence; Lark Base receives only eligible catalog projections.
 
 ## Entry Modes
 
@@ -47,6 +47,9 @@ download-evidence --problem-id <problem_xxx> --output-dir <relative-dir>
 validate-metadata --input <json-path|->
 base_metadata.py preview --input <json-path|->
 base_metadata.py apply --input <json-path|->
+quark_wrongbook.py baseline|sync|status
+quark_wrongbook.py ignore --question-id <id>...
+quark_wrongbook.py import (--all-pending | --question-id <id>...)
 ```
 
 `start chat` checks the configured detection Provider before upload. OCR uses the API's configured real Provider; production configuration does not expose a Fake OCR option.
@@ -62,6 +65,8 @@ Manual frame input contains only:
 ```
 
 The Agent derives these values from the original-resolution page after the teacher selects the question. A successful frame result returns the public problem IDs in reading order; OCR does not begin implicitly.
+
+Quark wrongbook is a pre-`single` source adapter. Its first baseline stores current IDs as `baseline_excluded` with zero downloads and zero local/Base writes. Later sync stores only unseen IDs as pending. Import requires the teacher's explicit pending selection, downloads into a temporary file, and calls the same `single` path; it stops with public problem IDs and does not run OCR or publish implicitly. The full state/privacy contract is in `quark-wrongbook.md`.
 
 `get` and `ocr` deliberately expose selected OCR/corrected text to the current Agent for teacher confirmation, but omit raw Provider response and private storage fields. `publish` omits remote record/table/field IDs from CLI output.
 
@@ -113,6 +118,7 @@ For scanned pages with embedded diagrams, PaddleOCR text/layout output and local
 - Publication rejection retains the revision and reports which required source/revision fact is missing.
 - Publication failure retains the corrected local asset. Retry the same problem ID; hidden IDs prevent duplicate questions and exact source-file hashes prevent the same image bytes from creating another page row.
 - Direct `intake.py start` returns `source_requires_page_images` for PDF/DOC/DOCX because `/assets` accepts images. The public Skill supports them by first using MinerU plus PDF/doc rendering to produce page images as defined in `source-routing.md`; never pretend the image API directly stored the original document.
+- Quark baseline/sync failure leaves the prior private state unchanged. Imported items resume downstream work from their stored public problem ID; baseline history never becomes pending on a later sync.
 
 ## Staged Corrected-Work Campaign
 

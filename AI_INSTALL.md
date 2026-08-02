@@ -15,6 +15,8 @@
 7. `onboarding.py verify` 返回 `status=ready`；
 8. 告诉教师：“可以开始发作业图片、PDF 或 Word 了。”
 
+夸克扫描王错题本是使用阶段的可选来源，不是首次安装完成条件。只有教师主动选择该来源时才读取 `references/quark-wrongbook.md` 并临时提供 `QK_UT/QK_KP`；不要把它们持久写入仓库配置。
+
 ## 1. 获取仓库
 
 公开仓库：

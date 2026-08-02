@@ -70,9 +70,26 @@
 
 **Given** 任意成功或失败路径，**When** 检查日志和错误响应，**Then** 不含完整图片、OCR/修订/学生文本、Token、CLI stderr、SQL 参数或绝对私有路径。
 
+## AC-018 夸克错题本首次基线
+
+**Given** 教师第一次连接已有历史题目的夸克扫描王错题本，**When** 执行 `baseline`，**Then** 只读取并本地记录当前题目 ID 为 `baseline_excluded`，下载 0 张图片，创建 0 个 SourceAsset、ProblemAsset 和 Base 记录；重复执行不访问远端且不改变结果。
+
+## AC-019 夸克错题本只发现新增题
+
+**Given** 首次基线已经完成，**When** 后续 `sync` 看见基线中不存在的题目 ID，**Then** 只把新 ID 追加为 `pending`，不下载图片、不调用 OCR、不写飞书；既有 `baseline_excluded/imported/ignored` 状态保持不变。
+
+## AC-020 教师选择后复用单题入口
+
+**Given** 一个 `pending` 题目且教师明确选择导入，**When** 执行 `import`，**Then** 仅下载该题原图到临时文件，复用 `single` 入口创建本地题目资产，成功后状态改为 `imported` 并保存公共 `problemId`，临时文件被删除；重复导入返回同一 `problemId` 且不再访问远端。
+
+## AC-021 夸克状态与凭证最小化
+
+**Given** 任意成功或失败路径，**When** 检查状态文件、命令输出和错误信息，**Then** 只包含安全 ID、时间、状态和公共 `problemId`，不含 `QK_UT/QK_KP`、Cookie、题干、图片 URL、图片字节或学生身份。状态文件使用原子替换；远端下载失败不改变原状态，若本地题目已创建但状态落盘失败，错误返回安全的 `questionId + problemId` 供恢复。
+
 ## 补充质量标准
 
 - Provider raw NumPy 值必须可 JSON 序列化。
 - 文件/数据库补偿只删除本次失败步骤写入的文件，不删除既有 source/crop。
 - FastAPI OpenAPI 与提交的快照保持一致。
 - `manual + frame` 只承担上传与框题，不隐式调用 OCR、修订或发布。
+- 夸克错题本入口依赖非公开接口，接口变化时安全失败并保留本地状态，不回退为全量历史导入。

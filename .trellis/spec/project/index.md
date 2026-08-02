@@ -23,7 +23,7 @@
 
 ## Quality Check
 
-- The shared flow is material normalization → Agent-guided complete-question selection → OCR evidence → teacher-confirmed revision (immediately current) → explicit Base publication → Agent appends linked rows to the separate `变式题` catalog → complete output becomes available or a genuine exception is repaired → immutable batch manifest + Word assembly → retry feedback. Manual framing stays in the conversation; chat intake may use Yescan group-level candidates.
+- The shared flow is material normalization → Agent-guided complete-question selection → OCR evidence → teacher-confirmed revision (immediately current) → explicit Base publication → Agent appends linked rows to the separate `变式题` catalog → complete output becomes available or a genuine exception is repaired → immutable batch manifest + Word assembly → retry feedback. Manual framing stays in the conversation; chat intake may use Yescan group-level candidates; optional Quark wrongbook intake excludes its first baseline and sends only teacher-selected later additions into `single`.
 - In identified mode, only exact private-roster names appear in teacher-confirmed `错题记录.对应学生`; options follow private student-number order, while numbers remain outside Base and duplicate names stop the workflow. No student table/account, class relation/analytics, backend generation, queue, FastAPI PDF pipeline, multi-provider routing, or authorization platform was added.
 - Architecture and product docs remain consistent with task contracts and executable tests.
 - Local launcher changes preserve existing `.env`, SQLite data, uploaded files and fixed ports. The OCR default remains hosted `PaddleOCR-VL-1.6`; missing credentials must be explained, never replaced with fabricated OCR output.

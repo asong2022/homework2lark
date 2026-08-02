@@ -55,6 +55,8 @@ Thumbs.db
 
 # Private teacher inputs and generated outputs
 .codex-remote-attachments/
+.shi-homework2lark/
+quark-wrongbook-state*.json
 .agents/skills/*-workspace/
 artifacts/auth/
 artifacts/class-*-practice-*/

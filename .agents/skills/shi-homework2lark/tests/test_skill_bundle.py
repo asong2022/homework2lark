@@ -35,10 +35,17 @@ class BundleManifestTests(unittest.TestCase):
 
         self.assertLessEqual(
             top_level_keys,
-            {"name", "description", "license", "allowed-tools", "metadata", "compatibility"},
+            {
+                "name",
+                "description",
+                "license",
+                "allowed-tools",
+                "metadata",
+                "compatibility",
+            },
         )
         self.assertNotIn("version", top_level_keys)
-        self.assertIn('version: "3.0.0"', frontmatter)
+        self.assertIn('version: "3.1.0"', frontmatter)
 
     def test_bundle_declares_one_entry_and_five_stages(self) -> None:
         manifest = doctor.load_bundle(SKILL_ROOT)
@@ -53,15 +60,16 @@ class BundleManifestTests(unittest.TestCase):
 
     def test_router_contains_all_handoffs_and_external_delegation(self) -> None:
         skill = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
-        handoffs = (SKILL_ROOT / "references" / "orchestration-and-handoffs.md").read_text(
-            encoding="utf-8"
-        )
+        handoffs = (
+            SKILL_ROOT / "references" / "orchestration-and-handoffs.md"
+        ).read_text(encoding="utf-8")
 
         self.assertIn("唯一入口", skill)
         self.assertIn("禁止 AI 自动判断", skill)
         self.assertIn("lark-base", skill)
         self.assertIn("shi-ocr", skill)
         self.assertIn("wumu-jihe-html", skill)
+        self.assertIn("quark-wrongbook.md", skill)
         for block in (
             "task",
             "source",
@@ -75,6 +83,7 @@ class BundleManifestTests(unittest.TestCase):
             self.assertIn(f"[homework/{block}]", handoffs)
         self.assertTrue((SKILL_ROOT / "scripts" / "workflow.py").is_file())
         self.assertTrue((SKILL_ROOT / "scripts" / "retry_batch.py").is_file())
+        self.assertTrue((SKILL_ROOT / "scripts" / "quark_wrongbook.py").is_file())
 
 
 class DoctorTests(unittest.TestCase):
@@ -125,7 +134,9 @@ class DoctorTests(unittest.TestCase):
         self.assertEqual(intake["status"], "degraded")
         self.assertIn("skill:shi-ocr", intake["missingRecommended"])
 
-    def test_missing_filesystem_base_degrades_because_cli_embedded_guide_remains(self) -> None:
+    def test_missing_filesystem_base_degrades_because_cli_embedded_guide_remains(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             report = doctor.build_report(
                 SKILL_ROOT,
@@ -136,9 +147,13 @@ class DoctorTests(unittest.TestCase):
             )
 
         self.assertEqual(report["overallStatus"], "degraded")
-        base_check = next(item for item in report["skills"] if item["name"] == "lark-base")
+        base_check = next(
+            item for item in report["skills"] if item["name"] == "lark-base"
+        )
         self.assertFalse(base_check["available"])
-        mistakes = next(stage for stage in report["stages"] if stage["id"] == "mistakes")
+        mistakes = next(
+            stage for stage in report["stages"] if stage["id"] == "mistakes"
+        )
         self.assertIn("skill:lark-base", mistakes["missingRecommended"])
 
     def test_report_does_not_expose_discovered_paths(self) -> None:

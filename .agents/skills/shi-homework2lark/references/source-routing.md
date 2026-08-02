@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The public Skill accepts images, PDF, Word and teacher descriptions, while the local FastAPI upload endpoint still accepts only JPG/JPEG/PNG. Normalize every material into visual page evidence before creating problem regions.
+The public Skill accepts images, PDF, Word, teacher descriptions and baseline-new Quark wrongbook items, while the local FastAPI upload endpoint still accepts only JPG/JPEG/PNG. Normalize every material into visual page evidence before creating problem regions.
 
 ## Routes
 
@@ -12,7 +12,10 @@ The public Skill accepts images, PDF, Word and teacher descriptions, while the l
 | full-page JPG/PNG | Yescan or AI preview | original page | `chat` or `manual` + `frame` |
 | PDF | MinerU Markdown/JSON | render every selected PDF page to PNG | page-by-page `chat`/`manual` |
 | DOC/DOCX | doc render and optional MinerU | render to PDF, then page PNG | page-by-page `chat`/`manual` |
+| Quark wrongbook new item | private catalog sync; no OCR yet | selected `original_image_url` downloaded temporarily | `quark_wrongbook.py import` -> existing `single` |
 | teacher description only | none | none | allow catalog draft only; request a question image before claiming visual completeness |
+
+Quark wrongbook first use is special: `baseline` records every currently existing question ID as excluded and downloads nothing. Only IDs first seen by a later `sync` may become pending, and only a teacher-selected pending ID may be downloaded. Load `quark-wrongbook.md` before using this route.
 ## Blank Template Plus Corrected Copies
 
 When one blank worksheet/test is paired with many corrected copies, treat the blank page as the unique printed-question source:
@@ -67,3 +70,4 @@ Use only relative session paths in manifests. Do not include keys, tokens, image
 - PDF render fails: stop the PDF route and request page images.
 - Word render differs visibly: request PDF export from the teacher.
 - Candidate detection fails: keep the page image and switch to `manual + frame`.
+- Quark private interface fails: keep the versioned local baseline/pending state and do not reclassify old items or silently import history.

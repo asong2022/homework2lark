@@ -24,7 +24,7 @@ Owns the approved `shi-homework2lark` Skill/CLI flow: explicit Base selection, A
 
 ### `agent-assisted-problem-intake`
 
-Owns the approved `shi-homework2lark` intake orchestration: images use Agent manual framing, chat Yescan candidate selection or one-question full-image intake; PDF/Word use Agent-level MinerU plus page rendering before entering the image-only FastAPI. It also owns OCR/revision commands, explicit publication, complete-question boundaries and teacher-confirmed Base metadata suggestions. It does not bypass FastAPI domain rules, claim direct PDF/Word API upload, make automatic detection mandatory, or store Provider/Lark/model credentials.
+Owns the approved `shi-homework2lark` intake orchestration: images use Agent manual framing, chat Yescan candidate selection or one-question full-image intake; PDF/Word use Agent-level MinerU plus page rendering before entering the image-only FastAPI. An optional Quark Scan King wrongbook adapter may establish a private current-ID exclusion baseline, discover only later additions and send only teacher-selected pending single-question images into the same `single` path. It also owns OCR/revision commands, explicit publication, complete-question boundaries and teacher-confirmed Base metadata suggestions. It does not bypass FastAPI domain rules, import Quark baseline history, describe a private App interface as official/stable, claim direct PDF/Word API upload, make automatic detection mandatory, or store Provider/Lark/model credentials.
 
 ### `agent-assisted-learning-loop`
 
@@ -68,3 +68,5 @@ The `student-personal-precision-practice` proposal was approved by the user's ex
 The `class-batch-practice-and-staged-intake` proposal was approved by the user's explicit request to continue development on 2026-07-15. It authorizes batch-wide generation and resumable, page-budgeted intake.
 
 The `fully-automated-skill-intake-and-retry` proposal was approved by the user's explicit request on 2026-07-15. It authorizes a user-selected three-way collection entry and returned-scan page/item localization plus append-only retry events and Base current projection. It does not authorize student/class tables, autonomous mastery claims, a backend LLM Provider or broad analytics.
+
+The `quark-wrongbook-new-only-intake` task was approved on 2026-08-02 after Web removal. It authorizes a private, local baseline/pending/imported/ignored state and selected-image handoff to existing `single` intake. Current baseline content, automatic import/OCR/Base publication, credential persistence and claims of an official stable API remain forbidden.
