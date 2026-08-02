@@ -2,7 +2,7 @@
 
 ## Stable Error Contract
 
-All application, routing, and request-validation failures that enter the FastAPI exception chain become this JSON shape. A denied CORS preflight is the deliberate exception: Starlette owns its safe plain-text 400, while the outer request middleware still adds correlation.
+All application, routing, and request-validation failures that enter the FastAPI exception chain become this JSON shape.
 
 ```json
 {
@@ -16,7 +16,7 @@ All application, routing, and request-validation failures that enter the FastAPI
 }
 ```
 
-The `code` is stable and testable. `message` is safe, teacher-facing Chinese. `details` contains only corrective, non-sensitive values. The request ID links UI feedback to privacy-safe logs.
+The `code` is stable and testable. `message` is safe, teacher-facing Chinese. `details` contains only corrective, non-sensitive values. The request ID links Agent feedback to privacy-safe logs.
 
 ## Error Ownership
 
@@ -42,7 +42,7 @@ The `code` is stable and testable. `message` is safe, teacher-facing Chinese. `d
 ## Retry Rules
 
 - Retrying OCR is explicit and creates a new run ID.
-- API errors must tell the frontend whether the operation can be retried.
+- API errors must tell the Agent client whether the operation can be retried.
 - Never retry automatically inside the business layer in Phase 1; it would obscure run lineage.
 
 ## Avoid

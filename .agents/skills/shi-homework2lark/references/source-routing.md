@@ -2,17 +2,20 @@
 
 ## Purpose
 
-The public Skill accepts images, PDF, Word and teacher descriptions, while the local FastAPI upload endpoint still accepts only JPG/JPEG/PNG. Normalize every material into visual page evidence before creating problem regions.
+The public Skill accepts images, PDF, Word, teacher descriptions and baseline-new Quark wrongbook items, while the local FastAPI upload endpoint still accepts only JPG/JPEG/PNG. Normalize every material into visual page evidence before creating problem regions.
 
 ## Routes
 
 | Input | Structure extraction | Visual evidence | Next step |
 |---|---|---|---|
 | one-question JPG/PNG | optional AI/OCR | original image | `single` |
-| full-page JPG/PNG | Yescan or AI preview | original page | `chat` or `web` |
-| PDF | MinerU Markdown/JSON | render every selected PDF page to PNG | page-by-page `chat`/`web` |
-| DOC/DOCX | doc render and optional MinerU | render to PDF, then page PNG | page-by-page `chat`/`web` |
+| full-page JPG/PNG | Yescan or AI preview | original page | `chat` or `manual` + `frame` |
+| PDF | MinerU Markdown/JSON | render every selected PDF page to PNG | page-by-page `chat`/`manual` |
+| DOC/DOCX | doc render and optional MinerU | render to PDF, then page PNG | page-by-page `chat`/`manual` |
+| Quark wrongbook new item | private catalog sync; no OCR yet | authorized pending `original_image_url` downloaded temporarily | `quark_wrongbook.py collect-new` or selected `import` -> existing `single` |
 | teacher description only | none | none | allow catalog draft only; request a question image before claiming visual completeness |
+
+Quark wrongbook first use is special: `baseline` records every currently existing question ID as excluded and downloads nothing. Only IDs first seen later may become pending. A teacher request to “新增/收录今天或本次新增题” authorizes all pending through `collect-new` without a second item-by-item choice; “查看/列出新增” remains `sync/status` only, while explicit partial selection still uses `import`. Load `quark-wrongbook.md` before using this route.
 ## Blank Template Plus Corrected Copies
 
 When one blank worksheet/test is paired with many corrected copies, treat the blank page as the unique printed-question source:
@@ -59,11 +62,12 @@ Use only relative session paths in manifests. Do not include keys, tokens, image
 - The teacher explicitly chooses which candidates are mistakes.
 - When a candidate includes adjacent text and a diagram, preserve both inside one crop even if OCR exposes separate blocks.
 - A `question-ocr` result is still a machine candidate. Preserve one logical question even when its text and visual are returned as separate blocks.
-- If the crop is uncertain, use Web manual boxing or ask for a one-question screenshot.
+- If the crop is uncertain, ask the teacher for a one-question screenshot rather than guessing.
 
 ## Failure Recovery
 
 - MinerU fails: retain the original and try visual page rendering; do not claim extracted text.
 - PDF render fails: stop the PDF route and request page images.
 - Word render differs visibly: request PDF export from the teacher.
-- Candidate detection fails: keep the page image and switch to Web/manual.
+- Candidate detection fails: keep the page image and switch to `manual + frame`.
+- Quark private interface fails: keep the versioned local baseline/pending state and do not reclassify old items or silently import history.

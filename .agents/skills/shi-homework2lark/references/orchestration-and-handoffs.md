@@ -17,7 +17,7 @@
 - 收集方式决定者：用户 / 未选择
 - 起点：原始材料 / 已修订本地题目 / Base 原题 / Base 错题记录 / 变式题 / 练习批次 / 批改反馈
 - 本轮终点：
-- 输入材料：图片 / PDF / Word / 单题截图 / 教师描述 / Base 选择 / 班级名单 / 已批改练习
+- 输入材料：图片 / PDF / Word / 单题截图 / 夸克错题本新增题 / 教师描述 / Base 选择 / 班级名单 / 已批改练习
 - 处理范围：页、题目、学生或批次的明确范围
 - 教师已有判断：无 / 错题选择 / 真实作答 / 错因 / 选题意图 / 掌握判断
 - 第三方上传授权：未涉及 / 已授权给具体 Provider / 待确认
@@ -32,7 +32,7 @@
 
 | 模式 | 起点 | 核心阶段 | 默认停点 |
 |---|---|---|---|
-| A 收集入库 | 图片/PDF/Word/单题图 | source → questions（可选 Web 框题）→ Agent OCR/质量门 → Base | `[homework/base]` 原题已发布 |
+| A 收集入库 | 图片/PDF/Word/单题图 | source → 对话选题/完整框区 → Agent OCR/质量门 → Base | `[homework/base]` 原题已发布 |
 | B 错情整理 | 空白模板 + 已批改稿，或教师描述 | source/questions → observed mistakes → grouped Base records | `[homework/mistakes]` 与 `[homework/base]` |
 | C 题生变式 | Base 原题 | fact card → generate/check → optional diagram → Base write | `[homework/variants]` |
 | D 精准练习 | Base 原题/错题记录/变式 | select → immutable manifest → Word | `[homework/practice]` |
@@ -47,7 +47,7 @@
 
 ```markdown
 ## [homework/source]
-- 来源类型：
+- 来源类型：本地图片/PDF/Word / 夸克错题本基线后新增 / 教师描述
 - 材料角色：空白模板 / 已批改作业 / 单题截图 / 教师描述
 - 页数与已处理范围：
 - 页面化状态：未需要 / 已完成 / 失败待补材料
@@ -147,15 +147,16 @@ Word 不预估物理页，不插人工分页符；实际页面码由 Word `PAGE`
 
 进入阶段时，按以下顺序加载，避免把所有文档一次塞入上下文：
 
-Web 若被调用，只完成题目区域保存和公开 `problemId` 交接；OCR、修订、质量门与 Base 操作仍在本阶段的 Agent 对话中继续。
+整页材料先由教师在对话中点名题号或选择候选；Agent 保存完整题目区域并取得公开 `problemId`，OCR、修订、质量门与 Base 操作继续在同一对话推进。夸克错题本来源先读 `quark-wrongbook.md`：教师说“新增/收录”时通过 `collect-new` 把全部 pending 直接转成同一 `single` problem ID 集合；只有“查看/列出”才停在只读 pending，明确部分范围才逐题选择。
 
 ### 收集入库
 
 1. `source-routing.md`
 2. `question-asset-contract.md`
 3. `intake-contract.md`
-4. 需要 OCR 时读取 `../shi-ocr/SKILL.md`
-5. 写 Base 前读取 `lark-base/SKILL.md`
+4. 夸克来源另读 `quark-wrongbook.md`
+5. 需要 OCR 时读取 `../shi-ocr/SKILL.md`
+6. 写 Base 前读取 `lark-base/SKILL.md`
 
 ### 错情整理
 

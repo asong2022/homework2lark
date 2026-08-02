@@ -84,13 +84,13 @@ Phase 1 不实现：自动切题/整页识别、多页 PDF、图像增强/去手
 
 - 接受单个 JPG/JPEG/PNG，默认最大 15 MiB。
 - 服务端以实际解码结果验证格式，计算 SHA-256，保存宽高、大小、MIME、原文件名和 storage key。
-- 原始字节不可变；宽高和裁图使用 EXIF orientation 后的显示方向，浏览器框选服务器返回的同一原图表示。
+- 原始字节不可变；宽高和裁图使用 EXIF orientation 后的显示方向，Agent 按服务器返回的同一原图表示确定框区。
 - 原图不可覆盖；hash 建索引以支持识别重复上传。
 - 提供元数据与受控内容读取接口。
 
 ### FR-02 框选与裁图
 
-- 浏览器提交 `normalized_top_left` bbox；服务端验证有限数值、0..1 范围、非零面积和最小像素尺寸。
+- Agent CLI 提交 `normalized_top_left` bbox；服务端验证有限数值、0..1 范围、非零面积和最小像素尺寸。
 - 后端根据原图尺寸转换为 `pixel_top_left`，生成 PNG 裁图并保存坐标和 crop key。
 - 同一 SourceAsset 可以有多个区域；本次 UI 每次只录入一道题。
 

@@ -35,7 +35,7 @@
 
 ## 对技术栈的影响
 
-- Web：单矩形 Selector 升级为候选覆盖层、点击多选、手动新增/编辑和多题保存。
+- Agent：在对话中展示候选、接受教师选择，并支持教师确认一个或多个完整手动框区。
 - API：新增检测端点、批量区域确认、Provider Registry 和按请求 OCR 选择。
 - Provider：新增 detection 抽象、MinerU Adapter；Paddle 安装与实测；Yescan 使用独立标准 API Adapter，并保留匿名样本返回契约门。
 - 飞书：单教师本地阶段可先使用已授权的 `lark-cli base` Adapter；未来服务化/多用户时需迁移到正式 OAuth/OpenAPI Adapter。

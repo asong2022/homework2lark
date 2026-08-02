@@ -27,14 +27,14 @@
 
 ## 4. 技术与运行假设
 
-- Web：Next.js App Router、React、TypeScript；不引入大型 UI 框架或全局状态库。
+- 用户入口：Codex、Hermes 等 AI Agent 对话；仓库不包含 Web 或 App。
 - API：Python 3.11、FastAPI、Pydantic v2、SQLAlchemy 2、Alembic。
 - 本地开发数据库为 SQLite；业务代码通过 Repository 边界访问持久化数据。
 - 文件存储为仓库内本地目录，通过 `StorageAdapter` 隔离；数据库只保存 storage key，不保存绝对路径或图片二进制。
-- 浏览器提交 `normalized_top_left` 坐标（0 到 1）；后端验证后转换并保存为绑定原图尺寸的 `pixel_top_left` 整数坐标。
+- Agent CLI 提交 `normalized_top_left` 坐标（0 到 1）；后端验证后转换并保存为绑定原图尺寸的 `pixel_top_left` 整数坐标。
 - 单个上传文件上限默认 15 MiB，只接受经 Pillow 解码确认的 JPG/JPEG/PNG；扩展名和客户端 MIME 不能单独作为可信依据。
-- 原始字节保持不变；宽高、服务端裁图和浏览器预览都按 EXIF orientation 后的显示方向解释，避免手机照片的预览坐标与裁图错位。
-- API 默认前缀为 `/api/v1`，开发端口为 8000；Web 默认端口为 3000。
+- 原始字节保持不变；宽高与服务端裁图都按 EXIF orientation 后的显示方向解释，避免手机照片方向与裁图错位。
+- API 默认前缀为 `/api/v1`，本地端口为 8000。
 
 ## 5. OCR 假设
 

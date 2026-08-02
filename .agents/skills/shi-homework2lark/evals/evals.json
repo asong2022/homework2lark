@@ -36,12 +36,12 @@
     },
     {
       "id": 4,
-      "prompt": "我发了一张整页作业图片。我愿意打开前端自己框错题，不需要自动识别题目边界。上传一次后把人工框题页面给我，框完回到对话继续OCR核对和入飞书。",
-      "expected_output": "Starts the Web intake mode, returns the existing-asset manual-only URL, avoids automatic detection and continues from copied public problem IDs without a second upload.",
+      "prompt": "我发了一张整页作业图片，只想收第3题和第6题，不需要自动识别题目边界。请在对话里完成框题，再继续OCR核对和入飞书。",
+      "expected_output": "Starts manual intake, derives two complete-question bboxes from the original page, saves them through frame without automatic detection, and continues from the returned public problem IDs without a second upload.",
       "files": [],
       "expectations": [
-        "Uses intake start mode web and does not call candidate detection",
-        "Explains that each manual box is one problem and the source is not re-uploaded",
+        "Uses intake start mode manual and does not call candidate detection",
+        "Uses one frame payload where each box is one complete problem and does not re-upload the source",
         "Keeps correction and external publication as explicit later gates without adding a review status"
       ]
     },
@@ -75,7 +75,7 @@
       "expected_output": "Uses the Agent conversation and single-image path, preserves the supplied real evidence, previews a grouped mistake record, and waits for explicit confirmation before Base mutation.",
       "files": [],
       "expectations": [
-        "Does not require the Web workbench for an already-cropped question",
+        "Uses the single-image route for an already-cropped question",
         "Stores the observed response in 错题记录.典型错例 and does not invent unsupported student behavior",
         "Previews the full group, selected student, error pattern and proposed cause before the Base write"
       ]
@@ -305,7 +305,7 @@
       "expectations": [
         "Presents exactly the three collection choices with concise required materials",
         "Does not recommend or persist a selected mode before the user chooses",
-        "Does not call OCR, Web, Base or any Provider while waiting",
+        "Does not call OCR, Base or any Provider while waiting",
         "After a later explicit choice, persists decidedBy=user and starts only the chosen workflow"
       ]
     },
@@ -333,6 +333,33 @@
         "Masks only clearly foreign Q13 content when rectangle overlap is unavoidable and does not redraw the diagram",
         "Uses 题干图片 only for the clean non-text visual from the same original source pixels",
         "Previews locally and downloads both Base attachments for visual readback after upload"
+      ]
+    },
+    {
+      "id": 29,
+      "prompt": "从我的夸克扫描王错题本收题。现在里面已有的错题都不要加入，以后我新加到夸克的题才提示我选择；这次先帮我初始化。",
+      "expected_output": "Uses the Quark wrongbook new-only source contract, establishes a local baseline of all currently visible question IDs without downloading or creating any problem, and reports zero OCR/Base activity. Later syncs keep only unseen IDs pending until the teacher explicitly imports or ignores them.",
+      "files": [],
+      "expectations": [
+        "Loads quark-wrongbook.md and keeps shi-homework2lark as the only user-facing Skill",
+        "Runs baseline once and marks every current ID baseline_excluded with zero image download, SourceAsset, OCR or Base write",
+        "Keeps QK_UT and QK_KP in the private process environment and out of argv, stdout, state and Git",
+        "Does not turn baseline history into pending on a later sync or repeated baseline",
+        "Requires explicit teacher selection before a pending image enters the existing single intake path"
+      ]
+    },
+    {
+      "id": 30,
+      "prompt": "新增今天夸克扫描王里的错题，直接整理后加进飞书；以前基线里的旧题不要，我也不想再逐题选一遍。",
+      "expected_output": "Treats the teacher's sentence as scope authorization for every pending baseline-new Quark item, runs collect-new once without another item-by-item selection, then continues the returned problem IDs through the existing OCR, correction and authorized Base workflow while never importing baseline history.",
+      "files": [],
+      "expectations": [
+        "Loads quark-wrongbook.md and routes the write-intent phrase to collect-new rather than read-only sync/status",
+        "Treats the teacher-curated Quark source as the user's explicit teacher-selected collection mode instead of presenting the 1/2/3 menu again",
+        "Requires an existing baseline and never reclassifies baseline_excluded history",
+        "Imports all current pending items, including additions previously found by a read-only sync, without asking the teacher to choose each one",
+        "Lists the private remote catalog once, persists discoveries before downloads, and keeps per-item partial-success recovery",
+        "Continues OCR, complete-question checking and Base publication for the authorized set, pausing only affected items with genuine content or provider failures"
       ]
     }
   ]

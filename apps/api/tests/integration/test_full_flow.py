@@ -432,17 +432,3 @@ def test_framework_400_404_and_405_use_the_stable_error_envelope(client: TestCli
     assert method_not_allowed.json()["error"]["code"] == "method_not_allowed"
     assert method_not_allowed.json()["error"]["retryable"] is False
     assert "GET" in method_not_allowed.headers["allow"]
-
-
-def test_denied_cors_preflight_still_has_request_correlation(client: TestClient) -> None:
-    response = client.options(
-        "/api/v1/health",
-        headers={
-            "Origin": "https://untrusted.example",
-            "Access-Control-Request-Method": "GET",
-        },
-    )
-
-    assert response.status_code == 400
-    assert response.headers["x-request-id"].startswith("req_")
-    assert response.headers["content-type"].startswith("text/plain")

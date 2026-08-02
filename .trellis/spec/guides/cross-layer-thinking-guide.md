@@ -4,14 +4,14 @@
 
 ```text
 Teacher
-  → Next.js feature state
-  → typed API client
+  → Agent conversation + shi-homework2lark command
+  → Skill HTTP gateway
   → FastAPI schema/router
   → application service
   → Repository + Storage/OCR ports
   → SQLite + local files/Provider
   → normalized problem record
-  → teacher evidence UI
+  → teacher-visible evidence in the conversation
 ```
 
 For every changed field, trace both write and read directions through this whole path.
@@ -21,10 +21,10 @@ For every changed field, trace both write and read directions through this whole
 | Boundary | Owner | Rule |
 |---|---|---|
 | File bytes → valid image metadata | upload application service | Decode bytes; never trust filename/MIME alone |
-| Display rectangle → canonical crop | region service | Browser sends normalized coordinates; server validates and converts to source pixels |
+| Display rectangle → canonical crop | region service | Agent sends teacher-confirmed normalized coordinates; server validates and converts to source pixels |
 | Vendor result → OCR contract | OCR adapter | Preserve raw JSON-safe output and expose normalized text/blocks |
-| Database rows → public record | normalized-record assembler | Frontend never infers joins or current versions |
-| Error → teacher message | API error mapper | Stable code and safe Chinese message; no vendor/path/secret leakage |
+| Database rows → public record | normalized-record assembler | Skill never infers joins or current versions |
+| Error → teacher message | API error mapper + Skill client | Stable code and safe Chinese message; no vendor/path/secret leakage |
 | Current revision → publication eligibility | publication service | Require a same-region non-empty revision plus complete source/crop/OCR lineage |
 
 ## Failure Walkthrough
@@ -34,7 +34,7 @@ At each arrow ask:
 1. What has already been durably saved?
 2. What is safe to compensate/delete?
 3. Which IDs must remain so the teacher can retry?
-4. What stable error reaches the UI?
+4. What stable error reaches the Agent and teacher?
 5. What private content must stay out of logs?
 
 Examples:
@@ -47,10 +47,10 @@ Examples:
 ## Contract Change Checklist
 
 - Update Pydantic schema/OpenAPI.
-- Update `packages/contracts` and TypeScript projection.
+- Update the checked-in `packages/contracts/openapi.json` snapshot.
 - Update service/repository mapping.
 - Update normalized-record example/spec if public shape changed.
-- Update frontend rendering and error handling.
-- Add round-trip test plus any relevant component/Playwright assertion.
+- Update Skill decoding and teacher-facing error handling.
+- Add a backend round-trip test plus the relevant Skill command assertion.
 
 Do not use local casts or duplicate transformations at consumers to “fix” a mismatched contract.

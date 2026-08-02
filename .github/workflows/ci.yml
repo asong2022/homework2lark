@@ -16,21 +16,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.0
 
-      - uses: actions/setup-node@v7.0.0
-        with:
-          node-version: 22
-          cache: npm
-
       - uses: astral-sh/setup-uv@v8.3.2
         with:
           version: latest
           enable-cache: true
 
       - name: Install dependencies
-        run: |
-          npm ci
-          npm audit --audit-level=moderate
-          uv sync --directory apps/api --group dev
+        run: uv sync --directory apps/api --group dev
 
       - name: Backend checks
         run: |
@@ -45,9 +37,8 @@ jobs:
           uv run --directory apps/api ruff check ../../.agents/skills/shi-homework2lark/scripts ../../.agents/skills/shi-homework2lark/tests
           uv run --directory apps/api ruff format --check ../../.agents/skills/shi-homework2lark/scripts ../../.agents/skills/shi-homework2lark/tests
 
-      - name: Web checks
+      - name: Skill package and privacy checks
         run: |
-          npm run lint:web
-          npm run typecheck:web
-          npm run test:web
-          npm run build:web
+          uv run --directory apps/api python ../../.agents/skills/shi-homework2lark/scripts/package_bundle.py build --output ../../tmp/ci/shi-homework2lark.skill
+          uv run --directory apps/api python ../../.agents/skills/shi-homework2lark/scripts/package_bundle.py verify --package ../../tmp/ci/shi-homework2lark.skill
+          cmp tmp/ci/shi-homework2lark.skill artifacts/skills/shi-homework2lark.skill

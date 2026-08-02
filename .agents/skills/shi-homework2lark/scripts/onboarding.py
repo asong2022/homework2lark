@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 from collections.abc import Callable, Mapping, Sequence
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import date, timedelta
 from pathlib import Path
@@ -277,9 +278,8 @@ class OnboardingService:
         *,
         repo_root: Path,
         base_title: str,
-        with_web: bool = False,
     ) -> dict[str, JSONValue]:
-        self._check_local_runtime(repo_root, with_web=with_web)
+        self._check_local_runtime(repo_root)
         title = _safe_title(base_title)
         configuration = {**_dotenv(repo_root / ".env"), **self.environ}
         if not configuration.get("PADDLEOCR_ACCESS_TOKEN", "").strip():
@@ -338,7 +338,7 @@ class OnboardingService:
             "nextAction": "authorize_lark",
             "configured": {
                 "ocr": "PaddleOCR-VL-1.6",
-                "questionSelection": "Yescan 自动候选" if enable_yescan else "教师手动框题",
+                "questionSelection": "Yescan 自动候选" if enable_yescan else "Agent 对话框题",
                 "publisher": "飞书用户身份",
             },
         }
@@ -423,15 +423,12 @@ class OnboardingService:
         *,
         repo_root: Path,
         base_title: str,
-        with_web: bool = False,
     ) -> dict[str, JSONValue]:
-        return self.check(repo_root=repo_root, base_title=base_title, with_web=with_web)
+        return self.check(repo_root=repo_root, base_title=base_title)
 
-    def _check_local_runtime(self, repo_root: Path, *, with_web: bool) -> None:
+    def _check_local_runtime(self, repo_root: Path) -> None:
         self._require_repo(repo_root)
         required_commands = ["uv", "lark-cli"]
-        if with_web:
-            required_commands.extend(("node", "npm"))
         missing = [name for name in required_commands if not self.which(name)]
         if missing:
             raise OnboardingError(
@@ -461,12 +458,6 @@ class OnboardingService:
                 "api_dependencies_missing",
                 "收题服务需要 Python 3.11/3.12 和完整依赖，请让 AI 修复安装。",
                 action="install_runtime",
-            )
-        if with_web and not (repo_root / "node_modules").is_dir():
-            raise OnboardingError(
-                "web_dependencies_missing",
-                "可视化框题页面尚未安装，请让 AI 补齐 Web 依赖。",
-                action="install_web",
             )
 
     @staticmethod
@@ -1053,8 +1044,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
     for name in ("check", "verify"):
-        command = subparsers.add_parser(name)
-        command.add_argument("--with-web", action="store_true")
+        subparsers.add_parser(name)
     configure = subparsers.add_parser("configure-runtime")
     configure.add_argument("--stdin-json", action="store_true")
     configure.add_argument("--enable-yescan", action="store_true")
@@ -1072,10 +1062,8 @@ def _force_utf8_stdio() -> None:
         reconfigure = getattr(stream, "reconfigure", None)
         if reconfigure is None:
             continue
-        try:
+        with suppress(ValueError, OSError):
             reconfigure(encoding="utf-8")
-        except (ValueError, OSError):
-            pass
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -1089,7 +1077,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             result = getattr(service, args.command)(
                 repo_root=repo_root,
                 base_title=args.base_title,
-                with_web=args.with_web,
             )
         elif args.command == "configure-runtime":
             result = service.configure_runtime(

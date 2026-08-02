@@ -4,7 +4,6 @@ import logging
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
-from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from mistake_notebook_api.api.errors import (
@@ -42,17 +41,6 @@ def create_app(*, settings: Settings | None = None, runtime: Runtime | None = No
         ],
     )
     application.state.runtime = runtime or build_runtime(settings)
-    application.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.allowed_cors_origins,
-        allow_credentials=False,
-        allow_methods=["GET", "POST"],
-        allow_headers=["Content-Type", "X-Request-ID"],
-        expose_headers=["X-Request-ID"],
-    )
-    # Starlette applies the most recently registered middleware outermost.
-    # Keep request correlation outside CORS so denied preflights are still logged
-    # and receive X-Request-ID even though CORSMiddleware owns their plain-text body.
     application.add_middleware(RequestContextMiddleware)
     application.add_exception_handler(AppError, app_error_handler)
     application.add_exception_handler(RequestValidationError, validation_error_handler)

@@ -4,11 +4,11 @@
 
 Keep one owner for each cross-cutting concept:
 
-- OCR and publication status values: backend domain enums; mirrored once in frontend contracts. Do not add a replacement review/readiness enum.
+- OCR and publication status values: backend domain enums; decoded once by the Skill client. Do not add a replacement review/readiness enum.
 - Public ID generation: one backend ID helper.
 - UTC creation/serialization: one backend time helper.
-- Normalized-to-pixel conversion: one tested backend function; frontend only produces normalized values.
-- API base URL, JSON/error decoding, and endpoints: `apps/web/src/lib/api-client.ts`.
+- Normalized-to-pixel conversion: one tested backend function; the Skill only produces normalized values.
+- API base URL, JSON/error decoding, and endpoints: `.agents/skills/shi-homework2lark/scripts/intake.py`.
 - Provider raw-to-normalized conversion: the concrete OCR adapter.
 - Storage traversal protection and atomic writes: the storage adapter.
 - Publication eligibility: one application service rule based on the current revision and complete lineage; it is not serialized as a boolean.
@@ -25,14 +25,14 @@ Do not create generic `utils`, base repositories, service superclasses, Provider
 
 ## Contract Consistency
 
-When adding/changing a public field, search backend schemas, normalized-record assembly, OpenAPI/contracts, frontend types, renderers, and tests. A field is not complete if only one layer knows it.
+When adding/changing a public field, search backend schemas, normalized-record assembly, OpenAPI/contracts, Skill decoders and tests. A field is not complete if only one layer knows it.
 
-When adding a new enum value, update every explicit match/branch and prefer exhaustive TypeScript switches. Python fallback branches must reject unknown values rather than silently treating them as an existing status.
+When adding a new enum value, update every explicit Python match/branch. Fallback branches must reject unknown values rather than silently treating them as an existing status.
 
 ## Duplication That Is Acceptable
 
-- A small TypeScript projection of the OpenAPI contract is acceptable in Phase 1 if checked by contract tests and kept in one file.
-- Separate teacher-facing labels from backend enum values; presentation text is a UI concern.
+- A small Skill-side projection of fields needed for teacher-facing output is acceptable when checked by contract tests and kept at the HTTP boundary.
+- Separate teacher-facing labels from backend enum values; conversational presentation belongs to the Agent layer.
 - Test fixtures may repeat small valid records when it keeps the behavior under test obvious.
 
 The goal is one owner per invariant, not abstraction for its own sake.

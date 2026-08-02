@@ -60,7 +60,7 @@ max_journal_lines: 2000
 #
 # The code uses workspace directories, but Trellis keeps a single shared Spec
 # scope because Phase 1 is one cross-layer vertical slice. The generated
-# backend/frontend/project layers under `.trellis/spec/` remain the authority.
+# backend/project layers under `.trellis/spec/` remain the authority.
 
 #-------------------------------------------------------------------------------
 # Channel worker OOM guard

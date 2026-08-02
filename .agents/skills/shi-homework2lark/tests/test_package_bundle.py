@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import shutil
 import sys
 import tempfile
 import unittest
@@ -47,6 +48,21 @@ class PackageBundleTests(unittest.TestCase):
 
         for required in manifest["resources"]["requiredFiles"]:
             self.assertIn(Path(required), files)
+
+    def test_build_normalizes_text_line_endings_across_platforms(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            copied_root = Path(temp_dir) / "skill"
+            shutil.copytree(SKILL_ROOT, copied_root)
+            copied_skill = copied_root / "SKILL.md"
+            normalized = copied_skill.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+            copied_skill.write_bytes(normalized.replace(b"\n", b"\r\n"))
+            original_package = Path(temp_dir) / "original.skill"
+            copied_package = Path(temp_dir) / "copied.skill"
+
+            original = package_bundle.build_package(SKILL_ROOT, original_package)
+            copied = package_bundle.build_package(copied_root, copied_package)
+
+        self.assertEqual(original["sha256"], copied["sha256"])
 
     def test_private_path_and_credential_are_rejected_without_echoing_value(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

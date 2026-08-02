@@ -8,9 +8,9 @@
 
 **Given** SourceAsset 已保存，**When** 完成裁图、OCR、修订和发布，**Then** 原图 bytes、storage key 与 SHA-256 不变，crop 使用独立 key。
 
-## AC-003 人工框题与上下文恢复
+## AC-003 Agent 人工框题与上下文恢复
 
-**Given** 已上传服务器图片，**When** 教师框选、保存并重新打开 `/intake/{assetId}`，**Then** 持久化题框以只读叠加恢复，教师可以继续补框，已有 public problem IDs 不丢失。
+**Given** 已上传服务器图片，**When** 教师在对话中选题且 Agent 提交一个或多个完整框区，**Then** FastAPI 持久化裁图并返回稳定 public problem IDs；重读来源页时已有题目不丢失。
 
 ## AC-004 坐标验证与裁图
 
@@ -64,15 +64,38 @@
 
 ## AC-016 自动化质量门
 
-**Given** 新检出仓库及已安装依赖，**When** 执行项目检查，**Then** 后端 Ruff/format/mypy/pytest、Alembic、前端 ESLint/tsc/Vitest/build/Playwright、OpenAPI 合约和 Skill 全量测试全部通过。
+**Given** 新检出仓库及已安装依赖，**When** 执行项目检查，**Then** 后端 Ruff/format/mypy/pytest、Alembic、OpenAPI 快照和 Skill 全量测试全部通过。
 
 ## AC-017 隐私与日志
 
 **Given** 任意成功或失败路径，**When** 检查日志和错误响应，**Then** 不含完整图片、OCR/修订/学生文本、Token、CLI stderr、SQL 参数或绝对私有路径。
 
+## AC-018 夸克错题本首次基线
+
+**Given** 教师第一次连接已有历史题目的夸克扫描王错题本，**When** 执行 `baseline`，**Then** 只读取并本地记录当前题目 ID 为 `baseline_excluded`，下载 0 张图片，创建 0 个 SourceAsset、ProblemAsset 和 Base 记录；重复执行不访问远端且不改变结果。
+
+## AC-019 夸克错题本只发现新增题
+
+**Given** 首次基线已经完成，**When** 后续 `sync` 看见基线中不存在的题目 ID，**Then** 只把新 ID 追加为 `pending`，不下载图片、不调用 OCR、不写飞书；既有 `baseline_excluded/imported/ignored` 状态保持不变。
+
+## AC-020 教师选择后复用单题入口
+
+**Given** 一个 `pending` 题目且教师明确选择导入，**When** 执行 `import`，**Then** 仅下载该题原图到临时文件，复用 `single` 入口创建本地题目资产，成功后状态改为 `imported` 并保存公共 `problemId`，临时文件被删除；重复导入返回同一 `problemId` 且不再访问远端。
+
+## AC-021 夸克状态与凭证最小化
+
+**Given** 任意成功或失败路径，**When** 检查状态文件、命令输出和错误信息，**Then** 只包含安全 ID、时间、状态和公共 `problemId`，不含 `QK_UT/QK_KP`、Cookie、题干、图片 URL、图片字节或学生身份。状态文件使用原子替换；远端下载失败不改变原状态，若本地题目已创建但状态落盘失败，错误返回安全的 `questionId + problemId` 供恢复。
+
+## AC-022 夸克新增题整批授权
+
+**Given** 已建立基线且教师说“新增/收录今天或本次的夸克错题”，**When** 执行 `collect-new`，**Then** 一次读取远端目录，将未见 ID 先保存为 `pending`，再直接导入当前全部 pending（包括之前只查看留下的题），不再逐题询问；`baseline_excluded/ignored/imported` 不变。没有 pending 时下载和建题均为 0；批量后续题失败时前面成功题保持 `imported`，其余保持 `pending`。
+
+**Given** 教师只说“查看/列出/有多少新增题”，**When** 执行只读路由，**Then** 仅运行 `sync/status`，不下载图片、不创建题目、不写飞书。
+
 ## 补充质量标准
 
 - Provider raw NumPy 值必须可 JSON 序列化。
 - 文件/数据库补偿只删除本次失败步骤写入的文件，不删除既有 source/crop。
-- FastAPI OpenAPI、提交的快照和生成 TypeScript 类型保持一致。
-- Web 只承担上传与框题，不调用 OCR、修订或发布。
+- FastAPI OpenAPI 与提交的快照保持一致。
+- `manual + frame` 只承担上传与框题，不隐式调用 OCR、修订或发布。
+- 夸克错题本入口依赖非公开接口，接口变化时安全失败并保留本地状态，不回退为全量历史导入。

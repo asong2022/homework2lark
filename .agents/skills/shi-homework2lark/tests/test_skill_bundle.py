@@ -35,10 +35,17 @@ class BundleManifestTests(unittest.TestCase):
 
         self.assertLessEqual(
             top_level_keys,
-            {"name", "description", "license", "allowed-tools", "metadata", "compatibility"},
+            {
+                "name",
+                "description",
+                "license",
+                "allowed-tools",
+                "metadata",
+                "compatibility",
+            },
         )
         self.assertNotIn("version", top_level_keys)
-        self.assertIn('version: "2.3.0"', frontmatter)
+        self.assertIn('version: "3.1.1"', frontmatter)
 
     def test_bundle_declares_one_entry_and_five_stages(self) -> None:
         manifest = doctor.load_bundle(SKILL_ROOT)
@@ -62,6 +69,8 @@ class BundleManifestTests(unittest.TestCase):
         self.assertIn("lark-base", skill)
         self.assertIn("shi-ocr", skill)
         self.assertIn("wumu-jihe-html", skill)
+        self.assertIn("quark-wrongbook.md", skill)
+        self.assertIn("collect-new", skill)
         for block in (
             "task",
             "source",
@@ -75,6 +84,7 @@ class BundleManifestTests(unittest.TestCase):
             self.assertIn(f"[homework/{block}]", handoffs)
         self.assertTrue((SKILL_ROOT / "scripts" / "workflow.py").is_file())
         self.assertTrue((SKILL_ROOT / "scripts" / "retry_batch.py").is_file())
+        self.assertTrue((SKILL_ROOT / "scripts" / "quark_wrongbook.py").is_file())
 
 
 class DoctorTests(unittest.TestCase):
@@ -125,7 +135,9 @@ class DoctorTests(unittest.TestCase):
         self.assertEqual(intake["status"], "degraded")
         self.assertIn("skill:shi-ocr", intake["missingRecommended"])
 
-    def test_missing_filesystem_base_degrades_because_cli_embedded_guide_remains(self) -> None:
+    def test_missing_filesystem_base_degrades_because_cli_embedded_guide_remains(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             report = doctor.build_report(
                 SKILL_ROOT,

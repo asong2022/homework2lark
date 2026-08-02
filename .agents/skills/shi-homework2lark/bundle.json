@@ -1,7 +1,7 @@
 {
   "schemaVersion": "shi-skill-bundle-v1",
   "name": "shi-homework2lark",
-  "version": "2.3.0",
+  "version": "3.1.1",
   "entrySkill": "shi-homework2lark",
   "architecture": "single-entry-progressive-disclosure",
   "description": "小学数学错题收集、错情分组、飞书 Base、题生变式、精准练习与再练反馈整包。",
@@ -35,7 +35,8 @@
         "references/collection-modes.md",
         "references/source-routing.md",
         "references/question-asset-contract.md",
-        "references/intake-contract.md"
+        "references/intake-contract.md",
+        "references/quark-wrongbook.md"
       ],
       "requiredSkills": [],
       "recommendedSkills": [
@@ -149,8 +150,10 @@
       "references/orchestration-and-handoffs.md",
       "references/setup-guide.md",
       "references/collection-modes.md",
+      "references/quark-wrongbook.md",
       "references/retry-feedback.md",
       "scripts/workflow.py",
+      "scripts/quark_wrongbook.py",
       "scripts/retry_batch.py",
       "scripts/doctor.py",
       "scripts/onboarding.py",

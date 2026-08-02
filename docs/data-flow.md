@@ -4,14 +4,14 @@
 
 - 每一步只消费上一步的稳定 ID 和明确契约。
 - 已经持久化的上游证据不会因下游失败被删除。
-- 文件字节进入 Storage，关系/元数据进入 Database，前端只持有临时选择和公共 ID。
+- 文件字节进入 Storage，关系/元数据进入 Database，Agent 会话只持有临时选择和公共 ID。
 - API 对外使用 camelCase；数据库使用 snake_case；映射由后端 schema/assembler 负责。
 
 ## 2. 上传流程
 
 ```text
 Teacher
-→ Frontend file input
+→ Agent intake command
 → POST /api/v1/assets (multipart)
 → size + decode + format validation
 → SHA-256 + EXIF-oriented display metadata
@@ -25,15 +25,39 @@ Teacher
 
 Skill 有三个入口，但上传后共用同一个 `SourceAsset`：
 
-- `web`：上传一次后打开 `/intake/{assetId}`，不再上传、不调用自动检测，教师直接手动框一道或多道错题。
+- `manual`：上传一次且不调用自动检测；教师在对话中点名题号，Agent 用 `frame` 保存一道或多道完整框区。
 - `chat`：上传后调用一次已配置的 Yescan 题目检测，在对话里展示整题候选，由教师选择。
 - `single`：教师直接给出一题一图，以整图作为一道题，不调用检测。
+
+夸克扫描王错题本是 `single` 之前的可选来源，不是第四套题目模型：
+
+```text
+首次连接夸克错题本
+→ baseline 只读取当前题目 ID
+→ 全部记为 baseline_excluded
+→ 下载 0 张图片，创建 0 个 SourceAsset/ProblemAsset/Base 记录
+
+以后教师说“新增/收录今天或本次新增题”
+→ collect-new 一次读取目录
+→ 未见过的题目 ID 先记为 pending
+→ 当前全部 pending 逐题下载到临时文件
+→ 复用 single 入口创建 SourceAsset、完整区域和 ProblemAsset
+→ 删除临时文件
+→ 后续 OCR、修订和发布流程保持不变
+
+教师只说“查看/列出新增题”
+→ sync 只把未见 ID 记为 pending
+→ status 展示安全摘要
+→ 不下载、不建题、不写飞书
+```
+
+状态文件只保存夸克题目 ID、首次/最近发现时间、`baseline_excluded | pending | imported | ignored` 和已导入题目的公共 `problemId`。它不保存 Cookie、`QK_UT/QK_KP`、题干、图片 URL、图片字节或学生身份；凭证只从进程环境读取。已经处于 `baseline_excluded` 的历史题不会被自动升级为 `pending`，需要收录时应由教师另行发送单题图片走普通入口。“今天”表示本地基线或上次同步后尚未处理的增量，不依据未承诺稳定的远端创建时间。
 
 ## 3. 人工框题与可选自动候选流程
 
 ```text
 SourceAsset
-→ default Web path: teacher draws/moves/resizes/deletes one or more manual boxes
+→ default Agent path: teacher selects questions; Agent submits one or more explicit boxes
   OR optional chat/compatibility path:
      POST /api/v1/assets/{assetId}/detection-runs
      → configured detection Provider
@@ -51,13 +75,13 @@ SourceAsset
 → return ordered public problem IDs
 ```
 
-前端人工框题是 Web 主线，自动检测不是必经步骤。Yescan Adapter 只在 chat/兼容入口使用：它对每个 group-level `StructureInfo` 一对一创建候选，不会把题内 `Detail` 文字、公式、表格或插图再次拆题，也不会在本地跨框猜测合并。Provider 偶发误切时才由教师显式调整或合并。坐标转换只由后端实现；裁图和原图分别保存。
+Agent 人工框题是默认主线，自动检测不是必经步骤。Yescan Adapter 只在 chat 入口使用：它对每个 group-level `StructureInfo` 一对一创建候选，不会把题内 `Detail` 文字、公式、表格或插图再次拆题，也不会在本地跨框猜测合并。Provider 偶发误切时由教师确认调整或合并。坐标转换只由后端实现；裁图和原图分别保存。
 
 ## 4. OCR 流程
 
 ```text
 ProblemRegion
-→ Web/Skill 对每个已保存题目分别调用 OCR API（按顺序，局部失败不撤销其他题）
+→ Skill 对每个已保存题目分别调用 OCR API（按顺序，局部失败不撤销其他题）
 → create OCRRun(running) and commit attempt
 → StorageAdapter.read(crop)
 → configured OCRProvider.recognize(OCRInput)
@@ -112,7 +136,7 @@ GET /api/v1/problems/{problemId}
 
 原图和裁图分别通过受控内容端点读取，不把绝对路径或 base64 放入规范化 JSON。
 
-Web 重新打开 `/intake/{assetId}` 时读取 SourceAsset 和来源页题目集合，把持久化像素 bbox 投影为只读叠加框；只有教师显式点击“继续为本页补框”才进入新的手动框选状态。Web 在返回 public problem IDs 后结束，不承担 OCR、修订或发布。
+Agent 可按 `assetId` 读取来源页现有题目集合；补框只追加新的手动区域并返回 public problem IDs，不承担隐式 OCR、修订或发布。
 
 ## 8. 发布到飞书 Base
 
@@ -187,7 +211,7 @@ Blank PDF/page
 → 错题题目 reverse 学生错题记录 exposes all groups
 ```
 
-一行不是一个学生，而是同题、同日期、同错因的一组学生。`典型错例` 保存该组一到几个真实作答，不含姓名；`题干图片` 只读引用原题，不复制附件。`对应学生` 可以使用姓名、简称或匿名代号；个人错题集由 Base 多选筛选得到。候选未确认时不写 Base，也不把学生名单写入证据文本。题目表的 `典型错例`、`错误表现` 是只读 lookup，`错误原因` 是带各组人数的文本汇总。人数列显示整数；错误率底层保存 `0～1` 比例、Base 显示一位小数百分比。批改批次的高频规则是 `去重错误人数 / 样本人数 > 35%`；人工/Web 收集没有样本时不伪造错误率，可标记为教师判断。
+一行不是一个学生，而是同题、同日期、同错因的一组学生。`典型错例` 保存该组一到几个真实作答，不含姓名；`题干图片` 只读引用原题，不复制附件。`对应学生` 可以使用姓名、简称或匿名代号；个人错题集由 Base 多选筛选得到。候选未确认时不写 Base，也不把学生名单写入证据文本。题目表的 `典型错例`、`错误表现` 是只读 lookup，`错误原因` 是带各组人数的文本汇总。人数列显示整数；错误率底层保存 `0～1` 比例、Base 显示一位小数百分比。批改批次的高频规则是 `去重错误人数 / 样本人数 > 35%`；教师精选没有样本时不伪造错误率，可标记为教师判断。
 
 ## 11. Base 举一反三 Skill
 
@@ -309,7 +333,7 @@ Teacher describes observed retry response + teacher judgment
 
 ## 13. 隐私流向
 
-- 浏览器 → 本地 FastAPI：完整上传图片、bbox、修订文本。
+- Codex/Hermes Skill → 本地 FastAPI：上传图片、明确 bbox 与教师确认修订。
 - FastAPI → 托管 PaddleOCR-VL（当前真实默认）：只发送教师所选题目裁图到官方 Job API，Token 只来自环境变量；Provider raw 与人工修订分层保存。本地 PaddleOCR Adapter 仍可作为隔离配置，但不是当前默认。
 - FastAPI → Yescan（仅 chat/兼容检测入口）：按教师已授权范围发送整页图片；完整返回写入私有 evidence storage，API/日志不返回 Base64 或完整识别文本。
 - FastAPI → Lark Base（仅教师显式发布）：发送来源整页、题目裁图、教师修订文本及最小发布元数据；不发送 OCR raw response、API Key、完整本地修订历史或本机绝对路径。

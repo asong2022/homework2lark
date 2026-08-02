@@ -7,6 +7,7 @@ import os
 import shutil
 import sys
 import uuid
+from contextlib import suppress
 from pathlib import Path
 from typing import Any
 
@@ -145,10 +146,8 @@ def _force_utf8_stdio() -> None:
         reconfigure = getattr(stream, "reconfigure", None)
         if reconfigure is None:
             continue
-        try:
+        with suppress(ValueError, OSError):
             reconfigure(encoding="utf-8")
-        except (ValueError, OSError):
-            pass
 
 
 def main(argv: list[str] | None = None) -> int:

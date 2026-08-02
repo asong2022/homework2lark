@@ -40,7 +40,6 @@ def runtime(tmp_path: Path) -> Iterator[Runtime]:
         max_upload_bytes=2 * 1024 * 1024,
         max_image_pixels=1_000_000,
         min_region_pixels=2,
-        cors_origins="http://localhost:3000",
         ocr_provider="paddleocr_vl_api",
     )
     engine = create_database_engine(settings.database_url)

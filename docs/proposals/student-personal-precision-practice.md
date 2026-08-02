@@ -43,7 +43,7 @@
 
 - 新增一个纯 Python Skill CLI，复用现有 `lark-cli` 只读 Base 网关和 `practice_sheet.py` Word 生成器。
 - 首版曾扩展正式练习纸 manifest 为 `personal-practice-v1`；真实样张反馈后，新生成改用扁平 `personal-practice-v2` 并让 Word 自然分页，V1 仅兼容读取。
-- 不修改 Next.js、FastAPI、SQLite，不新增后台队列或 LLM Provider。
+- 不修改 FastAPI、SQLite，不新增图形界面、后台队列或 LLM Provider。
 
 ## 隐私与失败边界
 

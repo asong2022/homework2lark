@@ -171,17 +171,77 @@ class IntakeServiceTest(unittest.TestCase):
         path.write_bytes(b"png")
         return path
 
-    def test_web_mode_uploads_once_without_detection_and_returns_manual_handoff(self):
+    def test_manual_mode_uploads_once_without_detection(self):
         gateway = FakeGateway()
-        service = intake.IntakeService(gateway, web_url="http://localhost:3000")
+        service = intake.IntakeService(gateway)
         with tempfile.TemporaryDirectory() as directory:
-            manifest = service.start(self.image(directory), "web")
+            manifest = service.start(self.image(directory), "manual")
 
-        self.assertEqual(manifest["mode"], "web")
-        self.assertEqual(manifest["webUrl"], "http://localhost:3000/intake/asset_1")
+        self.assertEqual(manifest["mode"], "manual")
+        self.assertNotIn("webUrl", manifest)
         self.assertIsNone(manifest["detection"])
         self.assertNotIn("rawResponse", str(manifest))
         self.assertEqual([call[0] for call in gateway.calls], ["health", "upload"])
+
+    def test_start_rejects_removed_web_mode_before_reading_or_uploading(self):
+        gateway = FakeGateway()
+        service = intake.IntakeService(gateway)
+
+        with self.assertRaises(intake.SkillError) as captured:
+            service.start(Path("missing.png"), "web")
+
+        self.assertEqual(captured.exception.code, "invalid_mode")
+        self.assertEqual(gateway.calls, [])
+
+    def test_frame_creates_ordered_manual_regions_without_detection_lineage(self):
+        gateway = FakeGateway()
+        service = intake.IntakeService(gateway)
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = service.start(self.image(directory), "manual")
+
+        selection = service.frame(
+            manifest,
+            {
+                "regions": [
+                    {"bbox": {"x": 0.05, "y": 0.1, "width": 0.9, "height": 0.2}},
+                    {"bbox": {"x": 0.05, "y": 0.4, "width": 0.9, "height": 0.25}},
+                ]
+            },
+        )
+
+        self.assertEqual(selection["mode"], "manual-selection")
+        self.assertEqual(
+            [problem["problemId"] for problem in selection["problems"]],
+            ["problem_1", "problem_2"],
+        )
+        regions = next(call[1] for call in gateway.calls if call[0] == "create_regions")
+        self.assertEqual([region["selectionSource"] for region in regions], ["manual", "manual"])
+        self.assertEqual([region["detectionCandidateIds"] for region in regions], [[], []])
+
+    def test_frame_rejects_empty_duplicate_malformed_and_out_of_bounds_regions(self):
+        service = intake.IntakeService(FakeGateway())
+        session = {
+            "schemaVersion": intake.SESSION_VERSION,
+            "mode": "manual",
+            "source": {"assetId": "asset_1"},
+        }
+        invalid_payloads = (
+            {},
+            {"regions": []},
+            {
+                "regions": [
+                    {"bbox": {"x": 0.1, "y": 0.1, "width": 0.5, "height": 0.2}},
+                    {"bbox": {"x": 0.1, "y": 0.1, "width": 0.5, "height": 0.2}},
+                ]
+            },
+            {"regions": [{"bbox": {"x": True, "y": 0.1, "width": 0.5, "height": 0.2}}]},
+            {"regions": [{"bbox": {"x": 0.8, "y": 0.1, "width": 0.3, "height": 0.2}}]},
+            {"regions": [{"bbox": {"x": 0.1, "y": 0.1, "width": 0, "height": 0.2}}]},
+        )
+        for payload in invalid_payloads:
+            with self.subTest(payload=payload), self.assertRaises(intake.SkillError) as captured:
+                service.frame(session, payload)
+            self.assertEqual(captured.exception.code, "invalid_regions")
 
     def test_chat_mode_keeps_each_yescan_group_as_one_candidate_and_selects_explicit_ids(
         self,
@@ -329,7 +389,7 @@ class IntakeServiceTest(unittest.TestCase):
             path = Path(directory) / "worksheet.pdf"
             path.write_bytes(b"pdf")
             with self.assertRaises(intake.SkillError) as captured:
-                service.start(path, "web")
+                service.start(path, "manual")
         self.assertEqual(captured.exception.code, "source_requires_page_images")
 
     def test_metadata_payload_allows_only_catalog_fields(self):

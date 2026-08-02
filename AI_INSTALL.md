@@ -15,6 +15,8 @@
 7. `onboarding.py verify` 返回 `status=ready`；
 8. 告诉教师：“可以开始发作业图片、PDF 或 Word 了。”
 
+夸克扫描王错题本是使用阶段的可选来源，不是首次安装完成条件。只有教师主动选择该来源时才读取 `references/quark-wrongbook.md` 并临时提供 `QK_UT/QK_KP`；不要把它们持久写入仓库配置。教师说“新增/收录今天或本次新增题”时直接运行 `collect-new`，不要再逐题询问；“查看/列出新增”才保持只读。
+
 ## 1. 获取仓库
 
 公开仓库：
@@ -45,7 +47,7 @@ Hermes/其他 Agent 把仓库中的 `.agents/skills/shi-homework2lark` 整目录
 
 - Python 3.11 或 3.12（可由 uv 管理）；
 - [uv](https://docs.astral.sh/uv/)；
-- Node/npm 仅用于安装 `lark-cli`，以及教师明确使用 Web 时的前端；
+- Node/npm 仅用于全局安装 `lark-cli`；项目本身没有 Node 工作区；
 - `lark-cli`：`npm install -g @larksuite/cli`。
 
 在仓库根目录执行：
@@ -131,7 +133,6 @@ python -X utf8 .agents/skills/shi-homework2lark/scripts/onboarding.py --repo-roo
   uv run --directory apps/api uvicorn --app-dir src mistake_notebook_api.main:app --port 8000
   ```
 
-- 只有教师要求可视化手动框题时，才执行 `npm install`、`npm run dev:web`；
 - 第一次收题读取 `collection-modes.md`，让教师选择 1/2/3，不能由 AI 自动决定。
 
 ## 绝对不要做
@@ -140,5 +141,5 @@ python -X utf8 .agents/skills/shi-homework2lark/scripts/onboarding.py --repo-roo
 - 不把现有业务 Base 直接导出为公开模板；
 - 不输出 PaddleOCR/Yescan 密钥、飞书 open_id、Base token、表/字段/记录 ID、绝对私有路径；
 - 不把测试替身当成可选 OCR、自动框题或发布模式；
-- 不因 Web 没启动而阻塞纯对话收题、变式或练习；
+- 不要求教师安装或启动 Web；整页题目由教师在对话中选择，Agent 保存完整框区；
 - 不运行公开 CI 的真实云端测试，除非用户明确授权并已安全提供凭据。

@@ -1,9 +1,9 @@
 ---
 name: shi-homework2lark
 description: >
-  小学数学智能错题学习整包与唯一工作流入口。通过 Codex/Hermes 对话接收空白卷、已批改作业、图片、PDF、Word、单题截图、学生真实作答和教师判断，完成完整题目收集、错情分组、飞书 Base 入库、题生变式、班级/个人练习纸和再练反馈。用户提到收集错题、批改作业识别、错题进飞书、典型错例、学生共性错误、举一反三、变式题、每日一练、个人精准练习、整班批量出卷或再练反馈时必须使用；不要把它当成普通 OCR 或把五个阶段拆成多个竞争入口。
+  小学数学智能错题学习整包与唯一工作流入口。通过 Codex/Hermes 对话接收空白卷、已批改作业、图片、PDF、Word、单题截图、夸克扫描王错题本新增题目、学生真实作答和教师判断，完成完整题目收集、错情分组、飞书 Base 入库、题生变式、班级/个人练习纸和再练反馈。用户提到收集错题、夸克错题本同步、批改作业识别、错题进飞书、典型错例、学生共性错误、举一反三、变式题、每日一练、个人精准练习、整班批量出卷或再练反馈时必须使用；不要把它当成普通 OCR 或把五个阶段拆成多个竞争入口。
 metadata:
-  version: "2.3.0"
+  version: "3.1.1"
   compatibility: Python 3.11+；完整闭环需要 lark-cli/lark-base；OCR、题图和文档能力按阶段委托已安装的兄弟 Skill。
   requires:
     bins: ["python", "lark-cli"]
@@ -20,7 +20,7 @@ metadata:
 1. 首次安装、首次绑定飞书、教师说“帮我配置/初始化”或环境不确定时，先完整读取 [一键安装与配置](references/setup-guide.md)，运行 `onboarding.py check`，并且每次只向教师索取当前唯一缺失项。不得先讲开发测试。
 2. 若同级存在 `../shi-shared/SKILL.md`，先完整读取并遵守；缺失时使用本 Skill 内的隐私、费用和边界规则，不伪装已经读过。
 3. 始终完整读取 [编排与交接合约](references/orchestration-and-handoffs.md)，从上下文填写最小 `[homework/task]`，不要重复询问教师已经给出的信息。
-4. 若本轮从收集错题开始，先读取 [用户三选一收集方式](references/collection-modes.md)。没有用户明确选择时只展示 1/2/3 并等待，禁止 AI 自动判断或调用任何外部能力；选择后运行 `workflow.py start` 固化 `decidedBy=user`。
+4. 若本轮从收集错题开始，先读取 [用户三选一收集方式](references/collection-modes.md)。没有用户明确选择时只展示 1/2/3 并等待，禁止 AI 自动判断或调用任何外部能力；选择后运行 `workflow.py start` 固化 `decidedBy=user`。教师明确要求从自己已整理的夸克错题本新增/收录题目，等价于用户已选择“1 教师精选”，不重复展示三选一；随后完整读取 [夸克错题本新增同步](references/quark-wrongbook.md)。
 5. 判断本轮从哪个学习阶段开始、停在哪里。教师说“一口气做完”可连续推进，但外部上传、Base 写入、覆盖和反馈更新仍执行对应授权门。
 
 只检查 Skill 包自身时可运行离线体检；它不联网、不认证、不读密钥：
@@ -97,7 +97,7 @@ python <skill-root>/scripts/onboarding.py --repo-root <repo-root> check
 
 | 阶段 | 必读本包 reference | 进入阶段前读取的外部 Skill |
 |---|---|---|
-| 收集入库 | [来源路由](references/source-routing.md)、[完整题目](references/question-asset-contract.md)、[收题合约](references/intake-contract.md) | OCR 需要时读 `shi-ocr`；它再选择 MinerU/PaddleOCR/Yescan。Base 发布前读 `lark-base` |
+| 收集入库 | [来源路由](references/source-routing.md)、[完整题目](references/question-asset-contract.md)、[收题合约](references/intake-contract.md)；夸克来源另读 [新增同步](references/quark-wrongbook.md) | OCR 需要时读 `shi-ocr`；它再选择 MinerU/PaddleOCR/Yescan。Base 发布前读 `lark-base` |
 | 错情整理 | [收题合约](references/intake-contract.md)、[Base 合约](references/base-contract.md)；多人多页另读 [分批录入](references/staged-intake.md) | Base 操作读 `lark-base`；图像文字辅助按需读 `shi-ocr` |
 | 题生变式 | [Base 合约](references/base-contract.md)、[题生变式协议](references/variant-generation-prompt.md) | 写回读 `lark-base`；确需题图再读 `wumu-jihe-html` 和 [题图合约](references/diagram-contract.md) |
 | 精准练习 | [学习闭环](references/learning-loop.md)、[正式练习纸](references/practice-sheet-template.md)；个人/班级另读 [个人精准练习](references/personal-practice.md) | Base 只读读 `lark-base`；创建/检查 DOCX 时使用可用文档 Skill |
@@ -115,7 +115,8 @@ python <skill-root>/scripts/onboarding.py --repo-root <repo-root> check
 4. **一个写入门**：同一明确范围可以一次授权连续写入；范围、记录集合或覆盖语义改变时重新确认。预览/doctor/schema-check 不算写入。
 5. **可停止、可续跑**：教师可停在任一阶段。保存已有交接块、稳定 ID 和私有产物位置，下次从该处继续。
 6. **失败不倒退**：OCR、Base、附件或 Word 失败时保留已经完成的不可变证据，只重试失败步骤。
-7. **Web 只是框题器**：Agent 对话是主入口；需要可视化题目边界时才打开现有 SourceAsset，可手动或显式自动框题。点击完成后 Web 只返回公开 `problemId`，OCR、整理、质量门和 Base 写入继续由 Agent 执行。
+7. **对话内完成框题**：教师只需点名题号或选择候选；Agent 依据原始高清页面确定完整边界，通过 `manual + frame` 保存题目区域。边界不确定时请求单题截图，不把坐标操作交给教师。
+8. **夸克只收基线后新增**：首次只建立历史 ID 基线，永不下载或导入已有题。教师说“新增/收录今天或本次的夸克错题”就是对全部 pending 的范围授权，直接运行 `collect-new`，不再逐题询问；教师只说“查看/列出新增”时才运行只读 `sync/status`。明确指定部分题目时仍可选择式导入。
 
 ## 最小授权门
 
