@@ -7,6 +7,7 @@ import argparse
 import json
 import sys
 from collections.abc import Sequence
+from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -179,10 +180,8 @@ def _force_utf8_stdio() -> None:
         reconfigure = getattr(stream, "reconfigure", None)
         if reconfigure is None:
             continue
-        try:
+        with suppress(ValueError, OSError):
             reconfigure(encoding="utf-8")
-        except (ValueError, OSError):
-            pass
 
 
 def main(argv: Sequence[str] | None = None) -> int:

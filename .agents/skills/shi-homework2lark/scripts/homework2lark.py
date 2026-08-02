@@ -9,6 +9,7 @@ import subprocess
 import sys
 import time
 from collections.abc import Callable, Sequence
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -23,10 +24,9 @@ def force_utf8_stdio() -> None:
         reconfigure = getattr(stream, "reconfigure", None)
         if reconfigure is None:
             continue
-        try:
+        with suppress(ValueError, OSError):
             reconfigure(encoding="utf-8")
-        except (ValueError, OSError):
-            pass
+
 
 DEFAULT_BASE_TITLE = "小学数学错题学习库"
 DEFAULT_TABLE_NAME = "错题题目"
@@ -559,9 +559,7 @@ class LarkCliGateway:
         if not paginate:
             records, has_more = _page(0, limit)
             if has_more:
-                raise SkillError(
-                    "result_too_large", "目标范围超过 200 条，请缩小视图或筛选范围。"
-                )
+                raise SkillError("result_too_large", "目标范围超过 200 条，请缩小视图或筛选范围。")
             return records
 
         # 全量扫描：按 offset 翻页累积，避免题库/变式表超过单页上限后

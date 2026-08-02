@@ -36,3 +36,9 @@ jobs:
           uv run --directory apps/api --with python-docx python -m unittest discover -s ../../.agents/skills/shi-homework2lark/tests -p 'test_*.py'
           uv run --directory apps/api ruff check ../../.agents/skills/shi-homework2lark/scripts ../../.agents/skills/shi-homework2lark/tests
           uv run --directory apps/api ruff format --check ../../.agents/skills/shi-homework2lark/scripts ../../.agents/skills/shi-homework2lark/tests
+
+      - name: Skill package and privacy checks
+        run: |
+          uv run --directory apps/api python ../../.agents/skills/shi-homework2lark/scripts/package_bundle.py build --output ../../tmp/ci/shi-homework2lark.skill
+          uv run --directory apps/api python ../../.agents/skills/shi-homework2lark/scripts/package_bundle.py verify --package ../../tmp/ci/shi-homework2lark.skill
+          cmp tmp/ci/shi-homework2lark.skill artifacts/skills/shi-homework2lark.skill

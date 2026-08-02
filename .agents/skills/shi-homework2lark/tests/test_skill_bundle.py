@@ -60,9 +60,9 @@ class BundleManifestTests(unittest.TestCase):
 
     def test_router_contains_all_handoffs_and_external_delegation(self) -> None:
         skill = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
-        handoffs = (
-            SKILL_ROOT / "references" / "orchestration-and-handoffs.md"
-        ).read_text(encoding="utf-8")
+        handoffs = (SKILL_ROOT / "references" / "orchestration-and-handoffs.md").read_text(
+            encoding="utf-8"
+        )
 
         self.assertIn("唯一入口", skill)
         self.assertIn("禁止 AI 自动判断", skill)
@@ -148,13 +148,9 @@ class DoctorTests(unittest.TestCase):
             )
 
         self.assertEqual(report["overallStatus"], "degraded")
-        base_check = next(
-            item for item in report["skills"] if item["name"] == "lark-base"
-        )
+        base_check = next(item for item in report["skills"] if item["name"] == "lark-base")
         self.assertFalse(base_check["available"])
-        mistakes = next(
-            stage for stage in report["stages"] if stage["id"] == "mistakes"
-        )
+        mistakes = next(stage for stage in report["stages"] if stage["id"] == "mistakes")
         self.assertIn("skill:lark-base", mistakes["missingRecommended"])
 
     def test_report_does_not_expose_discovered_paths(self) -> None:

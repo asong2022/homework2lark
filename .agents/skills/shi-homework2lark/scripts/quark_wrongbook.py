@@ -42,9 +42,7 @@ STAT_PATH = "/v1/api/cuotiben/course/stat"
 PAGE_SIZE = 50
 MAX_PAGES_PER_COURSE = 500
 MAX_IMAGE_BYTES = 15 * 1024 * 1024
-USER_AGENT = (
-    "Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 Mobile UCBrowser/13.4.0.1308"
-)
+USER_AGENT = "Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 Mobile UCBrowser/13.4.0.1308"
 QUESTION_ID_RE = re.compile(r"^[A-Za-z0-9._:-]{1,200}$")
 PROBLEM_ID_RE = re.compile(r"^problem_[A-Za-z0-9_-]+$")
 
@@ -107,9 +105,7 @@ class StateStore:
         try:
             raw: JSONValue = json.loads(self.path.read_text(encoding="utf-8"))
         except (OSError, UnicodeError, json.JSONDecodeError):
-            raise WrongbookError(
-                "state_invalid", "夸克错题本本地状态无法读取。"
-            ) from None
+            raise WrongbookError("state_invalid", "夸克错题本本地状态无法读取。") from None
         return _validate_state(raw)
 
     def save(self, state: dict[str, JSONValue]) -> None:
@@ -120,9 +116,7 @@ class StateStore:
             payload = json.dumps(validated, ensure_ascii=False, indent=2) + "\n"
             descriptor = os.open(temp_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
             try:
-                with os.fdopen(
-                    descriptor, "w", encoding="utf-8", newline="\n"
-                ) as handle:
+                with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as handle:
                     handle.write(payload)
                     handle.flush()
                     os.fsync(handle.fileno())
@@ -195,9 +189,7 @@ class QuarkHttpClient:
                     if existing is None:
                         questions[question.question_id] = question
                     else:
-                        questions[question.question_id] = _merge_duplicate(
-                            existing, question
-                        )
+                        questions[question.question_id] = _merge_duplicate(existing, question)
                 if len(page_questions) < PAGE_SIZE:
                     break
                 self._sleep(0.2)
@@ -286,9 +278,7 @@ class QuarkHttpClient:
         query = urllib.parse.urlencode({"ut": self._ut, "kp": self._kp})
         request = urllib.request.Request(
             f"{host}{path}{separator}{query}",
-            data=json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode(
-                "utf-8"
-            ),
+            data=json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8"),
             headers={
                 "Content-Type": "application/json",
                 "User-Agent": USER_AGENT,
@@ -352,9 +342,7 @@ class SingleIntakeImporter:
 
     def import_image(self, image: DownloadedImage) -> str:
         try:
-            with tempfile.TemporaryDirectory(
-                prefix="homework2lark-quark-"
-            ) as directory:
+            with tempfile.TemporaryDirectory(prefix="homework2lark-quark-") as directory:
                 path = Path(directory) / f"question{image.suffix}"
                 path.write_bytes(image.data)
                 manifest = self._service.start(path, "single")
@@ -474,9 +462,7 @@ class WrongbookService:
         selected = _selected_ids(question_ids)
         state = self._store.load()
         items = _state_items(state)
-        _validate_transitions(
-            items, selected, allowed=frozenset(("pending", "ignored"))
-        )
+        _validate_transitions(items, selected, allowed=frozenset(("pending", "ignored")))
         now = self._now()
         changed = 0
         for question_id in selected:
@@ -547,9 +533,7 @@ class WrongbookService:
                 "unchanged": [],
                 **_state_summary(state),
             }
-        _validate_transitions(
-            items, selected, allowed=frozenset(("pending", "imported"))
-        )
+        _validate_transitions(items, selected, allowed=frozenset(("pending", "imported")))
         unchanged = [
             {
                 "questionId": question_id,
@@ -682,12 +666,8 @@ def _state_summary(state: dict[str, JSONValue]) -> dict[str, JSONValue]:
             raise WrongbookError("state_invalid", "夸克错题本本地题目状态无效。")
         counts[status] += 1
         if status == "pending":
-            pending.append(
-                {"questionId": question_id, "firstSeenAt": item.get("firstSeenAt")}
-            )
-    pending.sort(
-        key=lambda value: (str(value["firstSeenAt"]), str(value["questionId"]))
-    )
+            pending.append({"questionId": question_id, "firstSeenAt": item.get("firstSeenAt")})
+    pending.sort(key=lambda value: (str(value["firstSeenAt"]), str(value["questionId"])))
     return {
         "totalCount": len(items),
         "baselineExcludedCount": counts["baseline_excluded"],
@@ -723,9 +703,7 @@ def _remote_question(value: JSONValue) -> RemoteQuestion:
         )
     question_id = _question_id(value.get("question_id"))
     image_url = value.get("original_image_url")
-    if image_url is not None and (
-        not isinstance(image_url, str) or not image_url.strip()
-    ):
+    if image_url is not None and (not isinstance(image_url, str) or not image_url.strip()):
         raise WrongbookError(
             "quark_invalid_response",
             "夸克错题本返回的原题图片字段无效。",
@@ -788,9 +766,7 @@ def _timestamp(value: JSONValue) -> str:
 def _selected_ids(values: Sequence[str]) -> list[str]:
     selected = [_question_id(value) for value in values]
     if not selected or len(selected) != len(set(selected)):
-        raise WrongbookError(
-            "invalid_selection", "请选择一个或多个不重复的夸克题目 ID。"
-        )
+        raise WrongbookError("invalid_selection", "请选择一个或多个不重复的夸克题目 ID。")
     return selected
 
 
@@ -850,9 +826,7 @@ def _default_state_path() -> Path:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description="Sync only new Quark wrongbook questions"
-    )
+    parser = argparse.ArgumentParser(description="Sync only new Quark wrongbook questions")
     parser.add_argument("--state", type=Path, default=_default_state_path())
     parser.add_argument(
         "--api-url",

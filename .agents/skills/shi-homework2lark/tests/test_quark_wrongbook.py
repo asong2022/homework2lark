@@ -48,9 +48,7 @@ class StubImporter:
 
 class StubResponse:
     def __init__(self, value):
-        self.payload = (
-            json.dumps(value).encode("utf-8") if not isinstance(value, bytes) else value
-        )
+        self.payload = json.dumps(value).encode("utf-8") if not isinstance(value, bytes) else value
 
     def __enter__(self):
         return self
@@ -306,14 +304,12 @@ class WrongbookServiceTests(unittest.TestCase):
             )
 
             result = import_service.import_questions(["new_1"])
-            repeated = wrongbook.WrongbookService(
-                store, now=lambda: NOW
-            ).import_questions(["new_1"])
+            repeated = wrongbook.WrongbookService(store, now=lambda: NOW).import_questions(
+                ["new_1"]
+            )
             status = import_service.status()
 
-        self.assertEqual(
-            result["imported"], [{"questionId": "new_1", "problemId": "problem_1"}]
-        )
+        self.assertEqual(result["imported"], [{"questionId": "new_1", "problemId": "problem_1"}])
         self.assertEqual(repeated["status"], "no_change")
         self.assertEqual(repeated["unchanged"][0]["problemId"], "problem_1")
         self.assertEqual(client.download_calls, ["new_1"])
@@ -338,9 +334,7 @@ class WrongbookServiceTests(unittest.TestCase):
                 now=lambda: NOW,
             ).import_questions(all_pending=True)
 
-        self.assertEqual(
-            [item["questionId"] for item in result["imported"]], ["new_1", "new_2"]
-        )
+        self.assertEqual([item["questionId"] for item in result["imported"]], ["new_1", "new_2"])
         self.assertEqual(result["pendingCount"], 0)
         self.assertEqual(result["importedCount"], 2)
 

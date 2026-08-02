@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 from collections.abc import Callable, Mapping, Sequence
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import date, timedelta
 from pathlib import Path
@@ -1061,10 +1062,8 @@ def _force_utf8_stdio() -> None:
         reconfigure = getattr(stream, "reconfigure", None)
         if reconfigure is None:
             continue
-        try:
+        with suppress(ValueError, OSError):
             reconfigure(encoding="utf-8")
-        except (ValueError, OSError):
-            pass
 
 
 def main(argv: Sequence[str] | None = None) -> int:

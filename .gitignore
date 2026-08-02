@@ -12,6 +12,7 @@ __pycache__/
 .ruff_cache/
 .coverage
 htmlcov/
+dist/
 .venv/
 
 # Runtime data (keep directory guards)

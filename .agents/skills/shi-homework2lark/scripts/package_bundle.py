@@ -6,6 +6,7 @@ import json
 import re
 import sys
 import zipfile
+from contextlib import suppress
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -84,6 +85,15 @@ def _write_entry(archive: zipfile.ZipFile, name: str, data: bytes) -> None:
     archive.writestr(info, data, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
 
 
+def _package_bytes(path: Path, relative: Path) -> bytes:
+    if relative.suffix.lower() not in TEXT_SUFFIXES:
+        return path.read_bytes()
+    try:
+        return path.read_text(encoding="utf-8").encode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise PackageError(f"text resource is not UTF-8: {relative.as_posix()}") from exc
+
+
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -119,7 +129,11 @@ def build_package(skill_dir: Path, output: Path, *, overwrite: bool = False) -> 
         with zipfile.ZipFile(temporary, mode="w") as archive:
             for relative in files:
                 archive_name = PurePosixPath(manifest["name"], relative.as_posix()).as_posix()
-                _write_entry(archive, archive_name, (skill_dir / relative).read_bytes())
+                _write_entry(
+                    archive,
+                    archive_name,
+                    _package_bytes(skill_dir / relative, relative),
+                )
         verify_package(temporary, expected_manifest=manifest)
         if output.exists():
             output.unlink()
@@ -205,10 +219,8 @@ def _force_utf8_stdio() -> None:
         reconfigure = getattr(stream, "reconfigure", None)
         if reconfigure is None:
             continue
-        try:
+        with suppress(ValueError, OSError):
             reconfigure(encoding="utf-8")
-        except (ValueError, OSError):
-            pass
 
 
 def main(argv: list[str] | None = None) -> int:

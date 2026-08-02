@@ -304,9 +304,11 @@ class MojibakeGuardTests(unittest.TestCase):
             stderr="",
         )
         runner = homework2lark.SubprocessRunner("lark-cli")
-        with patch.object(homework2lark.subprocess, "run", return_value=corrupted):
-            with self.assertRaises(homework2lark.SkillError) as captured:
-                runner.run(["base", "+record-get"])
+        with (
+            patch.object(homework2lark.subprocess, "run", return_value=corrupted),
+            self.assertRaises(homework2lark.SkillError) as captured,
+        ):
+            runner.run(["base", "+record-get"])
         self.assertEqual(captured.exception.code, "lark_output_mojibake")
 
     def test_runner_accepts_clean_chinese_output(self) -> None:
