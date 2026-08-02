@@ -32,7 +32,7 @@
 
 | 模式 | 起点 | 核心阶段 | 默认停点 |
 |---|---|---|---|
-| A 收集入库 | 图片/PDF/Word/单题图 | source → questions（可选 Web 框题）→ Agent OCR/质量门 → Base | `[homework/base]` 原题已发布 |
+| A 收集入库 | 图片/PDF/Word/单题图 | source → 对话选题/完整框区 → Agent OCR/质量门 → Base | `[homework/base]` 原题已发布 |
 | B 错情整理 | 空白模板 + 已批改稿，或教师描述 | source/questions → observed mistakes → grouped Base records | `[homework/mistakes]` 与 `[homework/base]` |
 | C 题生变式 | Base 原题 | fact card → generate/check → optional diagram → Base write | `[homework/variants]` |
 | D 精准练习 | Base 原题/错题记录/变式 | select → immutable manifest → Word | `[homework/practice]` |
@@ -147,7 +147,7 @@ Word 不预估物理页，不插人工分页符；实际页面码由 Word `PAGE`
 
 进入阶段时，按以下顺序加载，避免把所有文档一次塞入上下文：
 
-Web 若被调用，只完成题目区域保存和公开 `problemId` 交接；OCR、修订、质量门与 Base 操作仍在本阶段的 Agent 对话中继续。
+整页材料先由教师在对话中点名题号或选择候选；Agent 保存完整题目区域并取得公开 `problemId`，OCR、修订、质量门与 Base 操作继续在同一对话推进。
 
 ### 收集入库
 

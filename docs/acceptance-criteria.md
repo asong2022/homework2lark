@@ -8,9 +8,9 @@
 
 **Given** SourceAsset 已保存，**When** 完成裁图、OCR、修订和发布，**Then** 原图 bytes、storage key 与 SHA-256 不变，crop 使用独立 key。
 
-## AC-003 人工框题与上下文恢复
+## AC-003 Agent 人工框题与上下文恢复
 
-**Given** 已上传服务器图片，**When** 教师框选、保存并重新打开 `/intake/{assetId}`，**Then** 持久化题框以只读叠加恢复，教师可以继续补框，已有 public problem IDs 不丢失。
+**Given** 已上传服务器图片，**When** 教师在对话中选题且 Agent 提交一个或多个完整框区，**Then** FastAPI 持久化裁图并返回稳定 public problem IDs；重读来源页时已有题目不丢失。
 
 ## AC-004 坐标验证与裁图
 
@@ -64,7 +64,7 @@
 
 ## AC-016 自动化质量门
 
-**Given** 新检出仓库及已安装依赖，**When** 执行项目检查，**Then** 后端 Ruff/format/mypy/pytest、Alembic、前端 ESLint/tsc/Vitest/build/Playwright、OpenAPI 合约和 Skill 全量测试全部通过。
+**Given** 新检出仓库及已安装依赖，**When** 执行项目检查，**Then** 后端 Ruff/format/mypy/pytest、Alembic、OpenAPI 快照和 Skill 全量测试全部通过。
 
 ## AC-017 隐私与日志
 
@@ -74,5 +74,5 @@
 
 - Provider raw NumPy 值必须可 JSON 序列化。
 - 文件/数据库补偿只删除本次失败步骤写入的文件，不删除既有 source/crop。
-- FastAPI OpenAPI、提交的快照和生成 TypeScript 类型保持一致。
-- Web 只承担上传与框题，不调用 OCR、修订或发布。
+- FastAPI OpenAPI 与提交的快照保持一致。
+- `manual + frame` 只承担上传与框题，不隐式调用 OCR、修订或发布。

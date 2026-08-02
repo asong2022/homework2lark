@@ -70,7 +70,7 @@ Never expose CLI stderr, Base token, absolute temp path, OCR/revision text or at
 - Service: no-current-revision rejection; valid-current-revision success; source/crop/OCR lineage rejection; pending-to-success/failure; retry reuses local state.
 - Adapter: table aliases, hidden-ID/hash lookup, duplicate rejection, readable placeholders, payload with revision number but no retired review or OCR-provider fields, columnar create response, attachment skip and safe error mapping.
 - Migration: 0004 sample data upgrades to 0005 with IDs, current revision and publication pointers preserved.
-- API/OpenAPI/frontend: publication projection decodes without review fields.
+- API/OpenAPI/Skill: publication projection decodes without review fields.
 - E2E: framing remains independent and never invokes publication.
 
 ### 7. Wrong vs Correct

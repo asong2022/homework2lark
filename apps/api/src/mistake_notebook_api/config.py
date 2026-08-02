@@ -23,7 +23,6 @@ class Settings(BaseSettings):
     max_upload_bytes: int = Field(default=15 * 1024 * 1024, gt=0)
     max_image_pixels: int = Field(default=40_000_000, gt=0)
     min_region_pixels: int = Field(default=4, gt=0)
-    cors_origins: str = "http://localhost:3000"
     log_level: str = "INFO"
 
     ocr_provider: str = "paddleocr_vl_api"
@@ -46,10 +45,6 @@ class Settings(BaseSettings):
     lark_base_title: str = "小学数学错题学习库"
     lark_cli_command: str = "lark-cli"
     lark_publish_timeout_seconds: int = Field(default=120, gt=0)
-
-    @property
-    def allowed_cors_origins(self) -> list[str]:
-        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
 
 @lru_cache

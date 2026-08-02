@@ -4,7 +4,7 @@
 
 ### `problem-intake`
 
-Owns validated JPG/JPEG/PNG upload, immutable source storage, metadata/hash, manual-first teacher region selection, one optional configured automatic detection Provider, correction/editing of manual or multi-candidate detected regions, batch-confirmed canonical crops, and OCR per saved logical problem.
+Owns validated JPG/JPEG/PNG upload, immutable source storage, metadata/hash, Agent-guided teacher region selection, one optional configured automatic detection Provider, batch-confirmed canonical crops, and OCR per saved logical problem.
 
 ### `problem-revision-and-confirmation`
 
@@ -20,11 +20,11 @@ Owns explicit publication of problem assets with a valid current teacher revisio
 
 ### `agent-assisted-variant-reuse`
 
-Owns the approved `shi-homework2lark` Skill/CLI flow: explicit Base selection, Agent-generated numbered variants, preview, append-only rows in the separate `变式题` table, a single genuine-exception queue, and available-only assembly reads. The original problem still requires a teacher-confirmed current revision before Base publication; complete Base variants do not create a routine approval state. It does not add an LLM Provider to the Web/API backend.
+Owns the approved `shi-homework2lark` Skill/CLI flow: explicit Base selection, Agent-generated numbered variants, preview, append-only rows in the separate `变式题` table, a single genuine-exception queue, and available-only assembly reads. The original problem still requires a teacher-confirmed current revision before Base publication; complete Base variants do not create a routine approval state. It does not add an LLM Provider to the FastAPI backend.
 
 ### `agent-assisted-problem-intake`
 
-Owns the approved `shi-homework2lark` intake orchestration: images use Web manual handoff, chat Yescan candidate selection or one-question full-image intake; PDF/Word use Agent-level MinerU plus page rendering before entering the image-only FastAPI. It also owns OCR/revision commands, explicit publication, complete-question boundaries and teacher-confirmed Base metadata suggestions. It does not bypass FastAPI domain rules, claim direct PDF/Word API upload, make automatic detection mandatory, or store Provider/Lark/model credentials.
+Owns the approved `shi-homework2lark` intake orchestration: images use Agent manual framing, chat Yescan candidate selection or one-question full-image intake; PDF/Word use Agent-level MinerU plus page rendering before entering the image-only FastAPI. It also owns OCR/revision commands, explicit publication, complete-question boundaries and teacher-confirmed Base metadata suggestions. It does not bypass FastAPI domain rules, claim direct PDF/Word API upload, make automatic detection mandatory, or store Provider/Lark/model credentials.
 
 ### `agent-assisted-learning-loop`
 
@@ -59,7 +59,7 @@ Automatic segmentation was authorized through the `intake-multi-ocr-lark-proposa
 
 A proposal records the problem, why it exceeds Phase 1, recommendation, data/stack impact, estimated cost, and target phase. It is not implementation authorization.
 
-The `reviewed-problem-lark-reuse-loop` proposal was approved on 2026-07-13. Its publication child now has one production `ProblemPublisher` (`lark_cli`); test stubs are injected only from `tests/support`. Its generation child remains Skill/Base-based and cannot add a backend LLM Provider, queue, or student workflow.
+The `reviewed-problem-lark-reuse-loop` proposal was approved on 2026-07-13. Its publication child now has one production `ProblemPublisher` (`lark_cli`); test stubs are injected only from `tests/support`. Its generation child remains Skill/Base-based and cannot add a backend LLM Provider, queue, or student workflow. The historical proposal name does not reintroduce a product review state.
 
 The `student-mistake-occurrence-expansion` proposal was partially approved on 2026-07-14 as a smaller Base-only slice: add one grouped `错题记录` table, use a multi-select `对应学生`, and do not add `学生`, `Submission`, local `MistakeOccurrence` persistence, accounts or class analytics.
 

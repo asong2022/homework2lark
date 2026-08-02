@@ -13,7 +13,7 @@
 - 飞书中存在唯一、结构正确的四表空白错题库；
 - `onboarding.py verify` 返回 `status=ready`。
 
-Web 不是必需项。只有教师需要在电脑上手动画框时才安装 Node 依赖并启动 Web；纯对话收题、Base 选题、变式和练习不因 Web 未启动而被阻塞。
+仓库不包含 Web 或 Node 前端。收题、Base 选题、变式和练习都从 AI Agent 对话完成；教师不需要安装浏览器端框题工具。
 
 ## AI 执行顺序
 
@@ -39,7 +39,6 @@ python -X utf8 .agents/skills/shi-homework2lark/scripts/onboarding.py --repo-roo
 |---|---|
 | `clone_repository` | 克隆完整仓库并重新定位 `--repo-root` |
 | `install_runtime` | 安装 uv、lark-cli 和 API 依赖；执行 `uv sync --directory apps/api --all-groups` 与 `uv run --directory apps/api alembic upgrade head` |
-| `install_web` | 仅教师明确需要可视化框题时安装 Node 20+、执行 `npm install` |
 | `configure_ocr` | 只询问 PaddleOCR/AI Studio Token，再走安全配置命令 |
 | `authorize_lark` | 安装 `@larksuite/cli` 后执行 `lark-cli auth login`，让教师完成一次用户授权 |
 | `init_base` | 用内置空白模板创建 Base |
@@ -55,7 +54,7 @@ Token 只能通过进程环境或标准输入进入脚本，不能放进命令�
 python -X utf8 .agents/skills/shi-homework2lark/scripts/onboarding.py --repo-root . configure-runtime
 ```
 
-默认使用教师手动框题或对话选题，不配置自动检测。教师明确希望整页自动给候选框时，才询问 Yescan 两项密钥并加 `--enable-yescan`；Yescan 不是完成错题学习闭环的前置条件。
+默认由教师在对话中点名题号，Agent 根据原图通过 `manual + frame` 保存完整题目边界，不配置自动检测。教师明确希望整页自动给候选框时，才询问 Yescan 两项密钥并加 `--enable-yescan`；Yescan 不是完成错题学习闭环的前置条件。
 
 如果 Agent 只能使用 stdin，发送以下 JSON，并加 `--stdin-json`：
 
@@ -95,7 +94,7 @@ python -X utf8 .agents/skills/shi-homework2lark/scripts/onboarding.py --repo-roo
 uv run --directory apps/api uvicorn --app-dir src mistake_notebook_api.main:app --port 8000
 ```
 
-只有需要 Web 手动框题时再运行 `npm run dev:web`。不要要求普通教师运行测试、查看 OpenAPI、理解数据库迁移或手工创建字段。
+不要要求普通教师处理坐标、运行测试、查看 OpenAPI、理解数据库迁移或手工创建字段。
 
 ## 隐私与失败边界
 

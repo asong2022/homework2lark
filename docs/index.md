@@ -23,4 +23,4 @@
 
 ## Trellis
 
-编码与审查规则位于 `.trellis/spec/`；当前双入口与 Base 闭环任务位于 `.trellis/tasks/07-13-skill-intake-reviewed-problem-to-lark/`。
+编码与审查规则位于 `.trellis/spec/`。产品当前采用 Agent 单入口，任务工件不进入公开发布仓库。

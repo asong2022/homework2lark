@@ -2,7 +2,7 @@
 
 ## 1. Scope / Trigger
 
-This contract applies whenever a change crosses Web, HTTP, database, local storage or OCR configuration. The current path is one image -> teacher-confirmed regions -> append-only OCR attempts -> immutable teacher-confirmed revision -> optional explicit Lark publication. Web owns upload and framing only; Agent/API clients own OCR, revision and publication.
+This contract applies whenever a change crosses the product Skill, HTTP, database, local storage or OCR configuration. The current path is one image -> Agent-guided teacher-confirmed regions -> append-only OCR attempts -> immutable teacher-confirmed revision -> optional explicit Lark publication. The Agent Skill owns upload/framing orchestration; FastAPI owns persistence and evidence rules.
 
 ## 2. Signatures
 
@@ -40,9 +40,9 @@ SourceAsset -> ProblemRegion -> OCRRun -> ProblemRevision
 - The public record contains no review status, review event, reviewed timestamp or future-reuse boolean.
 - Publication requires a non-empty current revision plus valid source/region/crop/OCR lineage. It remains an explicit external mutation.
 - `GET /assets/{assetId}/problems` returns stable bbox order with `no-store`; an existing empty page returns an empty collection.
-- Web stops after region persistence and public-ID handoff. It never calls OCR, revision or publication.
+- `manual`, `chat`, and `single` intake commands stop after region persistence and public-ID handoff. They never call OCR, revision or publication implicitly.
 - Default OCR is hosted `paddleocr_vl_api` / `PaddleOCR-VL-1.6`; the only other production OCR option is local `paddleocr`.
-- FastAPI OpenAPI is authoritative; export it and regenerate TypeScript in the same change.
+- FastAPI OpenAPI is authoritative; export the checked-in JSON snapshot in the same public-contract change.
 
 ## 4. Validation & Error Matrix
 
@@ -55,7 +55,7 @@ SourceAsset -> ProblemRegion -> OCRRun -> ProblemRevision
 | OCR invalid/unavailable/timeout | 502/503/504 | failed run plus source/region/crop retained |
 | invalid revision baseline/text | 422 | prior evidence retained |
 | publication without valid current revision/lineage | 409 `problem_not_publishable` | local evidence retained |
-| malformed frontend 2xx | client `invalid_response` | no optimistic domain state |
+| malformed API 2xx | Skill client `invalid_response` | no optimistic domain state |
 
 Every JSON error uses the safe `ErrorEnvelope` and request ID.
 
@@ -70,8 +70,8 @@ Every JSON error uses the safe `ErrorEnvelope` and request ID.
 - Backend full flow and failure durability: `apps/api/tests/integration/test_full_flow.py`.
 - 0004 -> 0005 sample-data preservation and fresh up/down/up migration.
 - OCR transport/normalization plus opt-in live hosted smoke.
-- OpenAPI drift and runtime frontend decoding.
-- Web geometry, manual/detection recovery and Playwright public-ID handoff without downstream calls.
+- OpenAPI drift and Skill HTTP-decoding tests.
+- Agent manual-frame validation, candidate selection and public-ID handoff without downstream calls.
 - Skill intake regression: save revision -> publish, with no review command.
 
 ## 7. Wrong vs Correct

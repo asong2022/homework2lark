@@ -118,7 +118,7 @@ class OCRBlock:
 ### 7.2 运行条件与隐私
 
 - 只需 Python `requests`、出站 HTTPS 和有效 `PADDLEOCR_ACCESS_TOKEN`，不需要本地 PaddlePaddle、GPU 或 VLM 权重。
-- Token 仅保存在 Git 忽略的 `.env`；Provider 对象 repr、异常、日志和前端都不得包含它。
+- Token 仅保存在 Git 忽略的 `.env`；Provider 对象 repr、异常、日志和 Agent 输出都不得包含它。
 - 启用时会把教师已确认的题目裁图发送给 PaddleOCR/AI Studio 官方云服务；不发 SourceAsset ID、本地 storage key、教师元数据或学生身份字段。
 - 已使用用户授权的 `image2.png` 通过实际 API 纵向流程验证：Provider/model 正确，文本非空，raw 证据持久化，source/crop 仍可读。
 

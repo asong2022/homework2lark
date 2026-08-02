@@ -36,12 +36,12 @@
     },
     {
       "id": 4,
-      "prompt": "我发了一张整页作业图片。我愿意打开前端自己框错题，不需要自动识别题目边界。上传一次后把人工框题页面给我，框完回到对话继续OCR核对和入飞书。",
-      "expected_output": "Starts the Web intake mode, returns the existing-asset manual-only URL, avoids automatic detection and continues from copied public problem IDs without a second upload.",
+      "prompt": "我发了一张整页作业图片，只想收第3题和第6题，不需要自动识别题目边界。请在对话里完成框题，再继续OCR核对和入飞书。",
+      "expected_output": "Starts manual intake, derives two complete-question bboxes from the original page, saves them through frame without automatic detection, and continues from the returned public problem IDs without a second upload.",
       "files": [],
       "expectations": [
-        "Uses intake start mode web and does not call candidate detection",
-        "Explains that each manual box is one problem and the source is not re-uploaded",
+        "Uses intake start mode manual and does not call candidate detection",
+        "Uses one frame payload where each box is one complete problem and does not re-upload the source",
         "Keeps correction and external publication as explicit later gates without adding a review status"
       ]
     },
@@ -75,7 +75,7 @@
       "expected_output": "Uses the Agent conversation and single-image path, preserves the supplied real evidence, previews a grouped mistake record, and waits for explicit confirmation before Base mutation.",
       "files": [],
       "expectations": [
-        "Does not require the Web workbench for an already-cropped question",
+        "Uses the single-image route for an already-cropped question",
         "Stores the observed response in 错题记录.典型错例 and does not invent unsupported student behavior",
         "Previews the full group, selected student, error pattern and proposed cause before the Base write"
       ]
@@ -305,7 +305,7 @@
       "expectations": [
         "Presents exactly the three collection choices with concise required materials",
         "Does not recommend or persist a selected mode before the user chooses",
-        "Does not call OCR, Web, Base or any Provider while waiting",
+        "Does not call OCR, Base or any Provider while waiting",
         "After a later explicit choice, persists decidedBy=user and starts only the chosen workflow"
       ]
     },

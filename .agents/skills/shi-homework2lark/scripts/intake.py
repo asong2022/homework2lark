@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import mimetypes
 import os
 import re
@@ -18,7 +19,6 @@ from typing import Protocol
 JSONValue = None | bool | int | float | str | list["JSONValue"] | dict[str, "JSONValue"]
 
 DEFAULT_API_URL = "http://127.0.0.1:8000/api/v1"
-DEFAULT_WEB_URL = "http://localhost:3000"
 SESSION_VERSION = 1
 IMAGE_SUFFIXES = frozenset((".jpg", ".jpeg", ".png"))
 DOCUMENT_SUFFIXES = frozenset((".pdf", ".doc", ".docx"))
@@ -219,14 +219,8 @@ class HttpGateway:
 
 
 class IntakeService:
-    def __init__(
-        self,
-        gateway: Gateway,
-        *,
-        web_url: str = DEFAULT_WEB_URL,
-    ) -> None:
+    def __init__(self, gateway: Gateway) -> None:
         self.gateway = gateway
-        self.web_url = web_url.rstrip("/")
 
     def health(self) -> dict[str, JSONValue]:
         health = self.gateway.health()
@@ -243,6 +237,8 @@ class IntakeService:
         }
 
     def start(self, path: Path, mode: str) -> dict[str, JSONValue]:
+        if mode not in {"manual", "chat", "single"}:
+            raise SkillError("invalid_mode", "收题模式必须是 manual、chat 或 single。")
         self._validate_image(path)
         health = self.health()
         if mode == "chat":
@@ -263,7 +259,6 @@ class IntakeService:
             "schemaVersion": SESSION_VERSION,
             "mode": mode,
             "source": source_manifest,
-            "webUrl": f"{self.web_url}/intake/{urllib.parse.quote(asset_id)}",
             "detection": None,
             "problems": [],
         }
@@ -293,6 +288,22 @@ class IntakeService:
             )
             manifest["problems"] = self._problems_from_batch(batch)
         return manifest
+
+    def frame(
+        self,
+        session: dict[str, JSONValue],
+        payload: dict[str, JSONValue],
+    ) -> dict[str, JSONValue]:
+        _validate_session(session, required_mode="manual")
+        regions = _manual_regions(payload)
+        source = _object(session.get("source"), "source")
+        batch = self.gateway.create_regions(_string(source.get("assetId"), "assetId"), regions)
+        return {
+            "schemaVersion": SESSION_VERSION,
+            "mode": "manual-selection",
+            "source": source,
+            "problems": self._problems_from_batch(batch),
+        }
 
     def select(
         self, session: dict[str, JSONValue], candidate_ids: Sequence[str]
@@ -620,6 +631,62 @@ def _validate_session(session: dict[str, JSONValue], *, required_mode: str) -> N
     _object(session.get("source"), "source")
 
 
+def _manual_regions(payload: dict[str, JSONValue]) -> list[dict[str, JSONValue]]:
+    if set(payload) != {"regions"}:
+        raise SkillError("invalid_regions", "手动框题输入只能包含 regions。")
+    raw_regions = payload.get("regions")
+    if not isinstance(raw_regions, list) or not 1 <= len(raw_regions) <= 100:
+        raise SkillError("invalid_regions", "regions 必须包含 1 到 100 个题目框。")
+
+    output: list[dict[str, JSONValue]] = []
+    seen: set[tuple[float, float, float, float]] = set()
+    for index, value in enumerate(raw_regions, start=1):
+        region = _object_payload(value, f"regions[{index}]")
+        if set(region) != {"bbox"}:
+            raise SkillError("invalid_regions", f"regions[{index}] 只能包含 bbox。")
+        bbox = _object_payload(region.get("bbox"), f"regions[{index}].bbox")
+        if set(bbox) != {"x", "y", "width", "height"}:
+            raise SkillError(
+                "invalid_regions",
+                f"regions[{index}].bbox 必须完整包含 x、y、width、height。",
+            )
+        values = tuple(
+            _normalized_number(bbox.get(name), f"regions[{index}].bbox.{name}")
+            for name in ("x", "y", "width", "height")
+        )
+        x, y, width, height = values
+        if width <= 0 or height <= 0:
+            raise SkillError("invalid_regions", f"regions[{index}] 的宽和高必须大于 0。")
+        if x < 0 or y < 0 or x + width > 1 or y + height > 1:
+            raise SkillError("invalid_regions", f"regions[{index}] 超出原图范围。")
+        if values in seen:
+            raise SkillError("invalid_regions", "手动框题输入包含重复题目框。")
+        seen.add(values)
+        output.append(
+            {
+                "selectionSource": "manual",
+                "detectionCandidateIds": [],
+                "bbox": {"x": x, "y": y, "width": width, "height": height},
+            }
+        )
+    return output
+
+
+def _object_payload(value: JSONValue, label: str) -> dict[str, JSONValue]:
+    if not isinstance(value, dict):
+        raise SkillError("invalid_regions", f"{label} 结构无效。")
+    return value
+
+
+def _normalized_number(value: JSONValue, label: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise SkillError("invalid_regions", f"{label} 必须是 0 到 1 之间的数字。")
+    normalized = float(value)
+    if not math.isfinite(normalized) or normalized < 0 or normalized > 1:
+        raise SkillError("invalid_regions", f"{label} 必须是 0 到 1 之间的数字。")
+    return normalized
+
+
 def _object(value: JSONValue, label: str) -> dict[str, JSONValue]:
     if not isinstance(value, dict):
         raise SkillError("api_invalid_response", f"{label} 结构无效。")
@@ -745,7 +812,6 @@ def _start_summary(manifest: dict[str, JSONValue], output: str) -> dict[str, JSO
         "fileName": source.get("fileName"),
         "width": source.get("width"),
         "height": source.get("height"),
-        "webUrl": manifest.get("webUrl"),
         "detectionProvider": provider,
         "candidateCount": candidate_count,
         "problems": manifest.get("problems"),
@@ -758,10 +824,6 @@ def build_parser() -> argparse.ArgumentParser:
         "--api-url",
         default=os.environ.get("SHI_HOMEWORK2LARK_API_URL", DEFAULT_API_URL),
     )
-    parser.add_argument(
-        "--web-url",
-        default=os.environ.get("SHI_HOMEWORK2LARK_WEB_URL", DEFAULT_WEB_URL),
-    )
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("health")
 
@@ -770,8 +832,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     start = commands.add_parser("start")
     start.add_argument("--file", required=True)
-    start.add_argument("--mode", choices=("web", "chat", "single"), required=True)
+    start.add_argument("--mode", choices=("manual", "chat", "single"), required=True)
     start.add_argument("--output", required=True)
+
+    frame = commands.add_parser("frame")
+    frame.add_argument("--session", required=True)
+    frame.add_argument("--input", required=True)
+    frame.add_argument("--output", required=True)
 
     select = commands.add_parser("select")
     select.add_argument("--session", required=True)
@@ -807,7 +874,7 @@ def _force_utf8_stdio() -> None:
 def main(argv: Sequence[str] | None = None) -> int:
     _force_utf8_stdio()
     args = build_parser().parse_args(argv)
-    service = IntakeService(HttpGateway(args.api_url), web_url=args.web_url)
+    service = IntakeService(HttpGateway(args.api_url))
     try:
         if args.command == "health":
             result: JSONValue = service.health()
@@ -817,6 +884,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             manifest = service.start(Path(args.file).expanduser().resolve(), args.mode)
             output = _write_json(args.output, manifest)
             result = _start_summary(manifest, output)
+        elif args.command == "frame":
+            selection = service.frame(_load_json(args.session), _load_json(args.input))
+            output = _write_json(args.output, selection)
+            result = {"selection": output, "problems": selection["problems"]}
         elif args.command == "select":
             session = _load_json(args.session)
             selection = service.select(session, args.candidate_id)

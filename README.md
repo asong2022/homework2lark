@@ -4,7 +4,7 @@
 
 把作业图片、PDF、Word 或单题截图发给 AI，经过教师确认后保存到飞书多维表格；以后继续让 AI 从错题库生成变式题、个人精准练习和再练内容。
 
-教师不用手工建表，使用Codex、Hermes 等能操作电脑的 AI 是主入口。
+教师不用手工建表，使用 Codex、Hermes 等能操作电脑的 AI 是主入口。
 
 ## 最简单的安装方式
 
@@ -14,7 +14,7 @@
 
 然后把下面这段话原样发给它：
 
-> 请帮我安装并初始化 homework2lark。先阅读仓库的 README、AI_INSTALL.md 和 shi-homework2lark/SKILL.md，使用仓库内置的 onboarding.py 一直处理到 verify 返回 ready。每次只问我一个真正缺失的信息；默认使用 PaddleOCR-VL-1.6，默认由教师在对话中选题或手动框题，不强制配置 Yescan；用内置空白模板创建我的飞书 Base。配置完成后直接告诉我“可以开始发作业了”。
+> 请帮我安装并初始化 homework2lark。先阅读仓库的 README、AI_INSTALL.md 和 shi-homework2lark/SKILL.md，使用仓库内置的 onboarding.py 一直处理到 verify 返回 ready。每次只问我一个真正缺失的信息；默认使用 PaddleOCR-VL-1.6，由我在对话中选择题目，你负责从原图保存完整题目边界，不强制配置 Yescan；用内置空白模板创建我的飞书 Base。配置完成后直接告诉我“可以开始发作业了”。
 
 首次使用通常只需要教师完成两件事：
 
@@ -72,17 +72,9 @@ Yescan 自动候选框、当前年级和学期日期都是可选项，不阻塞�
 
 默认 OCR 是官方托管 `PaddleOCR-VL-1.6`，无需教师在本地部署模型或 GPU。题图不交给 OCR 猜：完整题目裁图和题干图片都以原始高清页面为视觉依据，从原像素提取，上传飞书后再回读检查。
 
-未配置 Yescan 时，系统明确采用教师手动框题或 AI 对话选题，不会产生虚假的“自动检测结果”。Yescan 只是可选的整页题目候选路径，不是错题学习闭环的前提。
+未配置 Yescan 时，教师只需在对话中说出题号，AI 根据原始页面保存完整题目边界，不会产生虚假的“自动检测结果”。边界确实看不清时，AI 会请教师补一张单题截图。Yescan 只是可选的整页候选路径，不是错题学习闭环的前提。
 
-## 可选 Web 框题器
-
-如果教师在电脑前，希望自己从整页图片上框出错题，可以让 AI 启动 Web：
-
-```text
-请启动 homework2lark 的可视化框题页面，我要手动框题。
-```
-
-Web 只负责上传页面、手动新增/编辑题框并把题目编号交回对话；OCR、整理和飞书写入仍由 AI 完成。只在 AI 对话里使用时，不需要安装或启动 Web。
+本仓库没有 Web 或手机 App。教师只面对 AI 对话和自己的飞书 Base。
 
 ## 隐私边界
 
@@ -94,7 +86,7 @@ Web 只负责上传页面、手动新增/编辑题框并把题目编号交回对
 
 ## 给开发者
 
-主要技术栈：Python 3.11/3.12、FastAPI、SQLAlchemy、Alembic、SQLite、Next.js 16、React 19、TypeScript，以及用户身份下的 `lark-cli`。
+主要技术栈：Python 3.11/3.12、FastAPI、SQLAlchemy、Alembic、SQLite，以及用户身份下的 `lark-cli`。
 
 首次安装运行时：
 
@@ -109,13 +101,6 @@ uv run --directory apps/api alembic upgrade head
 uv run --directory apps/api uvicorn --app-dir src mistake_notebook_api.main:app --port 8000
 ```
 
-只有开发或使用 Web 时才需要：
-
-```powershell
-npm install
-npm run dev:web
-```
-
 初始化器与 Skill 入口：
 
 ```powershell
@@ -124,7 +109,7 @@ python -X utf8 .agents/skills/shi-homework2lark/scripts/onboarding.py --repo-roo
 python -X utf8 .agents/skills/shi-homework2lark/scripts/doctor.py
 ```
 
-API 健康检查：`http://localhost:8000/api/v1/health`。Web 默认地址：`http://localhost:3000`。架构和开发约定从 [docs/index.md](./docs/index.md) 与 [.trellis/spec/](./.trellis/spec/) 开始。
+API 健康检查：`http://127.0.0.1:8000/api/v1/health`。架构和开发约定从 [docs/index.md](./docs/index.md) 与 [.trellis/spec/](./.trellis/spec/) 开始。
 
 质量门：
 
@@ -133,10 +118,6 @@ uv run --directory apps/api ruff format --check .
 uv run --directory apps/api ruff check .
 uv run --directory apps/api mypy src
 uv run --directory apps/api pytest -q
-npm run lint:web
-npm run typecheck:web
-npm run test:web
-npm run build:web
 ```
 
 公开自动化测试不使用教师 Token，也不消耗 PaddleOCR 额度；真实云端冒烟测试必须显式开启。

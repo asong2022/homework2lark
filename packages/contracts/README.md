@@ -1,9 +1,10 @@
-# API Contracts
+# FastAPI Contract Snapshot
 
-`openapi.json` is generated from FastAPI and is the public contract source for the Web application.
+`openapi.json` is the committed public HTTP contract for the local FastAPI evidence service. It is
+generated from application code and checked for drift by the backend contract tests.
 
 ```powershell
-npm run contracts
+uv run --directory apps/api python scripts/export_openapi.py
 ```
 
-Do not edit `openapi.json` or `apps/web/src/lib/generated-api.ts` by hand.
+Do not edit `openapi.json` by hand.

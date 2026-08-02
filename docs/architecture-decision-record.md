@@ -1,20 +1,20 @@
 # Phase 1 Architecture Decision Record
 
-## ADR-001：模块化产品单体与技术栈
+## ADR-001：Agent Skill + 本地证据服务
 
-- 状态：Accepted（2026-07-12）
-- 决策：仓库采用 `apps/web`（Next.js/React/TypeScript）与 `apps/api`（FastAPI/Pydantic/SQLAlchemy/Alembic）的模块化 monorepo/product monolith。两者作为一个产品、一套数据模型和一个部署单元理解，不拆微服务。
-- 理由：纵向流程需要浏览器图像交互和 Python OCR 生态；两个运行时边界清晰，同时远小于微服务基础设施。
-- 代价：本地需同时运行 Node 与 Python；跨语言契约需要 OpenAPI 同步。
-- 迁移：未来仍可分别部署 Web/API；当前不承诺独立团队/服务演进。
+- 状态：Accepted（2026-08-02，取代最初的双运行时方案）。
+- 决策：教师只通过 `shi-homework2lark` 与 Codex/Hermes 对话；仓库保留 Python Skill/CLI 和 `apps/api` FastAPI 本地证据服务，不包含图形界面运行时。
+- 理由：教师的核心任务是收题、整理到 Base、变式和再练，而不是操作软件工作台。单一对话入口减少安装、更新和认知成本。
+- 代价：整页手动框题由 Agent 根据原图确定 bbox；边界不清时需要单题截图。
+- 迁移：未来图形界面若有真实独立需求，必须作为单独产品和仓库重新立项，不能重新耦合到核心 Skill。
 
-## ADR-002：Next.js App Router 与原生框选
+## ADR-002：Agent 手动框题与服务端裁图
 
-- 状态：Accepted。
-- 决策：使用 Next.js App Router、严格 TypeScript 和 DOM Pointer Events 实现矩形选择；不引入 UI、裁图或全局状态框架。
-- 理由：只需要一个矩形 bbox，原生实现可控、可测试，服务端仍是裁图真值。
-- 代价：需自行处理坐标缩放、反向拖拽、pointer capture、键盘替代和响应式布局。
-- 风险控制：选择服务器返回的图片；前后端统一 EXIF orientation；组件和 Playwright 双层测试。
+- 状态：Accepted（2026-08-02）。
+- 决策：`intake start --mode manual` 只上传原图，`intake frame` 接收 Agent 生成的一个或多个 `normalized_top_left` bbox；FastAPI 校验并从原始显示像素裁图。
+- 理由：教师只需说题号，既不操作坐标也不安装第二套运行时；服务端仍是裁图真值。
+- 代价：AI 视觉判断存在边界风险。
+- 风险控制：完整题目必须保留文字、选项和题图；越界/重复/零面积在 CLI 与 API 双层拒绝，不确定时请求单题截图。
 
 ## ADR-003：同步 FastAPI + SQLAlchemy 2
 
@@ -53,16 +53,16 @@
 - 状态：Accepted。
 - 决策：`OCR_PROVIDER` 在应用组合时只选择一个生产 Adapter。默认 `paddleocr_vl_api` 调用官方托管 Job API 与 `PaddleOCR-VL-1.6`；`paddleocr` 保留为隔离的 3.x 本地 Adapter。生产配置不暴露 Fake OCR。
 - 理由：托管 VL 直接返回更适合数学公式、表格和图文页面的 Markdown，而且不需要教师电脑安装 GPU、PaddlePaddle 或 VLM 权重。自动化测试在测试目录注入 stub/transport，不把测试数据冒充产品能力。
-- 运行验证：已使用用户授权的 `image2.png` 通过真实 Web/API 路径完成托管 OCRRun，Provider/model 为 `paddleocr_vl_api` / `PaddleOCR-VL-1.6`，标准化文本非空，原图与裁图仍可读。本地 Adapter 的 Windows 模式仍必须关闭 MKLDNN/oneDNN。
+- 运行验证：已使用用户授权样本通过真实 Agent/API 路径完成托管 OCRRun，Provider/model 为 `paddleocr_vl_api` / `PaddleOCR-VL-1.6`，标准化文本非空，原图与裁图仍可读。本地 Adapter 的 Windows 模式仍必须关闭 MKLDNN/oneDNN。
 - 代价：托管路径需要 Token、外网和数据传输告知；结果仍是机器中间数据，原裁图和教师校对不可省略。
 - 迁移：接入第二个可用 Provider 前创建 proposal；统一接口不自动引入路由/降级/投票。
 
 ## ADR-008：FastAPI OpenAPI 为跨端契约权威
 
 - 状态：Accepted。
-- 决策：FastAPI schema 生成 OpenAPI；提交 `packages/contracts/openapi.json`，使用 `openapi-typescript` 生成 Web 类型。
-- 理由：避免 Python/TypeScript/文档三份手工契约漂移；前端不依赖 ORM。
-- 代价：schema 变化需运行导出/生成命令，并提交生成物。
+- 决策：FastAPI schema 生成 OpenAPI；提交 `packages/contracts/openapi.json` 并由后端契约测试检查漂移。
+- 理由：让 Agent CLI、文档和测试共享一个公开 HTTP 契约，且不依赖 ORM。
+- 代价：schema 变化需运行导出命令并提交快照。
 - 迁移：未来可发布 contracts package，但 Phase 1 不建独立 registry。
 
 ## ADR-009：不采用复杂基础设施
@@ -97,13 +97,13 @@
 - 代价：生成发生在 Agent 会话中，不提供后台批量任务；含图变式还要经过独立的数学题图生成、PNG 上传和图文一致性校验。
 - 迁移：题图由可替换的 `wumu-jihe-html` Skill 处理，FastAPI 不绑定图片模型。未来若需要后台批量生成或多教师协作，必须另立 proposal，并继续保留预览、数学检查、异常处理和对外发布确认。
 
-## ADR-013：双入口收集、Agent 对话优先、Base 中转核心
+## ADR-013：Agent 单入口收集、Base 中转核心
 
-- 状态：Accepted（2026-07-14）。
-- 决策：保留 Agent 对话与 Web 两个入口，但只维护一套 FastAPI 领域核心。日常默认从 Codex/Hermes 对话开始：整页可使用 Yescan 的 group-level 整题候选，单题截图以整图录入，教师也可直接口述学生作答和诊断；只有需要精确调整 bbox 时才打开 `/intake/{assetId}` 人工框题。全部经过 OCR 和教师确认修订后显式发布到 `错题页面/错题题目`。
+- 状态：Accepted（2026-08-02，取代 2026-07-14 的双入口方案）。
+- 决策：只保留 Codex/Hermes 对话入口和一套 FastAPI 领域核心。整页默认由教师点名题号、Agent `manual + frame`；可选 Yescan 返回 group-level 整题候选；单题截图以整图录入。教师也可直接口述学生作答和诊断。全部经过 OCR 和教师确认修订后显式发布到 `错题页面/错题题目`。
 - 理由：Agent 对话更适合同时吸收题图、学生真实作答、教师判断并完成后续 Base 整理；人工已经打开可视化工作台时，直接框一道题的成本低于等待和修正自动切题。产品价值在 Base 中长期复用、变式和组卷，不在扫描算法本身。
 - 数据权威：Base 是教师日常中转与复用核心，显示 AI/教师整理的可读 `页面名称`/`题目名称`；SQLite/本地文件保存不可变原图、裁图、Provider raw 和修订历史，隐藏 `系统页面ID`/`系统题目ID` 连接两层。
-- 代价：当前有本地证据与 Base 投影两层，需要幂等同步和失败重试；Web 自动候选兼容入口仍存在，但不作为主线。
+- 代价：当前有本地证据与 Base 投影两层，需要幂等同步和失败重试；没有可视化 bbox 编辑器，边界不清时必须补单题截图。
 - 迁移：Agent 层可以用 MinerU 和文档工具把 PDF/Word 页面化，再复用图片流程；FastAPI 仍不直接解析完整文档。每日一练 Word 由文档 Skill 读取内容完整且未标记异常的题目生成，不引入多 Provider 自动路由、队列或后台 LLM 服务。
 
 ## ADR-014：Base 一页一行与页面属性查找引用

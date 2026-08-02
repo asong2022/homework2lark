@@ -31,7 +31,7 @@ def plan_source(path: Path) -> dict[str, JSONValue]:
     if suffix in IMAGE_SUFFIXES:
         source_type = "image"
         route = "image_intake"
-        steps = ["single_or_whole_page_decision", "chat_or_web_or_single"]
+        steps = ["single_or_whole_page_decision", "manual_or_chat_or_single"]
         third_party = ["yescan_when_chat_selected", "paddleocr_vl_after_region_saved"]
     elif suffix in PDF_SUFFIXES:
         source_type = "pdf"
@@ -124,7 +124,7 @@ def validate_bundle(raw: JSONValue) -> dict[str, JSONValue]:
         "privacyNoticeShown": True,
         "pageCount": len(pages),
         "pages": pages,
-        "next": "send_each_page_to_chat_or_web_selection",
+        "next": "send_each_page_to_manual_chat_or_single",
     }
 
 

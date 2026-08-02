@@ -38,7 +38,7 @@ class BundleManifestTests(unittest.TestCase):
             {"name", "description", "license", "allowed-tools", "metadata", "compatibility"},
         )
         self.assertNotIn("version", top_level_keys)
-        self.assertIn('version: "2.3.0"', frontmatter)
+        self.assertIn('version: "3.0.0"', frontmatter)
 
     def test_bundle_declares_one_entry_and_five_stages(self) -> None:
         manifest = doctor.load_bundle(SKILL_ROOT)

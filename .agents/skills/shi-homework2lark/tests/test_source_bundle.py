@@ -61,7 +61,7 @@ class SourceBundleTests(unittest.TestCase):
             with self.assertRaisesRegex(source_bundle.SourceError, "数据流向"):
                 source_bundle.validate_bundle(raw)
         self.assertEqual(result["pageCount"], 1)
-        self.assertEqual(result["next"], "send_each_page_to_chat_or_web_selection")
+        self.assertEqual(result["next"], "send_each_page_to_manual_chat_or_single")
 
     def test_rejects_private_or_missing_manifest_fields(self):
         with self.assertRaises(source_bundle.SourceError):

@@ -45,7 +45,7 @@ Hermes/其他 Agent 把仓库中的 `.agents/skills/shi-homework2lark` 整目录
 
 - Python 3.11 或 3.12（可由 uv 管理）；
 - [uv](https://docs.astral.sh/uv/)；
-- Node/npm 仅用于安装 `lark-cli`，以及教师明确使用 Web 时的前端；
+- Node/npm 仅用于全局安装 `lark-cli`；项目本身没有 Node 工作区；
 - `lark-cli`：`npm install -g @larksuite/cli`。
 
 在仓库根目录执行：
@@ -131,7 +131,6 @@ python -X utf8 .agents/skills/shi-homework2lark/scripts/onboarding.py --repo-roo
   uv run --directory apps/api uvicorn --app-dir src mistake_notebook_api.main:app --port 8000
   ```
 
-- 只有教师要求可视化手动框题时，才执行 `npm install`、`npm run dev:web`；
 - 第一次收题读取 `collection-modes.md`，让教师选择 1/2/3，不能由 AI 自动决定。
 
 ## 绝对不要做
@@ -140,5 +139,5 @@ python -X utf8 .agents/skills/shi-homework2lark/scripts/onboarding.py --repo-roo
 - 不把现有业务 Base 直接导出为公开模板；
 - 不输出 PaddleOCR/Yescan 密钥、飞书 open_id、Base token、表/字段/记录 ID、绝对私有路径；
 - 不把测试替身当成可选 OCR、自动框题或发布模式；
-- 不因 Web 没启动而阻塞纯对话收题、变式或练习；
+- 不要求教师安装或启动 Web；整页题目由教师在对话中选择，Agent 保存完整框区；
 - 不运行公开 CI 的真实云端测试，除非用户明确授权并已安全提供凭据。

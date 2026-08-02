@@ -3,7 +3,7 @@ name: shi-homework2lark
 description: >
   小学数学智能错题学习整包与唯一工作流入口。通过 Codex/Hermes 对话接收空白卷、已批改作业、图片、PDF、Word、单题截图、学生真实作答和教师判断，完成完整题目收集、错情分组、飞书 Base 入库、题生变式、班级/个人练习纸和再练反馈。用户提到收集错题、批改作业识别、错题进飞书、典型错例、学生共性错误、举一反三、变式题、每日一练、个人精准练习、整班批量出卷或再练反馈时必须使用；不要把它当成普通 OCR 或把五个阶段拆成多个竞争入口。
 metadata:
-  version: "2.3.0"
+  version: "3.0.0"
   compatibility: Python 3.11+；完整闭环需要 lark-cli/lark-base；OCR、题图和文档能力按阶段委托已安装的兄弟 Skill。
   requires:
     bins: ["python", "lark-cli"]
@@ -115,7 +115,7 @@ python <skill-root>/scripts/onboarding.py --repo-root <repo-root> check
 4. **一个写入门**：同一明确范围可以一次授权连续写入；范围、记录集合或覆盖语义改变时重新确认。预览/doctor/schema-check 不算写入。
 5. **可停止、可续跑**：教师可停在任一阶段。保存已有交接块、稳定 ID 和私有产物位置，下次从该处继续。
 6. **失败不倒退**：OCR、Base、附件或 Word 失败时保留已经完成的不可变证据，只重试失败步骤。
-7. **Web 只是框题器**：Agent 对话是主入口；需要可视化题目边界时才打开现有 SourceAsset，可手动或显式自动框题。点击完成后 Web 只返回公开 `problemId`，OCR、整理、质量门和 Base 写入继续由 Agent 执行。
+7. **对话内完成框题**：教师只需点名题号或选择候选；Agent 依据原始高清页面确定完整边界，通过 `manual + frame` 保存题目区域。边界不确定时请求单题截图，不把坐标操作交给教师。
 
 ## 最小授权门
 

@@ -2,21 +2,21 @@
 
 ## Purpose
 
-The intake side of `shi-homework2lark` is Agent-first and orchestrates the existing local FastAPI plus a selection-only Web tool. The conversation receives images and teacher descriptions, then chooses a chat, single-image, or optional Web handoff. Web owns crop selection only; the Agent owns OCR, revision, quality gates and publication orchestration. FastAPI remains the only writer of local evidence; Lark Base receives only eligible catalog projections.
+The intake side of `shi-homework2lark` is Agent-only and orchestrates the local FastAPI from the conversation. The Agent chooses manual framing, configured candidate detection, or a whole-image single-question route after the teacher selects the collection mode and questions. FastAPI remains the only writer of local evidence; Lark Base receives only eligible catalog projections.
 
 ## Entry Modes
 
 | Mode | Detection | Teacher action | Result |
 |---|---|---|---|
-| `web` | optional, only after explicit click | Open returned URL and use manual boxes or automatic candidates | Saved crops and public problem IDs copied back to the Agent |
+| `manual` | none | Teacher names questions; Agent determines complete normalized boxes from the original page | One saved crop and public problem ID per explicit box |
 | `chat` | configured real detection Provider | Agent shows numbered candidates; teacher explicitly selects IDs | One ProblemRegion/ProblemAsset shell per selected Provider candidate |
 | `single` | none | Treat an already-cropped image as one whole-image problem | One manual full-image region |
 
-The normal experience starts in the Agent conversation. `web` is a precision fallback when the teacher wants to edit the bbox; it is not a mandatory first step.
+The normal experience stays in the Agent conversation. Teachers name question numbers or choose visible candidates; they are not asked to calculate or type coordinates.
 
-The Web route is `/intake/{assetId}`. It loads the existing SourceAsset and must not upload a duplicate. It starts manual-first and also offers an explicit automatic-framing action; opening the route alone never calls detection.
+`start --mode manual` uploads the page exactly once and creates no region. The Agent then writes one explicit `frame` payload for that session. Each region is one complete logical question, uses `normalized_top_left`, contains only `bbox`, and is saved with `selectionSource=manual` and no detection-candidate lineage. The input must contain 1 to 100 unique, finite, positive-area boxes fully inside the image.
 
-One Yescan `StructureInfo`/group remains one candidate. The chat client never splits nested detail blocks or silently combines adjacent candidates. Text, choices and an embedded diagram inside the same group remain one complete question asset. Use Web for bbox editing or deliberate teacher-confirmed split/merge. Clicking `完成选题` saves regions/crops and ends the Web stage; it must not start OCR or navigate to browser review/detail/publication pages.
+One Yescan `StructureInfo`/group remains one candidate. The chat client never splits nested detail blocks or silently combines adjacent candidates. Text, choices and an embedded diagram inside the same group remain one complete question asset. A deliberate split/merge requires teacher confirmation; if the Agent cannot determine a safe complete boundary from the original page, request a one-question screenshot.
 
 ## Session Files
 
@@ -24,7 +24,7 @@ Session/selection outputs use schema version `1` and contain only:
 
 - mode and public local asset/problem/region/run IDs;
 - source file name, media type and dimensions;
-- local API evidence paths and Web handoff URL;
+- local API evidence paths;
 - normalized/pixel candidate bboxes, reading order and confidence;
 - configured Provider/model names and safe warnings.
 
@@ -36,7 +36,8 @@ Input images and existing JSON input/session files may use any readable relative
 
 ```text
 health
-start --file <jpg|jpeg|png> --mode <web|chat|single> --output <relative-json>
+start --file <jpg|jpeg|png> --mode <manual|chat|single> --output <relative-json>
+frame --session <manual-session-json> --input <regions-json|-> --output <relative-json>
 select --session <json-path> --candidate-id <id>... --output <relative-json>
 ocr --problem-id <problem_xxx>
 get --problem-id <problem_xxx>
@@ -49,6 +50,18 @@ base_metadata.py apply --input <json-path|->
 ```
 
 `start chat` checks the configured detection Provider before upload. OCR uses the API's configured real Provider; production configuration does not expose a Fake OCR option.
+
+Manual frame input contains only:
+
+```json
+{
+  "regions": [
+    {"bbox": {"x": 0.05, "y": 0.12, "width": 0.9, "height": 0.18}}
+  ]
+}
+```
+
+The Agent derives these values from the original-resolution page after the teacher selects the question. A successful frame result returns the public problem IDs in reading order; OCR does not begin implicitly.
 
 `get` and `ocr` deliberately expose selected OCR/corrected text to the current Agent for teacher confirmation, but omit raw Provider response and private storage fields. `publish` omits remote record/table/field IDs from CLI output.
 
@@ -94,7 +107,7 @@ For scanned pages with embedded diagrams, PaddleOCR text/layout output and local
 ## Failure Recovery
 
 - Upload failure creates no source; retry the same input.
-- Detection failure retains a successfully uploaded SourceAsset when the API returned one; switch to Web/manual if appropriate.
+- Detection failure retains a successfully uploaded SourceAsset when the API returned one; switch to `manual + frame` if appropriate.
 - Region/OCR failure retains source, selected bbox, crop and prior runs. Retry by the same public ID.
 - Revision failure retains OCR and earlier revisions.
 - Publication rejection retains the revision and reports which required source/revision fact is missing.

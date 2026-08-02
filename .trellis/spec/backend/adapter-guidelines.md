@@ -33,7 +33,7 @@ Every `OCRBlock` has `type`, `text`, `bbox`, `confidence`, `reading_order`, and 
 
 - Use the distinct Provider name `paddleocr_vl_api`; never pass `PaddleOCR-VL-1.6` to the local `PaddleOCR(...)` SDK constructor.
 - Submit the teacher-confirmed crop as multipart to the HTTPS official Job API with model `PaddleOCR-VL-1.6`, then poll the authenticated job status until `done` or a total deadline.
-- Read the Token from `PADDLEOCR_ACCESS_TOKEN` as a secret. Keep it out of object repr, raw response, logs, errors, tests, task artifacts, and frontend bundles.
+- Read the Token from `PADDLEOCR_ACCESS_TOKEN` as a secret. Keep it out of object repr, raw response, logs, errors, tests, task artifacts, and Skill bundles.
 - The optional payload defaults to `useDocOrientationClassify=false`, `useDocUnwarping=false`, and `useChartRecognition=false`.
 - Download the returned HTTPS JSONL without forwarding the bearer Authorization header. Do not download remote Markdown/output images in this slice; the immutable local crop remains the visual source.
 - Normalize `result.layoutParsingResults[].markdown.text` in Provider order into `OCRResult.text` and TEXT blocks. Preserve submission, every polled status, and parsed JSONL as JSON-safe private raw evidence.

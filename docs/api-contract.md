@@ -7,7 +7,7 @@
 - 时间：UTC ISO 8601。
 - ID：带领域前缀的字符串。
 - 二进制：原图/裁图使用独立内容端点，不在 JSON 中返回 base64/绝对路径。
-- 契约权威：FastAPI 生成的 OpenAPI；提交 `packages/contracts/openapi.json` 并生成 Web TypeScript 类型。
+- 契约权威：FastAPI 生成的 OpenAPI；提交 `packages/contracts/openapi.json` 并由后端契约测试检查漂移。
 
 ## 2. 错误响应
 
@@ -23,7 +23,7 @@
 }
 ```
 
-进入 FastAPI 路由、校验和应用异常链的非 2xx 响应都使用该 envelope。Provider/数据库/文件系统原始异常不得直出。被 CORS middleware 在路由前拒绝的预检仍由 Starlette 返回安全的 plain-text 400；外层请求中间件继续添加 `X-Request-ID`，浏览器端把它视为网络/CORS 错误。
+进入 FastAPI 路由、校验和应用异常链的非 2xx 响应都使用该 envelope。Provider、数据库和文件系统原始异常不得直出。
 框架级 malformed multipart 返回 400 `bad_request`；不存在路由和不支持的方法也分别使用 404 `route_not_found`、405 `method_not_allowed` 的同一 envelope。
 
 ## 3. 端点
@@ -48,14 +48,14 @@ Hash 只用于提示重复，不自动合并/替换 SourceAsset。
 ### `GET /assets/{assetId}/content`
 
 - `200`: 原始图片 bytes，正确 Content-Type、ETag/hash 和 `X-Content-Type-Options: nosniff`。
-- 浏览器与后端都按 EXIF orientation 解释显示方向；原始 bytes 不变。
+- Agent 使用响应宽高理解 EXIF 显示方向；原始 bytes 不变。
 
 ### `GET /assets/{assetId}/problems`
 
 - `200`: `{ assetId, count, items }`，其中每项都是完整 `NormalizedProblemResponse`。
 - 按题框上、左坐标稳定排序；响应使用 `Cache-Control: no-store`。
 - 已存在但未框题的来源页返回空集合；不存在的 asset 返回 404 `asset_not_found`。
-- Web 用该接口恢复同一原图上的已保存题框，不把 OCR/修订文本写入 URL 或本地存储。
+- Agent 可用该接口恢复同一原图上的已保存题目，不把 OCR/修订文本写入路径或会话 ID。
 
 ### `POST /assets/{assetId}/regions`
 
@@ -122,9 +122,9 @@ Hash 只用于提示重复，不自动合并/替换 SourceAsset。
 
 - 上传/创建 region 不做透明重试，避免重复资产；UI 只在明确失败时由教师再次操作。
 - OCR retry 是新 POST/new run，天然保留历史。
-- revision save 是新版本；前端 pending 时禁止双击。Phase 1 单教师下不增加复杂幂等键。
+- revision save 是新版本；Agent 在响应返回前不重复提交。Phase 1 单教师下不增加复杂幂等键。
 - publication 总是读取服务端当前修订，不接受客户端伪造 revision ID 或修订内容。
 
 ## 5. OpenAPI 同步
 
-后端脚本从 `app.openapi()` 导出 `packages/contracts/openapi.json`；Web 使用 `openapi-typescript` 生成唯一的 `generated-api.ts`。后端测试检查提交的 OpenAPI 快照，schema 变化必须在同一任务更新生成类型和前端用法。
+后端脚本从 `app.openapi()` 导出 `packages/contracts/openapi.json`。后端测试检查提交快照，schema 变化必须在同一任务重新导出。
