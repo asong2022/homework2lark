@@ -1,7 +1,7 @@
 {
   "schemaVersion": "shi-skill-bundle-v1",
   "name": "shi-homework2lark",
-  "version": "3.1.1",
+  "version": "3.1.2",
   "entrySkill": "shi-homework2lark",
   "architecture": "single-entry-progressive-disclosure",
   "description": "小学数学错题收集、错情分组、飞书 Base、题生变式、精准练习与再练反馈整包。",

@@ -56,7 +56,7 @@ python -X utf8 .agents/skills/shi-homework2lark/scripts/onboarding.py --repo-roo
 
 默认由教师在对话中点名题号，Agent 根据原图通过 `manual + frame` 保存完整题目边界，不配置自动检测。教师明确希望整页自动给候选框时，才询问 Yescan 两项密钥并加 `--enable-yescan`；Yescan 不是完成错题学习闭环的前置条件。
 
-`QK_UT/QK_KP` 不是首次安装必配项，也不写入仓库 `.env`。只有教师主动选择“从夸克扫描王错题本收题”时，才读取 `quark-wrongbook.md`，在当前私有进程临时设置这两个值，并先建立“现有题全部排除”的 baseline。
+`QK_UT/QK_KP` 不是首次安装必配项，也不写入仓库 `.env`。只有教师主动选择“从夸克扫描王错题本收题”时，才读取 `quark-wrongbook.md`，在当前私有进程临时设置这两个值，并先建立“现有题全部排除”的 baseline。该入口不使用手机号或短信验证码登录。
 
 如果 Agent 只能使用 stdin，发送以下 JSON，并加 `--stdin-json`：
 

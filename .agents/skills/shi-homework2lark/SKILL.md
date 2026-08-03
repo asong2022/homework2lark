@@ -3,7 +3,7 @@ name: shi-homework2lark
 description: >
   小学数学智能错题学习整包与唯一工作流入口。通过 Codex/Hermes 对话接收空白卷、已批改作业、图片、PDF、Word、单题截图、夸克扫描王错题本新增题目、学生真实作答和教师判断，完成完整题目收集、错情分组、飞书 Base 入库、题生变式、班级/个人练习纸和再练反馈。用户提到收集错题、夸克错题本同步、批改作业识别、错题进飞书、典型错例、学生共性错误、举一反三、变式题、每日一练、个人精准练习、整班批量出卷或再练反馈时必须使用；不要把它当成普通 OCR 或把五个阶段拆成多个竞争入口。
 metadata:
-  version: "3.1.1"
+  version: "3.1.2"
   compatibility: Python 3.11+；完整闭环需要 lark-cli/lark-base；OCR、题图和文档能力按阶段委托已安装的兄弟 Skill。
   requires:
     bins: ["python", "lark-cli"]

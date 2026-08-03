@@ -337,15 +337,15 @@
     },
     {
       "id": 29,
-      "prompt": "从我的夸克扫描王错题本收题。现在里面已有的错题都不要加入，以后我新加到夸克的题才提示我选择；这次先帮我初始化。",
-      "expected_output": "Uses the Quark wrongbook new-only source contract, establishes a local baseline of all currently visible question IDs without downloading or creating any problem, and reports zero OCR/Base activity. Later syncs keep only unseen IDs pending until the teacher explicitly imports or ignores them.",
+      "prompt": "从我的夸克扫描王错题本收题。现在里面已有的错题都不要加入，以后我新加到夸克的题才处理；这次先帮我初始化。",
+      "expected_output": "Uses the Quark wrongbook new-only source contract, establishes a local baseline of all currently visible question IDs without downloading or creating any problem, and reports zero OCR/Base activity. Later read-only syncs keep unseen IDs pending; a later add/collect request imports all pending without another item-by-item choice.",
       "files": [],
       "expectations": [
         "Loads quark-wrongbook.md and keeps shi-homework2lark as the only user-facing Skill",
         "Runs baseline once and marks every current ID baseline_excluded with zero image download, SourceAsset, OCR or Base write",
         "Keeps QK_UT and QK_KP in the private process environment and out of argv, stdout, state and Git",
         "Does not turn baseline history into pending on a later sync or repeated baseline",
-        "Requires explicit teacher selection before a pending image enters the existing single intake path"
+        "Does not use phone or SMS-code login"
       ]
     },
     {
