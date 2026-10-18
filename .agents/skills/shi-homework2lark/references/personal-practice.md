@@ -53,6 +53,7 @@ python -X utf8 <skill-root>/scripts/personal_practice.py plan `
   --student-number <学号> `
   --batch-code 20260715-01 `
   --question-count 6 `
+  --image-scale-percent 70 `
   --output-dir session/personal/20260715-01-S001
 ```
 
@@ -80,6 +81,7 @@ python -X utf8 <skill-root>/scripts/class_practice.py build `
   --roster <私有班级名单.json> `
   --batch-code 20260715-01 `
   --question-count 6 `
+  --image-scale-percent 70 `
   --output-dir <新的班级批次目录>
 ```
 
@@ -125,6 +127,7 @@ python -X utf8 <skill-root>/scripts/class_practice.py build `
 - 重复页眉右上角使用 `YYYYMMDD-NN-Sxxx-P` 加 Word `PAGE` 字段，如第一页显示 `20260715-01-S001-P1`。
 - `Sxxx` 只表示该次私有名单中的顺序，不含姓名、学号、Base token 或远端记录 ID；本地 manifest 才保存对应关系。
 - 题号仍由 `R01...` 精确映射到原题或变式，题干图片与来源规则沿用正式练习纸模板。
+- `--image-scale-percent` 是可选的全卷设置，范围 50～100，默认 100；教师没有提出题图大小要求时不追问、不写冗余 `layout`。个人与整班批量使用同一比例。
 
 ## 失败与隐私
 

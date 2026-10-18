@@ -177,7 +177,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _force_utf8_stdio() -> None:
-    """Windows 控制台/管道默认 GBK；AI 消费的中文 JSON 必须始终按 UTF-8 输出。"""
+    """Emit UTF-8 JSON even when the Windows console defaults to GBK."""
     for stream in (sys.stdout, sys.stderr):
         reconfigure = getattr(stream, "reconfigure", None)
         if reconfigure is None:

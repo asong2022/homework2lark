@@ -745,9 +745,8 @@ def _question_number(value: JSONValue) -> str | None:
 
 
 def _strip_matching_question_number(text: str, question_number: str) -> str:
-    # 只在题号带明确分隔标点（1. / 1、 / 1：）或“第N题”标签时剥离。
-    # 裸数字+空格（如“1 与 2 哪个大？”“3 个苹果…”）可能是题干本身的数量，
-    # 宁可保留也不误删（SKILL.md 规则 2）。
+    # Strip only a punctuated outer number or the explicit Chinese question label.
+    # A bare number plus whitespace can be a quantity in the stem; preserve it.
     escaped = re.escape(question_number)
     prefix = re.compile(
         rf"^(?:{escaped}\s*[.．、:：]\s*|第\s*{escaped}\s*题(?:\s+|[.．、:：]\s*|$))"
@@ -861,7 +860,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _force_utf8_stdio() -> None:
-    """Windows 控制台/管道默认 GBK；AI 消费的中文 JSON 必须始终按 UTF-8 输出。"""
+    """Emit UTF-8 JSON even when the Windows console defaults to GBK."""
     for stream in (sys.stdout, sys.stderr):
         reconfigure = getattr(stream, "reconfigure", None)
         if reconfigure is None:

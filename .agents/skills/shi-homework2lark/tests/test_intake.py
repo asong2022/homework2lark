@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import importlib.util
+import io
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stderr
 from pathlib import Path
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
@@ -183,6 +185,17 @@ class IntakeServiceTest(unittest.TestCase):
         self.assertNotIn("rawResponse", str(manifest))
         self.assertEqual([call[0] for call in gateway.calls], ["health", "upload"])
 
+    def test_parser_keeps_manual_chat_single_and_rejects_retired_web(self):
+        for mode in ("manual", "chat", "single"):
+            args = intake.build_parser().parse_args(
+                ["start", "--file", "worksheet.png", "--mode", mode, "--output", "out.json"]
+            )
+            self.assertEqual(args.mode, mode)
+        with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            intake.build_parser().parse_args(
+                ["start", "--file", "worksheet.png", "--mode", "web", "--output", "out.json"]
+            )
+
     def test_start_rejects_removed_web_mode_before_reading_or_uploading(self):
         gateway = FakeGateway()
         service = intake.IntakeService(gateway)
@@ -269,6 +282,7 @@ class IntakeServiceTest(unittest.TestCase):
             manifest = service.start(self.image(directory), "single")
 
         self.assertEqual(len(manifest["problems"]), 1)
+        self.assertNotIn("webUrl", manifest)
         regions = next(call[1] for call in gateway.calls if call[0] == "create_regions")
         self.assertEqual(regions[0]["selectionSource"], "manual")
         self.assertEqual(regions[0]["bbox"], {"x": 0.0, "y": 0.0, "width": 1.0, "height": 1.0})
@@ -332,8 +346,7 @@ class IntakeServiceTest(unittest.TestCase):
                 self.assertNotIn("questionNumber", create_call[1])
 
     def test_revision_keeps_bare_leading_number_that_is_part_of_the_stem(self):
-        # 裸数字+空格可能是题干本身的数量（如“1 与 2 哪个大”“3 个苹果……”），
-        # 即便与 questionNumber 相同也不能剥离，否则会改错题目内容。
+        # Even a matching bare number can be a stem quantity rather than an outer label.
         cases = (
             ({"correctedText": "1 与 2 哪个大？", "questionNumber": "1"}, "1 与 2 哪个大？"),
             (

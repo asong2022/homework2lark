@@ -690,3 +690,82 @@ The 阿松 `shi-*` monorepo copy and user-level Agent/Codex/Claude installations
 - package unit: deterministic archive hash, one root folder, cache/private/secret exclusion and no absolute machine path;
 - mirror integration: project source, 阿松 monorepo mirror and installed copies compare equal by relative-path SHA-256;
 - regression: all existing intake/Base/variant/practice/feedback tests continue to pass.
+
+## Scenario H: Complex Tables, Resumable Image Batches, And Practice Image Scale
+
+### 1. Scope / Trigger
+
+Use this contract when an intake contains a solving-critical table, when an Agent receives 1–20 already-pageized images in one request, or when a teacher explicitly asks for smaller question images in a Word worksheet. These are optional Agent/Skill capabilities; they do not change the FastAPI schema or Lark Base schema.
+
+### 2. Signatures
+
+```text
+python scripts/intake_batch.py start --input <intake-batch-v1.json> --state <private-state.json>
+python scripts/intake_batch.py status --state <private-state.json>
+python scripts/personal_practice.py plan ... [--image-scale-percent 50..100]
+python scripts/class_practice.py build ... [--image-scale-percent 50..100]
+python scripts/practice_sheet.py --manifest <practice-sheet-v2|personal-practice-v2.json> --output <docx>
+```
+
+The optional v2 manifest field is:
+
+```json
+{"layout": {"imageScalePercent": 70}}
+```
+
+### 3. Contracts
+
+- A table and its surrounding stem remain one `ProblemAsset`. `图片题目` keeps the complete original crop; `题干文本` contains a readable Markdown/plain-text transcription; `题干图片` retains the original table when layout itself is a solving condition.
+- Transcription preserves all headers, row/column labels, units, intentional answer blanks (`____`), and footnotes. Merged headers use repeated parent labels or layered headers without inventing structure.
+- A solving-critical unreadable cell is `[?]`. Until the teacher supplies the value or a clearer crop, publication and variant generation stop.
+- Batch input contains schema version, one mode (`single|chat`), and continuous `I01...I20` items. The input digest covers mode, item code, filename, content hash, size, and an irreversible normalized-path fingerprint; the state never stores the path.
+- Durable item states are `pending|created|failed`. `no_change` is a per-run outcome only. A retry skips every `created` item and processes only failed/pending items. Session files use a per-batch hashed namespace, so state files in the same directory cannot overwrite one another.
+- If a session was saved before the main progress write failed, resume restores that session without uploading. If the API created an item but its session could not be saved, persist the public source/problem IDs, expose them through `status`, and stop automatic re-upload with `session_recovery_required` until the session is repaired.
+- `single` public output contains exactly one `problemId`; `chat` output contains no problem ID and only points to the relative candidate-session file. The main state keeps `problemIds` for internal validation.
+- `layout` is absent by default. If present it must contain only integer `imageScalePercent` in `50..100`; explicit `null`, booleans, floats and unknown fields are invalid. Scaling changes only the existing `145 mm × 65 mm` maximum, preserves ratio and never enlarges a source image.
+
+### 4. Validation & Error Matrix
+
+| Condition | Error / stop | Durable result |
+|---|---|---|
+| 0 or more than 20 images; bad code/mode/extension | `invalid_batch` | no batch state |
+| changed input or path identity | `input_conflict` | old state unchanged |
+| corrupt state/session | `invalid_state` | no API call |
+| one ordinary intake failure | item `failed` | other items continue and persist |
+| state/session write failure | `state_write_failed` / `session_write_failed` | batch stops before later items |
+| session save failed after API creation and no recovered session exists | `session_recovery_required` | public IDs retained; no duplicate upload |
+| solving-critical table cell unclear | `[?]` plus teacher question | no publication or variant generation |
+| missing `layout` | default 100 | normal output |
+| `layout: null`, out-of-range or unknown layout key | `ManifestError` | no DOCX write |
+
+### 5. Good / Base / Bad Cases
+
+- Good: three single-question images produce two created items and one failed item; the retry returns `no_change` for the two successes and creates only the failed item.
+- Base: a worksheet omits `layout`; output uses the historical maximum image size and otherwise remains unchanged.
+- Bad: store absolute paths or question text in batch state, guess a blurred table value, return `problemIds` as the public single-item contract, accept `layout: null`, or stretch/upscale a small image.
+
+### 6. Tests Required
+
+- `test_intake_batch.py`: partial failure, retry-only-failed, singular `problemId`, chat session-only output, same-bytes/different-path conflict, 20-item limit, privacy, corrupt state, atomic write recovery, retained IDs after session failure, cross-batch isolation, and state/session ID mismatch rejection.
+- `test_practice_sheet.py`: default 100, valid 70, explicit-null/out-of-range/unknown rejection, aspect ratio, and no upscaling.
+- `test_personal_practice.py` and `test_class_practice.py`: default omission and explicit percentage pass-through.
+- `evals/evals.json`: simple table, merged header plus `[?]` stop, resumable batch, and teacher-language image-scale cases.
+- Bundle tests assert the scripts/references/evals are declared and the removed Web entrypoint cannot reappear.
+
+### 7. Wrong vs Correct
+
+Wrong:
+
+```text
+OCR blocks -> split table from stem -> guess blurred value -> publish
+retry batch -> upload every image again
+layout: null -> silently treat as 100
+```
+
+Correct:
+
+```text
+complete original crop + lossless readable table -> [?] -> teacher confirmation -> publish
+retry batch -> skip created -> process only failed/pending
+layout absent -> 100; explicit valid percentage -> proportional no-upscale limit
+```

@@ -63,6 +63,7 @@ Use only relative session paths in manifests. Do not include keys, tokens, image
 - When a candidate includes adjacent text and a diagram, preserve both inside one crop even if OCR exposes separate blocks.
 - A `question-ocr` result is still a machine candidate. Preserve one logical question even when its text and visual are returned as separate blocks.
 - If the crop is uncertain, ask the teacher for a one-question screenshot rather than guessing.
+- For 1–20 images that already fit `single` or explicitly configured `chat`, use `intake_batch.py` and `batch-intake.md` to persist progress per image. Manual full-page selection continues through `manual + frame`; the batch wrapper does not enable detection implicitly.
 
 ## Failure Recovery
 

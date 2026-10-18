@@ -98,6 +98,8 @@ uv run --directory apps/api uvicorn --app-dir src mistake_notebook_api.main:app 
 
 不要要求普通教师处理坐标、运行测试、查看 OpenAPI、理解数据库迁移或手工创建字段。
 
+已经裁好的单题图片走 `single`；教师明确选择自动候选时走 `chat`。这两类输入一次有 1～20 张时使用 `batch-intake.md` 的可续跑入口。整页人工框题仍走 `manual + frame`，不要求为了批量处理而配置 Yescan。
+
 ## 隐私与失败边界
 
 - 不输出 PaddleOCR/Yescan 密钥、飞书 open_id、Base token、表/字段/记录 ID 或教师绝对路径。

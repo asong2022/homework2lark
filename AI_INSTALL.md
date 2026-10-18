@@ -134,6 +134,7 @@ python -X utf8 .agents/skills/shi-homework2lark/scripts/onboarding.py --repo-roo
   ```
 
 - 第一次收题读取 `collection-modes.md`，让教师选择 1/2/3，不能由 AI 自动决定。
+- 1～20 张单题图片或明确选择自动候选的整页图片，读取 `batch-intake.md` 并逐项保存进度；人工框题继续使用 `manual + frame`，不要强制开启 Yescan。
 
 ## 绝对不要做
 

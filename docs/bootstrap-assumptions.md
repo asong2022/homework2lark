@@ -1,11 +1,13 @@
 # Bootstrap 假设
 
+本文件保留 2026-07-12 Bootstrap 的边界假设；当前入口和技术选择以 2026-08-05 后的 ADR/Spec 为准。Web 前端已经移除，以下内容已同步为当前有效运行形态。
+
 ## 1. 规则来源与初始化状态
 
-- 仓库根目录没有 `TRELLIS.md`，且仓库尚无 Git 提交；本次无法读取一个不存在的文件。
+- 初始 Bootstrap 时仓库根目录没有 `TRELLIS.md`；当前规则以根 `AGENTS.md` 和 `.trellis/` 为准。
 - 当前可执行的 Trellis 规则源为 `AGENTS.md`、`.trellis/workflow.md`、`.trellis/spec/` 与项目级 `.agents/skills/`。
 - `.trellis/` 已由 Trellis 0.6.6 初始化，开发者身份为 `asong2022`，现有 `00-bootstrap-guidelines` 任务处于 `in_progress`。
-- 仓库中没有产品代码或技术栈清单。`homework_library_import_template_v2.xlsx` 视为用户已有领域资产，本次不修改、不接入，也不据此扩展导入功能。
+- 初始时仓库没有产品代码；当前已形成 Agent Skill、FastAPI 证据服务和飞书 Base 模板。
 
 ## 2. Trellis 采用配置
 

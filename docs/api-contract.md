@@ -120,7 +120,7 @@ Hash 只用于提示重复，不自动合并/替换 SourceAsset。
 
 ## 4. 请求一致性与重试
 
-- 上传/创建 region 不做透明重试，避免重复资产；UI 只在明确失败时由教师再次操作。
+- 上传/创建 region 不做透明重试，避免重复资产；Agent 只在明确失败并核对状态后重试。
 - OCR retry 是新 POST/new run，天然保留历史。
 - revision save 是新版本；Agent 在响应返回前不重复提交。Phase 1 单教师下不增加复杂幂等键。
 - publication 总是读取服务端当前修订，不接受客户端伪造 revision ID 或修订内容。

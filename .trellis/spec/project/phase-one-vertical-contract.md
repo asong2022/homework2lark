@@ -41,6 +41,7 @@ SourceAsset -> ProblemRegion -> OCRRun -> ProblemRevision
 - Publication requires a non-empty current revision plus valid source/region/crop/OCR lineage. It remains an explicit external mutation.
 - `GET /assets/{assetId}/problems` returns stable bbox order with `no-store`; an existing empty page returns an empty collection.
 - `manual`, `chat`, and `single` intake commands stop after region persistence and public-ID handoff. They never call OCR, revision or publication implicitly.
+- The optional `single/chat` image-batch wrapper persists each item's state/session and retries only unconfirmed items; it adds no downstream call or HTTP endpoint and does not replace `manual + frame`.
 - Default OCR is hosted `paddleocr_vl_api` / `PaddleOCR-VL-1.6`; the only other production OCR option is local `paddleocr`.
 - FastAPI OpenAPI is authoritative; export the checked-in JSON snapshot in the same public-contract change.
 
@@ -72,6 +73,7 @@ Every JSON error uses the safe `ErrorEnvelope` and request ID.
 - OCR transport/normalization plus opt-in live hosted smoke.
 - OpenAPI drift and Skill HTTP-decoding tests.
 - Agent manual-frame validation, candidate selection and public-ID handoff without downstream calls.
+- Resumable image-batch partial failure, session isolation and recovery, without re-uploading confirmed successful items.
 - Skill intake regression: save revision -> publish, with no review command.
 
 ## 7. Wrong vs Correct

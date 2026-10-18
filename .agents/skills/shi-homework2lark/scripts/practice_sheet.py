@@ -83,6 +83,7 @@ class PracticeManifest:
     pages: tuple[PracticePage, ...]
     natural_flow: bool
     page_code_prefix: str
+    image_scale_percent: int
 
 
 def _set_run_font(
@@ -164,8 +165,7 @@ def _configure_styles(document: Document) -> None:
     _set_style_font(answer, font_name=BODY_FONT, size=10)
     answer.paragraph_format.left_indent = Mm(8)
     answer.paragraph_format.right_indent = Mm(2)
-    # 小学生手写一行约需 9mm；space_before 拉开相邻横线（12+10+3=25pt≈8.8mm），
-    # 也让第一条横线与题干/题图留出书写起笔空间。
+    # Allow about 9 mm per handwriting line, including space before the first line.
     answer.paragraph_format.space_before = Pt(12)
     answer.paragraph_format.space_after = Pt(3)
     answer.paragraph_format.line_spacing = 1.0
@@ -449,24 +449,31 @@ def _add_continuation_marker(document: Document, page: PracticePage) -> None:
     _set_run_font(spacer, font_name=BODY_FONT, size=1)
 
 
-def _resize_picture(shape) -> None:
+def _resize_picture(shape, image_scale_percent: int = 100) -> None:
+    limit_scale = image_scale_percent / 100
     scale = min(
         1.0,
-        float(MAX_IMAGE_WIDTH) / float(shape.width),
-        float(MAX_IMAGE_HEIGHT) / float(shape.height),
+        (float(MAX_IMAGE_WIDTH) * limit_scale) / float(shape.width),
+        (float(MAX_IMAGE_HEIGHT) * limit_scale) / float(shape.height),
     )
     if scale < 1.0:
         shape.width = int(shape.width * scale)
         shape.height = int(shape.height * scale)
 
 
-def _add_stem_image(document: Document, image: StemImage, *, keep_with_next: bool) -> None:
+def _add_stem_image(
+    document: Document,
+    image: StemImage,
+    *,
+    keep_with_next: bool,
+    image_scale_percent: int,
+) -> None:
     paragraph = document.add_paragraph(style="Practice Stem Image")
     paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
     paragraph.paragraph_format.keep_with_next = keep_with_next
     run = paragraph.add_run()
     shape = run.add_picture(str(image.path))
-    _resize_picture(shape)
+    _resize_picture(shape, image_scale_percent)
     shape._inline.docPr.set("descr", image.description)
     shape._inline.docPr.set("title", image.description[:120])
 
@@ -480,7 +487,7 @@ def _add_answer_lines(document: Document, count: int) -> None:
         _set_paragraph_bottom_border(answer)
 
 
-def _add_item(document: Document, item: PracticeItem) -> None:
+def _add_item(document: Document, item: PracticeItem, *, image_scale_percent: int) -> None:
     paragraph = document.add_paragraph(style="Practice Question")
     paragraph.paragraph_format.keep_with_next = item.stem_image is not None or item.answer_lines > 0
     number = paragraph.add_run(f"{item.display_number}.  ")
@@ -489,7 +496,12 @@ def _add_item(document: Document, item: PracticeItem) -> None:
     _set_run_font(question, font_name=BODY_FONT, size=12)
 
     if item.stem_image is not None:
-        _add_stem_image(document, item.stem_image, keep_with_next=item.answer_lines > 0)
+        _add_stem_image(
+            document,
+            item.stem_image,
+            keep_with_next=item.answer_lines > 0,
+            image_scale_percent=image_scale_percent,
+        )
     _add_answer_lines(document, item.answer_lines)
 
 
@@ -526,6 +538,18 @@ def _required_text(value: object, field_name: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ManifestError(f"{field_name} 必须是非空文本。")
     return value.strip()
+
+
+def _validate_image_scale_percent(value: object) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or not 50 <= value <= 100:
+        raise ManifestError("layout.imageScalePercent 必须是 50 到 100 的整数。")
+    return value
+
+
+def _parse_layout(raw: object) -> int:
+    if not isinstance(raw, Mapping) or set(raw) != {"imageScalePercent"}:
+        raise ManifestError("layout 只能包含 imageScalePercent。")
+    return _validate_image_scale_percent(raw["imageScalePercent"])
 
 
 def _parse_student(raw: object) -> PracticeStudent:
@@ -651,8 +675,10 @@ def _load_manifest(path: Path) -> PracticeManifest:
     required = {"batchCode", "manifestVersion", content_field}
     if student is not None:
         required.add("student")
-    if set(raw) != required:
+    allowed = required | ({"layout"} if natural_flow else set())
+    if not required.issubset(raw) or set(raw) - allowed:
         raise ManifestError("manifest 字段不完整或包含未知字段。")
+    image_scale_percent = _parse_layout(raw["layout"]) if natural_flow and "layout" in raw else 100
 
     batch_code, batch_date = _validate_batch_code(str(raw["batchCode"]))
     version = _required_text(raw["manifestVersion"], "manifestVersion")
@@ -700,6 +726,7 @@ def _load_manifest(path: Path) -> PracticeManifest:
         pages=tuple(pages),
         natural_flow=natural_flow,
         page_code_prefix=_page_code_prefix(batch_code, student),
+        image_scale_percent=image_scale_percent,
     )
 
 
@@ -731,14 +758,14 @@ def build_document(manifest_path: Path, output_path: Path) -> None:
     )
     if manifest.natural_flow:
         for item in manifest.items:
-            _add_item(document, item)
+            _add_item(document, item, image_scale_percent=manifest.image_scale_percent)
     else:
         for page_index, page in enumerate(manifest.pages):
             if page_index > 0:
                 document.add_page_break()
                 _add_continuation_marker(document, page)
             for item in page.items:
-                _add_item(document, item)
+                _add_item(document, item, image_scale_percent=manifest.image_scale_percent)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     document.save(output_path)
@@ -752,7 +779,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _force_utf8_stdio() -> None:
-    """Windows 控制台/管道默认 GBK；AI 消费的中文 JSON 必须始终按 UTF-8 输出。"""
+    """Emit UTF-8 JSON even when the Windows console defaults to GBK."""
     for stream in (sys.stdout, sys.stderr):
         reconfigure = getattr(stream, "reconfigure", None)
         if reconfigure is None:

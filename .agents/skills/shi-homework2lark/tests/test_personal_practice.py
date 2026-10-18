@@ -288,6 +288,7 @@ class PersonalPracticeTests(unittest.TestCase):
 
         self.assertEqual(result["layout"], "word_auto_flow")
         self.assertNotIn("pages", manifest)
+        self.assertNotIn("layout", manifest)
         self.assertEqual([item["itemCode"] for item in manifest["items"]], ["R01", "R02"])
 
     def test_plan_writes_private_manifest_report_and_downloaded_image(self) -> None:
@@ -322,6 +323,7 @@ class PersonalPracticeTests(unittest.TestCase):
                 batch_code="20260715-02",
                 question_count=6,
                 output_dir=destination,
+                image_scale_percent=70,
             )
 
             manifest = json.loads((destination / "manifest.json").read_text(encoding="utf-8"))
@@ -330,6 +332,7 @@ class PersonalPracticeTests(unittest.TestCase):
             self.assertEqual(result["selected"], 1)
             self.assertEqual(manifest["manifestVersion"], "personal-practice-v2")
             self.assertEqual(manifest["student"]["instanceCode"], "S001")
+            self.assertEqual(manifest["layout"], {"imageScalePercent": 70})
             self.assertEqual(
                 manifest["items"][0]["stemImage"]["path"],
                 "images/R01.png",
@@ -340,6 +343,26 @@ class PersonalPracticeTests(unittest.TestCase):
             self.assertNotIn("学生A", "20260715-02-S001-P1")
             self.assertNotIn("学生A", json.dumps(result, ensure_ascii=False))
             self.assertNotIn('"01"', json.dumps(result, ensure_ascii=False))
+
+    def test_plan_rejects_invalid_image_scale_before_creating_output(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            destination = root / "invalid-scale"
+            service = personal_practice.PersonalPracticeService(
+                FakeGateway(personal_practice.PersonalPracticeData(()))
+            )
+
+            with self.assertRaises(personal_practice.practice_sheet.ManifestError):
+                service.plan(
+                    roster_path=self._roster(root),
+                    student_number="01",
+                    batch_code="20260715-02",
+                    question_count=1,
+                    output_dir=destination,
+                    image_scale_percent=40,
+                )
+
+            self.assertFalse(destination.exists())
 
     def test_plan_never_overwrites_an_existing_output_directory(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

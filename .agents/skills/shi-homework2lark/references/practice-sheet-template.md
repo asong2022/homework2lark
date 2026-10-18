@@ -12,6 +12,7 @@
 {
   "batchCode": "20260715-01",
   "manifestVersion": "practice-sheet-v2",
+  "layout": {"imageScalePercent": 70},
   "items": [
     {
       "itemCode": "R01",
@@ -40,13 +41,14 @@
 }
 ```
 
-- 普通组卷顶层字段固定为 `batchCode / manifestVersion / items`。标题日期和页面识别码均从批次码及 Word 实际页码派生，不重复保存日期、标题或页面码。
+- 普通组卷顶层必需字段为 `batchCode / manifestVersion / items`，可选 `layout`。标题日期和页面识别码均从批次码及 Word 实际页码派生，不重复保存日期、标题或页面码。
 - `batchCode` 使用有效日历日期与当日序号 `YYYYMMDD-NN`；标题为 `M月D日练习纸`，实际页面码为 `batchCode-P{Word PAGE}`。
 - `items` 是顺序题目清单。生成器不预估页容量、不插入人工分页符，由 Word 在实际放不下下一道完整题目块时自然换页；整个 Word 仍只有一个 A4 分节。
 - `itemCode` 在整份练习中从 `R01` 连续排列。它是 manifest 稳定代码；学生卷显示相同顺序的简洁数字题号 `1.、2.……`。
 - `source.type` 只能是 `original` 或 `variant`；两者都需要 `questionId`，变式还必须包含 `variantId`。
 - `answerLines` 为 `0..8`。填空、选择等题可为 0；计算、解决问题和解释题按真实作答需要预留。
 - `stemImage` 可省略。存在时必须包含可读的 JPG/JPEG/PNG 路径和非空说明；相对路径以 manifest 所在目录为基准，绝对路径也允许。
+- 教师明确说“题图缩小到 70%”时，Agent 写入 `layout.imageScalePercent=70`。只接受 50～100 的整数，默认 100；它只按比例缩小既有 `145 mm × 65 mm` 最大题图范围，绝不放大原图，也不改变字号、页边距或自然分页。
 
 个人精准练习使用 `personal-practice-v2`，并在顶层增加唯一的 `student`：
 

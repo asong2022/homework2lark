@@ -4,7 +4,7 @@
 
 把作业图片、PDF、Word 或单题截图发给 AI，经过教师确认后保存到飞书多维表格；以后继续让 AI 从错题库生成变式题、个人精准练习和再练内容。
 
-教师不用手工建表，使用 Codex、Hermes 等能操作电脑的 AI 是主入口。
+教师不用手工建表，不用理解 OCR、FastAPI、字段 ID 或命令行。Codex、Hermes 等能操作电脑的 AI 是唯一入口；没有需要额外安装或打开的 Web 前端。
 
 ## 最简单的安装方式
 
@@ -35,7 +35,9 @@ Yescan 自动候选框、当前年级和学期日期都是可选项，不阻塞�
 - “这是班级名单和已批改作业，按学生整理错题。”
 - “从飞书错题库选 5 道题，每题生成 2 道变式题并写回。”
 - “按班级名单给每个学生生成一份个人练习纸。”
+- “练习纸的题图缩小到 70%，其他字号、页边距和自然分页不变。”
 - “这是上次练习的批改 PDF，把再练结果反馈到错题库。”
+- “这 12 张图每张都是一道题，请逐张收录；中间失败的下次接着补。”
 
 第一次收题时，AI 会让教师明确选择一种方式，不替教师猜：
 
@@ -44,6 +46,8 @@ Yescan 自动候选框、当前年级和学期日期都是可选项，不阻塞�
 3. **实名绑定统计**：空白卷 + 已批改作业 + 班级名单，形成学生个人错题关系。
 
 无论哪种方式，一道题始终是一个完整资产：题干文字、文字选项和题干图片不会被拆成多道题。外层题号单独保存，不重复进入可复用题干。
+
+复杂表格题也遵守同一规则：完整原图是视觉事实，文本转写保留表头、单位、空白格和脚注；影响解题的单元格看不清时，AI 会停下来请教师确认，不猜数字。
 
 ## 飞书 Base 里有什么
 
@@ -114,6 +118,8 @@ python -X utf8 .agents/skills/shi-homework2lark/scripts/doctor.py
 
 API 健康检查：`http://127.0.0.1:8000/api/v1/health`。架构和开发约定从 [docs/index.md](./docs/index.md) 与 [.trellis/spec/](./.trellis/spec/) 开始。
 
+Windows 本机也可运行 `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-local.ps1`，只准备并启动 API，不打开网页，不覆盖已有 `.env` 或业务数据。
+
 质量门：
 
 ```powershell
@@ -121,6 +127,8 @@ uv run --directory apps/api ruff format --check .
 uv run --directory apps/api ruff check .
 uv run --directory apps/api mypy src
 uv run --directory apps/api pytest -q
+uv run --directory apps/api --with python-docx python -m unittest discover -s ../../.agents/skills/shi-homework2lark/tests -p 'test_*.py'
+uv run --directory apps/api python ../../.agents/skills/shi-homework2lark/scripts/package_bundle.py verify --package ../../artifacts/skills/shi-homework2lark.skill
 ```
 
 公开自动化测试不使用教师 Token，也不消耗 PaddleOCR 额度；真实云端冒烟测试必须显式开启。

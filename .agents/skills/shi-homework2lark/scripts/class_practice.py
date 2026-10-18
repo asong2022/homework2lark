@@ -92,8 +92,10 @@ class ClassPracticeService:
         output_dir: Path,
         include_mastered: bool = False,
         student_numbers: Sequence[str] = (),
+        image_scale_percent: int = 100,
     ) -> dict[str, core.JSONValue]:
         practice_sheet._validate_batch_code(batch_code)
+        practice_sheet._validate_image_scale_percent(image_scale_percent)
         if isinstance(question_count, bool) or not (
             personal_practice.MIN_QUESTION_COUNT
             <= question_count
@@ -132,6 +134,7 @@ class ClassPracticeService:
                         question_count=question_count,
                         output_dir=student_dir,
                         include_mastered=include_mastered,
+                        image_scale_percent=image_scale_percent,
                     )
                 except core.SkillError as exc:
                     if exc.code != "no_eligible_questions":
@@ -233,6 +236,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     build.add_argument("--include-mastered", action="store_true")
     build.add_argument("--student-number", action="append", default=[])
+    build.add_argument("--image-scale-percent", type=int, default=100)
     build.add_argument("--output-dir", required=True)
     return parser
 
@@ -256,6 +260,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 output_dir=Path(args.output_dir),
                 include_mastered=args.include_mastered,
                 student_numbers=args.student_number,
+                image_scale_percent=args.image_scale_percent,
             )
         print(_json({"ok": True, **result}))
         return 0

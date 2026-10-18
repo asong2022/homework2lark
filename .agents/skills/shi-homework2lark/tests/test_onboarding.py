@@ -3,11 +3,13 @@ from __future__ import annotations
 import base64
 import gzip
 import importlib.util
+import io
 import json
 import os
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stderr
 from pathlib import Path
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
@@ -234,6 +236,10 @@ class OnboardingStateTests(unittest.TestCase):
 
 
 class RuntimeConfigurationTests(unittest.TestCase):
+    def test_onboarding_parser_no_longer_exposes_web_dependencies(self) -> None:
+        with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            onboarding.build_parser().parse_args(["check", "--with-web"])
+
     def test_configuration_reads_secret_from_payload_without_echoing_it(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = _repo(Path(temporary), token="")

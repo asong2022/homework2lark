@@ -51,6 +51,8 @@ quark_wrongbook.py baseline|sync|status
 quark_wrongbook.py collect-new
 quark_wrongbook.py ignore --question-id <id>...
 quark_wrongbook.py import (--all-pending | --question-id <id>...)
+intake_batch.py start --input <json-path> --state <json-path>
+intake_batch.py status --state <json-path>
 ```
 
 `start chat` checks the configured detection Provider before upload. OCR uses the API's configured real Provider; production configuration does not expose a Fake OCR option.
@@ -68,6 +70,8 @@ Manual frame input contains only:
 The Agent derives these values from the original-resolution page after the teacher selects the question. A successful frame result returns the public problem IDs in reading order; OCR does not begin implicitly.
 
 Quark wrongbook is a pre-`single` source adapter. Its first baseline stores current IDs as `baseline_excluded` with zero downloads and zero local/Base writes. Later sync stores only unseen IDs as pending. A teacher add/collect request authorizes `collect-new` to download every pending image into a temporary file and call the same `single` path; a read-only request does not download, while an explicit partial range still uses selected import. These commands stop with public problem IDs and do not themselves run OCR or publish. The full state/privacy contract is in `quark-wrongbook.md`.
+
+For 1～20 ordinary images, `intake_batch.py` supplies resumable per-image orchestration. It uses one batch-wide `single` or `chat` mode, writes progress after every item, skips already-created items on retry and never auto-selects `chat` candidates. Its state contains no absolute paths, question text, student identity or credentials. Read `batch-intake.md` before using it.
 
 `get` and `ocr` deliberately expose selected OCR/corrected text to the current Agent for teacher confirmation, but omit raw Provider response and private storage fields. `publish` omits remote record/table/field IDs from CLI output.
 
@@ -112,6 +116,8 @@ AI should fill every reliably derivable catalog field, but must not fabricate di
 
 For scanned pages with embedded diagrams, PaddleOCR text/layout output and local visual inspection may run in parallel, but their authority differs: OCR supplies text evidence; the original-resolution page supplies visual truth. Crop both attachments from original pixels, mask only clearly foreign neighboring-question areas when unavoidable, preview locally, upload, then download/read back and visually verify both Base attachments.
 
+For a complex table, the corrected text must preserve every readable title, header, row/column label, unit, value, original blank cell (`____`) and footnote. Use a readable Markdown table; merged/multilevel headers may be repeated or represented in consecutive header rows, but never guessed. An unreadable solving-critical cell is `[?]` and blocks publication and variant generation until the teacher confirms it. The complete crop remains the final visual authority, and the table never becomes a second problem.
+
 ## Failure Recovery
 
 - Upload failure creates no source; retry the same input.
@@ -122,6 +128,7 @@ For scanned pages with embedded diagrams, PaddleOCR text/layout output and local
 - Publication failure retains the corrected local asset. Retry the same problem ID; hidden IDs prevent duplicate questions and exact source-file hashes prevent the same image bytes from creating another page row.
 - Direct `intake.py start` returns `source_requires_page_images` for PDF/DOC/DOCX because `/assets` accepts images. The public Skill supports them by first using MinerU plus PDF/doc rendering to produce page images as defined in `source-routing.md`; never pretend the image API directly stored the original document.
 - Quark baseline/sync failure leaves the prior private state unchanged. Imported items resume downstream work from their stored public problem ID; baseline history never becomes pending on a later sync.
+- Ordinary batch intake preserves every item whose `created` state and session were atomically written. A retry returns `no_change` for those items and calls FastAPI only for `failed` or `pending`; state damage or input digest conflict stops before further uploads.
 
 ## Staged Corrected-Work Campaign
 

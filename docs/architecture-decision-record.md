@@ -106,6 +106,15 @@
 - 代价：当前有本地证据与 Base 投影两层，需要幂等同步和失败重试；没有可视化 bbox 编辑器，边界不清时必须补单题截图。
 - 迁移：Agent 层可以用 MinerU 和文档工具把 PDF/Word 页面化，再复用图片流程；FastAPI 仍不直接解析完整文档。每日一练 Word 由文档 Skill 读取内容完整且未标记异常的题目生成，不引入多 Provider 自动路由、队列或后台 LLM 服务。
 
+## ADR-021：Agent 单入口，移除 Web 产品表面
+
+- 状态：Accepted（2026-08-05）。
+- 决策：删除 `apps/web`、根 npm workspace 和 frontend Spec。教师只通过 Codex/Hermes 等 Agent 使用 `shi-homework2lark`；保留 `manual + frame` 对话内框题，另有 `chat` 候选和 `single` 整图。后两种支持可续跑批量编排；FastAPI 继续保存来源、区域、OCR、人工修订和发布证据。
+- 理由：教师主要在手机拍照后与 AI 对话，独立网页增加安装、维护和入口选择成本，却没有增加错题学习闭环的核心价值。题目边界不确定时，教师可以指定题号、选择候选或补发单题截图。
+- 代价：不再提供拖拽 bbox 的浏览器工作台；需要精确边界时由 Agent 使用原图像素裁剪并向教师展示结果。
+- 约束：不得保留 `--mode web`、`--web-url`、3000 端口、Next.js 安装说明或 Playwright 质量门。API/OpenAPI、证据链、教师确认与 Base 写入门不变。
+- 回滚：若真实教师试用证明浏览器工作台具有不可替代价值，必须创建新 proposal 和独立可选仓库；不得把旧前端悄悄恢复到主 Skill。
+
 ## ADR-014：Base 一页一行与页面属性查找引用
 
 - 状态：Accepted（2026-07-14）。

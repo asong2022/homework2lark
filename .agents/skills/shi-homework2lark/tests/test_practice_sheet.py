@@ -137,6 +137,15 @@ class PracticeSheetTests(unittest.TestCase):
         with self.assertRaisesRegex(practice_sheet.ManifestError, "manifest 字段"):
             practice_sheet._load_manifest(path)
 
+    def test_explicit_null_layout_is_rejected(self) -> None:
+        raw = _auto_manifest()
+        raw["layout"] = None
+        temporary, _, path = self._workspace(raw)
+        self.addCleanup(temporary.cleanup)
+
+        with self.assertRaisesRegex(practice_sheet.ManifestError, "layout"):
+            practice_sheet._load_manifest(path)
+
     def test_batch_code_uses_a_valid_date_and_daily_sequence(self) -> None:
         raw = _manifest()
         raw["batchCode"] = "20260230-01"
@@ -191,6 +200,26 @@ class PracticeSheetTests(unittest.TestCase):
 
         with self.assertRaisesRegex(practice_sheet.ManifestError, "S 加三位数字"):
             practice_sheet._load_manifest(path)
+
+    def test_v2_layout_accepts_integer_scale_and_rejects_unknown_or_invalid_values(self) -> None:
+        raw = _auto_manifest()
+        raw["layout"] = {"imageScalePercent": 70}
+        temporary, _, path = self._workspace(raw)
+        self.addCleanup(temporary.cleanup)
+
+        self.assertEqual(practice_sheet._load_manifest(path).image_scale_percent, 70)
+
+        for layout in (
+            {"imageScalePercent": True},
+            {"imageScalePercent": 49},
+            {"imageScalePercent": 101},
+            {"imageScalePercent": 70, "unknown": 1},
+        ):
+            with self.subTest(layout=layout):
+                raw["layout"] = layout
+                path.write_text(json.dumps(raw, ensure_ascii=False), encoding="utf-8")
+                with self.assertRaises(practice_sheet.ManifestError):
+                    practice_sheet._load_manifest(path)
 
     def test_standard_manifest_rejects_personal_identity_fields(self) -> None:
         raw = _auto_manifest()
@@ -295,6 +324,33 @@ class PracticeSheetTests(unittest.TestCase):
         page_fields = header._element.xpath(".//w:fldSimple")
         self.assertEqual(len(page_fields), 1)
         self.assertEqual(page_fields[0].get(qn("w:instr")).strip(), "PAGE")
+
+    def test_image_scale_changes_only_the_existing_maximum_and_preserves_ratio(self) -> None:
+        temporary, root, default_path = self._workspace(_auto_manifest())
+        self.addCleanup(temporary.cleanup)
+        scaled_raw = _auto_manifest()
+        scaled_raw["layout"] = {"imageScalePercent": 70}
+        scaled_path = root / "scaled.json"
+        scaled_path.write_text(json.dumps(scaled_raw, ensure_ascii=False), encoding="utf-8")
+        default_output = root / "default.docx"
+        scaled_output = root / "scaled.docx"
+
+        practice_sheet.build_document(default_path, default_output)
+        practice_sheet.build_document(scaled_path, scaled_output)
+
+        default_shape = Document(default_output).inline_shapes[0]
+        scaled_shape = Document(scaled_output).inline_shapes[0]
+        self.assertAlmostEqual(scaled_shape.width / default_shape.width, 0.7, places=3)
+        self.assertAlmostEqual(scaled_shape.height / default_shape.height, 0.7, places=3)
+
+        class SmallShape:
+            width = int(practice_sheet.MAX_IMAGE_WIDTH * 0.2)
+            height = int(practice_sheet.MAX_IMAGE_HEIGHT * 0.2)
+
+        small = SmallShape()
+        original = (small.width, small.height)
+        practice_sheet._resize_picture(small, 70)
+        self.assertEqual((small.width, small.height), original)
 
 
 if __name__ == "__main__":

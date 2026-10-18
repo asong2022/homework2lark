@@ -154,9 +154,10 @@ Word 不预估物理页，不插人工分页符；实际页面码由 Word `PAGE`
 1. `source-routing.md`
 2. `question-asset-contract.md`
 3. `intake-contract.md`
-4. 夸克来源另读 `quark-wrongbook.md`
-5. 需要 OCR 时读取 `../shi-ocr/SKILL.md`
-6. 写 Base 前读取 `lark-base/SKILL.md`
+4. 普通多图另读 `batch-intake.md`；其 `single/chat` 逐项续跑不取代整页的 `manual + frame`
+5. 夸克来源另读 `quark-wrongbook.md`
+6. 需要 OCR 时读取 `../shi-ocr/SKILL.md`
+7. 写 Base 前读取 `lark-base/SKILL.md`
 
 ### 错情整理
 

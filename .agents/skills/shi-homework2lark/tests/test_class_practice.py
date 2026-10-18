@@ -132,6 +132,10 @@ class ClassPracticeTests(unittest.TestCase):
             self.assertNotIn('"01"', public_result)
             csv_bytes = (output / "班级个人练习清单.csv").read_bytes()
             self.assertTrue(csv_bytes.startswith(b"\xef\xbb\xbf"))
+            first_manifest = json.loads(
+                (output / "students" / "S001" / "manifest.json").read_text(encoding="utf-8")
+            )
+            self.assertNotIn("layout", first_manifest)
 
     def test_subset_keeps_instance_code_from_full_roster(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -155,12 +159,14 @@ class ClassPracticeTests(unittest.TestCase):
                 question_count=1,
                 output_dir=output,
                 student_numbers=("03",),
+                image_scale_percent=70,
             )
 
             manifest = json.loads(
                 (output / "students" / "S003" / "manifest.json").read_text(encoding="utf-8")
             )
             self.assertEqual(manifest["student"]["instanceCode"], "S003")
+            self.assertEqual(manifest["layout"], {"imageScalePercent": 70})
             self.assertEqual(gateway.loaded_names, ["学生丙"])
 
     def test_technical_failure_removes_the_entire_new_batch(self) -> None:

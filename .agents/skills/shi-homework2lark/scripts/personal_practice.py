@@ -339,8 +339,10 @@ class PersonalPracticeService:
         question_count: int,
         output_dir: Path,
         include_mastered: bool = False,
+        image_scale_percent: int = 100,
     ) -> dict[str, core.JSONValue]:
         practice_sheet._validate_batch_code(batch_code)
+        practice_sheet._validate_image_scale_percent(image_scale_percent)
         roster = load_roster(roster_path)
         student = resolve_student(roster, student_number)
         data = self.gateway.load_for_student(student.name)
@@ -404,6 +406,8 @@ class PersonalPracticeService:
                 },
                 "items": manifest_items,
             }
+            if image_scale_percent != 100:
+                manifest["layout"] = {"imageScalePercent": image_scale_percent}
             report = {
                 "batchCode": batch_code,
                 "student": {
@@ -793,6 +797,7 @@ def build_parser() -> argparse.ArgumentParser:
     plan.add_argument("--batch-code", required=True)
     plan.add_argument("--question-count", type=int, default=DEFAULT_QUESTION_COUNT)
     plan.add_argument("--include-mastered", action="store_true")
+    plan.add_argument("--image-scale-percent", type=int, default=100)
     plan.add_argument("--output-dir", required=True)
     return parser
 
@@ -816,6 +821,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 question_count=args.question_count,
                 output_dir=Path(args.output_dir),
                 include_mastered=args.include_mastered,
+                image_scale_percent=args.image_scale_percent,
             )
         print(_json({"ok": True, **result}))
         return 0

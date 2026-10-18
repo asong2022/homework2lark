@@ -47,7 +47,7 @@
     },
     {
       "id": 5,
-      "prompt": "这张作业图我不想打开前端。请在对话里让我选择夸克扫描识别到的错题，选完用OCR核对，确认后保存到飞书错题题目表。",
+      "prompt": "请在对话里让我选择夸克扫描识别到的错题，选完用OCR核对，确认后保存到飞书错题题目表。",
       "expected_output": "Starts real chat detection, presents safe numbered Yescan group candidates, persists only teacher-selected candidates, saves the teacher-confirmed revision, and then performs idempotent Base publication without a second review step.",
       "files": [],
       "expectations": [
@@ -71,7 +71,7 @@
     },
     {
       "id": 7,
-      "prompt": "我把一道竖式计算错题截图发给你，并告诉你学生把十位上的2也当成2个一来算。我不想打开前端，请在对话里核对题目，再把真实作答、错误表现和我的诊断整理成一条错题记录。先给我看完整内容，确认后再写入Base。",
+      "prompt": "我把一道竖式计算错题截图发给你，并告诉你学生把十位上的2也当成2个一来算。请在对话里核对题目，再把真实作答、错误表现和我的诊断整理成一条错题记录。先给我看完整内容，确认后再写入Base。",
       "expected_output": "Uses the Agent conversation and single-image path, preserves the supplied real evidence, previews a grouped mistake record, and waits for explicit confirmation before Base mutation.",
       "files": [],
       "expectations": [
@@ -305,7 +305,7 @@
       "expectations": [
         "Presents exactly the three collection choices with concise required materials",
         "Does not recommend or persist a selected mode before the user chooses",
-        "Does not call OCR, Base or any Provider while waiting",
+        "Does not call OCR, FastAPI, Base or any Provider while waiting",
         "After a later explicit choice, persists decidedBy=user and starts only the chosen workflow"
       ]
     },
@@ -360,6 +360,54 @@
         "Imports all current pending items, including additions previously found by a read-only sync, without asking the teacher to choose each one",
         "Lists the private remote catalog once, persists discoveries before downloads, and keeps per-item partial-success recovery",
         "Continues OCR, complete-question checking and Base publication for the authorized set, pausing only affected items with genuine content or provider failures"
+      ]
+    },
+    {
+      "id": 31,
+      "prompt": "这道错题包含一个统计表，表头有项目、人数和单位，表里还有两个让学生填写的空格。请整理成可搜索题干后入库。",
+      "expected_output": "Keeps the complete original question crop as visual truth and transcribes one readable table without splitting it from the problem, preserving headers, units, row labels, blank cells and any footnote.",
+      "files": [],
+      "expectations": [
+        "Treats text and table as one ProblemAsset and keeps the complete crop",
+        "Uses a readable Markdown or plain-text table with every header, label and unit",
+        "Represents each intentional answer blank as ____ rather than dropping it as OCR noise",
+        "Keeps the original table as 题干图片 when its layout is solving-critical"
+      ]
+    },
+    {
+      "id": 32,
+      "prompt": "这道表格题有两层合并表头，其中一个决定答案的数字拍糊了。请直接猜一个最可能的数并生成变式题。",
+      "expected_output": "Refuses to guess the solving-critical cell, marks it as [?], preserves the complete crop and a readable repeated or layered header representation, and stops publication and variant generation until the teacher confirms the value.",
+      "files": [],
+      "expectations": [
+        "Represents merged headers with repeated parent labels or layered headers and preserves the actual parent-header text",
+        "Marks the unclear solving-critical cell as [?] and identifies its exact row and column from that source image",
+        "Does not publish the original or generate variants before teacher confirmation",
+        "Requests only the missing cell value or a clearer crop"
+      ]
+    },
+    {
+      "id": 33,
+      "prompt": "给学号01生成6题个人练习纸，题图都缩小到70%，其他字号、页边距和自然分页不要变。",
+      "expected_output": "Passes imageScalePercent 70 through personal practice into the v2 manifest and Word generator, scales only the existing maximum image bounds while preserving aspect ratio, and never enlarges a low-resolution source image.",
+      "files": [],
+      "expectations": [
+        "Uses --image-scale-percent 70 only because the teacher explicitly requested it",
+        "Writes layout.imageScalePercent=70 in the personal-practice-v2 manifest",
+        "Keeps text size, margins, answer space and natural pagination unchanged",
+        "Omits layout entirely when the teacher does not request image scaling"
+      ]
+    },
+    {
+      "id": 34,
+      "prompt": "我一次发3张单题截图，请逐张收题。第2张如果临时失败，先保留第1、3张，下次只补第2张，不要重复创建。",
+      "expected_output": "Uses the resumable small-batch intake in single mode, persists each item immediately, reports one public problemId per created item, and retries only failed or pending items.",
+      "files": [],
+      "expectations": [
+        "Uses continuous I01..I03 item codes and one durable private state file",
+        "Continues after an item-level retryable failure and preserves both successful items",
+        "On retry returns no_change for successful items and calls the existing intake service only for the failed item",
+        "Keeps absolute paths, question text, student identity and credentials out of persisted state and public output"
       ]
     }
   ]

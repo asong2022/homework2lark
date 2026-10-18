@@ -23,11 +23,13 @@ Teacher
 
 边界：客户端 filename/MIME 仅作提示；Pillow 实际解码决定是否接受。原始字节不改写，但预览尺寸和后端裁图都使用 `ImageOps.exif_transpose` 后的显示方向。数据库失败时删除本次新写入的 source key。
 
-Skill 有三个入口，但上传后共用同一个 `SourceAsset`：
+Skill 有三个图片入口，上传后共用同一个 `SourceAsset`：
 
 - `manual`：上传一次且不调用自动检测；教师在对话中点名题号，Agent 用 `frame` 保存一道或多道完整框区。
 - `chat`：上传后调用一次已配置的 Yescan 题目检测，在对话里展示整题候选，由教师选择。
 - `single`：教师直接给出一题一图，以整图作为一道题，不调用检测。
+
+`intake_batch.py` 是 `single/chat` 的可续跑编排层：接收 1～20 张图片，每项使用隔离 session 并原子保存 `pending/created/failed`。重试跳过已确认成功项，只处理失败或尚未执行的项；`chat` 不自动选候选，也不隐式执行 OCR、修订或发布。整页人工框题仍使用 `manual + frame`。
 
 夸克扫描王错题本是 `single` 之前的可选来源，不是第四套题目模型：
 

@@ -45,7 +45,7 @@ class BundleManifestTests(unittest.TestCase):
             },
         )
         self.assertNotIn("version", top_level_keys)
-        self.assertIn('version: "3.1.2"', frontmatter)
+        self.assertIn('version: "3.2.0"', frontmatter)
 
     def test_bundle_declares_one_entry_and_five_stages(self) -> None:
         manifest = doctor.load_bundle(SKILL_ROOT)
@@ -85,6 +85,37 @@ class BundleManifestTests(unittest.TestCase):
         self.assertTrue((SKILL_ROOT / "scripts" / "workflow.py").is_file())
         self.assertTrue((SKILL_ROOT / "scripts" / "retry_batch.py").is_file())
         self.assertTrue((SKILL_ROOT / "scripts" / "quark_wrongbook.py").is_file())
+
+    def test_release_contains_batch_table_and_image_scale_contracts(self) -> None:
+        manifest = doctor.load_bundle(SKILL_ROOT)
+        required_files = set(manifest["resources"]["requiredFiles"])
+        self.assertIn("scripts/intake_batch.py", required_files)
+        self.assertIn("references/batch-intake.md", required_files)
+        self.assertIn("references/question-asset-contract.md", required_files)
+        self.assertIn("references/practice-sheet-template.md", required_files)
+
+        question_contract = (SKILL_ROOT / "references" / "question-asset-contract.md").read_text(
+            encoding="utf-8"
+        )
+        practice_contract = (SKILL_ROOT / "references" / "practice-sheet-template.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("____", question_contract)
+        self.assertIn("[?]", question_contract)
+        self.assertIn("imageScalePercent", practice_contract)
+
+        evals = json.loads((SKILL_ROOT / "evals" / "evals.json").read_text(encoding="utf-8"))
+        eval_ids = {item["id"] for item in evals["evals"]}
+        self.assertTrue({4, 31, 32, 33, 34}.issubset(eval_ids))
+
+    def test_published_skill_has_no_removed_web_entrypoint(self) -> None:
+        forbidden = ("--web-url", "mode web", "npm run dev:web", "Web intake")
+        paths = [SKILL_ROOT / "SKILL.md", SKILL_ROOT / "evals" / "evals.json"]
+        paths.extend((SKILL_ROOT / "references").glob("*.md"))
+        for path in paths:
+            text = path.read_text(encoding="utf-8")
+            for phrase in forbidden:
+                self.assertNotIn(phrase, text, f"{phrase!r} remains in {path.name}")
 
 
 class DoctorTests(unittest.TestCase):

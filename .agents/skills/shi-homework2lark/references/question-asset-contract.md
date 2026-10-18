@@ -36,6 +36,42 @@ OCR supplies text and layout evidence; it does not have final authority over vis
 
 The complete crop and stem image have different jobs: `图片题目` is the traceable original question, while `题干图片` is the clean non-text fragment used for reuse and layout. Neither may be inferred only from PaddleOCR block boxes.
 
+## Complex Tables
+
+A table remains inside the same `ProblemAsset`; rows, columns or OCR cells never become separate questions.
+
+1. Keep the complete original crop as visual truth. When table layout itself is a solving condition, also keep the original table pixels in `题干图片`.
+2. Put every reliably readable title, header, row/column label, unit, value and footnote into the teacher-confirmed text. Use a readable Markdown table when possible.
+3. Preserve an original blank answer cell as `____`; do not silently remove it as OCR whitespace.
+4. Represent merged or multilevel headers by repeating the parent label or using consecutive header rows. Keep the actual parent text: if `售出数量` spans `第一周 / 第二周 / 合计`, use `售出数量·第一周 / 售出数量·第二周 / 售出数量·合计`, or explicitly state that all three columns belong to `售出数量`. This is a readable approximation, never permission to omit or invent a relationship.
+5. Distinguish a printed value, an intentional answer blank (`____`), and an unreadable cell (`[?]`). Mark an unreadable solving-critical cell as `[?]`, identify its row and column beside that source crop, and stop publication and variant generation until reliable evidence supplies the value. Decorative lines may be omitted from text, but grouping relationships may not.
+6. With multiple photos, assess each photo before reconciling them. A clearer image of the same question may supply a missing value, but name that source; never describe an obscured cell as readable merely because another photo reveals its value. If only the obscured source exists, do not solve or publish using a guessed value.
+
+Example:
+
+```text
+单位：千克
+| 水果 | 第一箱 | 第二箱 | 合计 |
+|---|---:|---:|---:|
+| 苹果 | 12 | ____ | 30 |
+```
+
+Merged-header preview:
+
+```text
+题号：12
+题干文本：水果店两周售出水果的情况如下，请补全表格。
+单位：千克
+| 水果 | 售出数量·第一周 | 售出数量·第二周 | 售出数量·合计 |
+|---|---:|---:|---:|
+| 苹果 | 12 | ____ | [?] |
+说明：空白格填写苹果第二周售出的质量。
+不确定项：苹果行的合计看不清，无法唯一确定第二周质量。
+下一步：请提供合计值或清晰裁图；暂不发布、不生成变式。
+```
+
+The field preview keeps the outer number in `题号`; the reusable `题干文本` starts with the actual stem, not `12.`.
+
 ## Teacher Confirmation View
 
 Show together:
