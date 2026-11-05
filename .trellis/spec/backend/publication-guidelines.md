@@ -24,7 +24,9 @@ ProblemPublisher.publish(
         revision_number: int,
         corrected_text: str,
         revision_created_at: datetime,
-        ocr_provider: str,
+        ocr_provider: str | None,
+        recognition_source: RecognitionSource,
+        previous_revisions: tuple[tuple[int, str], ...],
         ...,
     )
 ) -> ProblemPublicationResult
@@ -34,7 +36,7 @@ Database table: `problem_publications`, unique on `problem_id`, with `pending / 
 
 ### 3. Contracts
 
-- Eligibility: `ProblemAsset.current_revision_id` resolves to a same-region, non-empty `ProblemRevision`; source, region, crop and the revision's OCR baseline all exist.
+- Eligibility: current revision is same-region and non-empty; source/region/crop exist; OCR sources require a valid baseline, AI/teacher sources may omit it. Any explicit baseline must be successful and same-region.
 - No review status, review timestamp, status event or `futureReuseEligible` participates in eligibility.
 - Environment: `PROBLEM_PUBLISHER=lark_cli`, `LARK_BASE_TITLE`, `LARK_CLI_COMMAND`, `LARK_PUBLISH_TIMEOUT_SECONDS`. Production has no selectable fake publisher; tests inject a stub directly from `tests/support`. Tokens remain in lark-cli user auth.
 - Target tables are `错题页面` and `错题题目`; `pages/questions` aliases are compatibility-only.
@@ -45,6 +47,7 @@ Database table: `problem_publications`, unique on `problem_id`, with `pending / 
 - Never require or write `已审核时间`, `审核状态` or `是否待复核`. Do not clear teacher-owned metadata or variant relations.
 - Exact-filter stable keys before create. `record-upsert` by record ID is not business-key upsert.
 - Attachment upload appends; read the cell first and skip an already present immutable attachment.
+- Read existing question text/version/page relation before any remote mutation. Unknown teacher edits fail with `content_conflict`; exact current content is a no-op, a known prior local revision may advance, and an adopted Base edit saved as a new local revision advances only the marker when text already matches. Do not call this remote atomic CAS.
 
 ### 4. Validation & Error Matrix
 
@@ -56,6 +59,7 @@ Database table: `problem_publications`, unique on `problem_id`, with `pending / 
 | malformed successful envelope | `lark_publisher_invalid_response` | no |
 | duplicate exact stable ID/hash | `lark_publisher_invalid_response` | no; repair duplicates |
 | existing system page ID has a different non-empty hash | `lark_publisher_invalid_response` | no |
+| unknown remote text/version or different page relation | HTTP 409 `lark_content_conflict` | no; read and adopt teacher changes explicitly |
 
 Never expose CLI stderr, Base token, absolute temp path, OCR/revision text or attachment bytes.
 
@@ -87,7 +91,7 @@ Correct:
 
 ```python
 revision = require_current_nonempty_revision(problem)
-require_source_crop_and_ocr_lineage(revision)
+require_source_crop_and_declared_recognition_lineage(revision)
 record = exact_filter("系统题目ID", problem.id, limit=2)
 publish_revision(record, revision.revision_number)
 ```

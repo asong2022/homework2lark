@@ -17,6 +17,8 @@ Migration `0003_multi_candidate_lineage` owns `problem_region_candidate_sources`
 
 Migration `0004_problem_publications` introduced publication state. Migration `0005_problem_assets` replaces the old review aggregate with `problem_assets`, renames the publication foreign key to `problem_id`, preserves public IDs/current revision/publication pointers, and removes review-state tables from runtime schema.
 
+Migration `0006_recognition_source` adds revision `recognition_source=ocr|ai_vision|teacher` and makes the OCR foreign key nullable. Existing revisions become `ocr` with unchanged pointers; a database check requires a baseline for OCR sources. Explicit non-null baselines must also pass application same-region/succeeded validation. Downgrade refuses while any non-OCR revision exists rather than discarding evidence or inventing runs.
+
 `problem_publications` owns one mutable current publication state per problem. It is retry/remote-pointer workflow state, not OCR or human evidence: retries update the same row, while `published_revision_id` records which immutable revision was attempted or published.
 
 Every downstream record keeps an explicit foreign key to its source. Deleting a source later must be an intentional aggregate operation; do not rely on accidental filesystem or database cascades.

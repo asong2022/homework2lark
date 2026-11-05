@@ -76,6 +76,31 @@ def observations() -> dict:
 
 
 class RetryBatchTests(unittest.TestCase):
+    def test_personal_feedback_targets_private_history_not_shared_group_mastery(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "manifest.json"
+            path.write_text(json.dumps(manifest(), ensure_ascii=False), encoding="utf-8")
+            plan = retry.build_plan(path, observations())
+            self.assertTrue(all(not item["canUpdateBase"] for item in plan["baseProjections"]))
+            self.assertTrue(
+                all(item["targetScope"] == "student_private" for item in plan["baseProjections"])
+            )
+            legacy = {
+                **plan,
+                "schemaVersion": retry.LEGACY_PLAN_VERSION,
+                "baseProjections": [
+                    {
+                        key: value
+                        for key, value in item.items()
+                        if key not in {"targetScope", "canUpdateBase"}
+                    }
+                    for item in plan["baseProjections"]
+                ],
+            }
+            upgraded = retry.validate_plan(legacy)
+            self.assertEqual(upgraded["events"], plan["events"])
+            self.assertEqual(upgraded["baseProjections"], plan["baseProjections"])
+
     def test_event_id_is_stable_across_roster_name_corrections(self) -> None:
         # 同一份练习、同一次观察：名单里姓名/学号被更正后重跑，
         # 事件 ID 必须不变（Sxxx 才是身份），否则会追加重复事件行。

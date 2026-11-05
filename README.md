@@ -14,12 +14,11 @@
 
 然后把下面这段话原样发给它：
 
-> 请帮我安装并初始化 homework2lark。先阅读仓库的 README、AI_INSTALL.md 和 shi-homework2lark/SKILL.md，使用仓库内置的 onboarding.py 一直处理到 verify 返回 ready。每次只问我一个真正缺失的信息；默认使用 PaddleOCR-VL-1.6，由我在对话中选择题目，你负责从原图保存完整题目边界，不强制配置 Yescan；用内置空白模板创建我的飞书 Base。配置完成后直接告诉我“可以开始发作业了”。
+> 请帮我安装并初始化 homework2lark。先阅读 README、AI_INSTALL.md 和 shi-homework2lark/SKILL.md，用内置 onboarding.py 准备服务并一直处理到 verify 返回 ready。先用 AI 看图，由我选择题目，你保存完整题目边界并整理入库；需要 OCR 时再配置 PaddleOCR-VL-1.6，不强制 Yescan。用内置空白模板创建我的飞书 Base，每次只问一个真正缺失的信息。最后告诉我现在支持哪些材料，可以开始发作业了。
 
-首次使用通常只需要教师完成两件事：
+首次使用通常只需要教师完成一次飞书用户授权。需要 OCR 时再提供 PaddleOCR / AI Studio Token。
 
-1. PaddleOCR / AI Studio Token；
-2. 一次飞书用户授权。
+AI 看图和教师提供题干可直接收录，不要求先购买或配置 OCR 服务。识别来源会保留，原图和修订可追溯。
 
 Yescan 自动候选框、当前年级和学期日期都是可选项，不阻塞开始收题；教师以后需要时再让 AI 配置即可。
 
@@ -77,6 +76,8 @@ Yescan 自动候选框、当前年级和学期日期都是可选项，不阻塞�
 
 默认 OCR 是官方托管 `PaddleOCR-VL-1.6`，无需教师在本地部署模型或 GPU。题图不交给 OCR 猜：完整题目裁图和题干图片都以原始高清页面为视觉依据，从原像素提取，上传飞书后再回读检查。
 
+OCR 是可选辅助，不是入库前置条件。图片收题就绪、PDF/Word 输入转换、Word 练习纸生成分别检查；AI 不会因图片可用就声称所有文件格式都已准备好。
+
 未配置 Yescan 时，教师只需在对话中说出题号，AI 根据原始页面保存完整题目边界，不会产生虚假的“自动检测结果”。边界确实看不清时，AI 会请教师补一张单题截图。Yescan 只是可选的整页候选路径，不是错题学习闭环的前提。
 
 也可以把夸克扫描王“试卷宝·错题本”作为可选单题来源。第一次连接只建立现有 ID 基线，下载和入库均为 0；以后说“新增今天/本次的夸克错题”就会直接处理全部待收录新增题，不再逐题询问。说“看看新增了哪些”则只展示，明确指定部分题目时仍可选择式导入。这里的“今天”表示本地基线或上次同步后尚未处理的新题，不依赖夸克私有时间字段。该入口依赖夸克 App 私有接口，可能随 App 更新而需要适配。
@@ -90,6 +91,13 @@ Yescan 自动候选框、当前年级和学期日期都是可选项，不阻塞�
 - 飞书默认只保存名单中的准确姓名；学号用于本地身份核对和个人练习纸，不写入稳定 ID 或普通日志。
 - 含学生信息的材料发送到第三方 OCR 前，AI 仍应说明服务商和范围。
 - 初始化器不会修改或清理已有业务 Base；同名库冲突时会停止，不会“取第一个”。
+- 重新发布先比较题干与版本，发现飞书手工修改不会覆盖。需要继续同步时，把飞书修改另存为本地新修订，完全相同的题干只推进内部版本标记。
+
+## 再练如何改变下一次练习
+
+把批改后的练习交给 AI，AI 按页面文字码和题号关联原题/变式，将真实作答追加到本班私有日志。之后生成个人或整班练习时复用这份日志：保留全部活跃错因，读取对应学生最新有效反馈，不把一人的表现当成全组表现。
+
+效果报告区分正确、部分正确、错误、看不清和未观察，注明统计的是作答次数；不会把一次正确直接判为已掌握，也不会把看不清计为答错。
 
 ## 给开发者
 
@@ -98,7 +106,7 @@ Yescan 自动候选框、当前年级和学期日期都是可选项，不阻塞�
 首次安装运行时：
 
 ```powershell
-uv sync --directory apps/api --all-groups
+uv sync --directory apps/api --all-groups --extra documents --inexact
 uv run --directory apps/api alembic upgrade head
 ```
 
@@ -118,6 +126,10 @@ python -X utf8 .agents/skills/shi-homework2lark/scripts/doctor.py
 
 API 健康检查：`http://127.0.0.1:8000/api/v1/health`。架构和开发约定从 [docs/index.md](./docs/index.md) 与 [.trellis/spec/](./.trellis/spec/) 开始。
 
+Agent 的跨平台服务入口是 `python -X utf8 .agents/skills/shi-homework2lark/scripts/onboarding.py --repo-root . prepare`；`verify` 会验证迁移和服务身份，不只检查依赖是否安装。
+
+正式源码以 `main` 为基线开发；Skill 包和安装副本由本仓库生成，不在发布镜像中独立修功能。旧私有历史不合并到公开发布。
+
 Windows 本机也可运行 `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-local.ps1`，只准备并启动 API，不打开网页，不覆盖已有 `.env` 或业务数据。
 
 质量门：
@@ -127,7 +139,7 @@ uv run --directory apps/api ruff format --check .
 uv run --directory apps/api ruff check .
 uv run --directory apps/api mypy src
 uv run --directory apps/api pytest -q
-uv run --directory apps/api --with python-docx python -m unittest discover -s ../../.agents/skills/shi-homework2lark/tests -p 'test_*.py'
+uv run --directory apps/api --extra documents python -m unittest discover -s ../../.agents/skills/shi-homework2lark/tests -p 'test_*.py'
 uv run --directory apps/api python ../../.agents/skills/shi-homework2lark/scripts/package_bundle.py verify --package ../../artifacts/skills/shi-homework2lark.skill
 ```
 

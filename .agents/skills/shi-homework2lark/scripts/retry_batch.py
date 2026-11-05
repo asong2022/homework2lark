@@ -21,7 +21,8 @@ if str(SCRIPT_DIR) not in sys.path:
 
 import practice_sheet  # noqa: E402
 
-PLAN_VERSION = "retry-feedback-plan-v1"
+PLAN_VERSION = "retry-feedback-plan-v2"
+LEGACY_PLAN_VERSION = "retry-feedback-plan-v1"
 EVENT_VERSION = "retry-feedback-event-v1"
 RESULTS = frozenset(("correct", "partial", "incorrect", "uncertain", "not_observed"))
 MASTERY_OPTIONS = frozenset(("未开始", "练习中", "需再练", "已掌握"))
@@ -89,6 +90,9 @@ class RetryEvent:
             "mastery": self.mastery,
             "summary": summary,
             "needsHuman": self.result in {"uncertain", "not_observed"},
+            "targetScope": "student_private" if self.student_name is not None else "question",
+            "canUpdateBase": self.student_name is None
+            and self.result in {"correct", "partial", "incorrect"},
         }
 
 
@@ -286,7 +290,10 @@ def build_plan(manifest_source: Path, raw: object) -> dict[str, Any]:
 
 
 def validate_plan(raw: object) -> dict[str, Any]:
-    if not isinstance(raw, dict) or raw.get("schemaVersion") != PLAN_VERSION:
+    if not isinstance(raw, dict) or raw.get("schemaVersion") not in {
+        PLAN_VERSION,
+        LEGACY_PLAN_VERSION,
+    }:
         raise RetryBatchError("再练计划版本无效。")
     if raw.get("status") != "prepared":
         raise RetryBatchError("再练计划状态无效。")
@@ -311,7 +318,17 @@ def validate_plan(raw: object) -> dict[str, Any]:
             raise RetryBatchError("再练事件稳定 ID 无效或重复。")
         ids.add(event_id)
         expected_projections.append(normalized.base_projection())
-    if projections != expected_projections:
+    expected_for_version = expected_projections
+    if raw["schemaVersion"] == LEGACY_PLAN_VERSION:
+        expected_for_version = [
+            {
+                key: value
+                for key, value in item.items()
+                if key not in {"targetScope", "canUpdateBase"}
+            }
+            for item in expected_projections
+        ]
+    if projections != expected_for_version:
         raise RetryBatchError("再练计划 Base 投影与不可变事件不一致。")
     expected_needs_human = sum(1 for projection in expected_projections if projection["needsHuman"])
     needs_human_count = raw.get("needsHumanCount")
@@ -321,7 +338,7 @@ def validate_plan(raw: object) -> dict[str, Any]:
         or needs_human_count != expected_needs_human
     ):
         raise RetryBatchError("再练计划人工处理计数与事件不一致。")
-    return raw
+    return {**raw, "schemaVersion": PLAN_VERSION, "baseProjections": expected_projections}
 
 
 def _write_new_json(path: Path, value: object) -> None:

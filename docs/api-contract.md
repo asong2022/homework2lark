@@ -91,14 +91,16 @@ Hash 只用于提示重复，不自动合并/替换 SourceAsset。
 
 ```json
 {
-  "basedOnOcrRunId": "ocr_...",
+  "recognitionSource": "ai_vision",
+  "basedOnOcrRunId": null,
   "correctedText": "教师修订后的完整题目",
   "correctionNote": "可选说明"
 }
 ```
 
 - `201`: 新 `ProblemRevisionResponse`，含递增 revision number。
-- `422`: 空文字或 OCR run 无效/不属于 region。
+- `recognitionSource` 为 `ocr / ai_vision / teacher`。为兼容旧调用默认 `ocr`，此时必须引用本区域一次成功的真实 OCR；其余两种允许无 OCR。显式提供的 OCR ID 无论哪种来源都必须有效且属于本区域，不创建占位运行。
+- `422`: 空文字、识别来源无效，或必需/显式提供的 OCR run 无效、不属于 region。
 - 新 revision 立即成为 `ProblemAsset.currentRevisionId`；不再需要第二次审核调用。
 
 ### `GET /problems/{problemId}`
@@ -110,13 +112,14 @@ Hash 只用于提示重复，不自动合并/替换 SourceAsset。
 ### `POST /problems/{problemId}/publications/lark`
 
 - `201`: 当前 `ProblemPublicationResponse`。
-- `409`: 没有非空当前修订，或来源、裁图、OCR 依据不完整时返回 `problem_not_publishable`。
+- `409`: 没有非空当前修订、来源或裁图不完整、声明为 OCR 的依据不完整时返回 `problem_not_publishable`；AI/教师修订不要求 OCR。
+- `409 lark_content_conflict`: Base 题干/版本/页面关系与本地已知修订不一致，在任何远端修改前停止；回读并将采纳的 Base 题干追加为本地新修订后再发布，不强行覆盖。
 - `502/503`: 飞书返回异常、登录/Schema 配置错误或暂时不可用；本地证据和当前修订保持不变。
 - 重试复用同一 `problemId` 的本地发布状态和远端隐藏稳定键，不重复创建题目。
 
 ### `GET /health`
 
-- `200`: API/数据库基本状态与当前 Provider 名称；不触发重型模型推理、不暴露配置/路径/密钥。
+- `200`: API/数据库基本状态、当前 Provider 名称与 `runtimeId`（仓库和数据库配置的短摘要）；不触发推理、不暴露配置/路径/密钥。引导工具另行检查迁移 head，不能把一个 HTTP 200 当成录题就绪。
 
 ## 4. 请求一致性与重试
 

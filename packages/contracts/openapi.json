@@ -150,6 +150,10 @@
             "title": "Regiondetectionprovider",
             "type": "string"
           },
+          "runtimeId": {
+            "title": "Runtimeid",
+            "type": "string"
+          },
           "status": {
             "const": "ok",
             "title": "Status",
@@ -160,7 +164,8 @@
           "status",
           "database",
           "ocrProvider",
-          "regionDetectionProvider"
+          "regionDetectionProvider",
+          "runtimeId"
         ],
         "title": "HealthResponse",
         "type": "object"
@@ -834,8 +839,15 @@
       "ProblemRevisionResponse": {
         "properties": {
           "basedOnOcrRunId": {
-            "title": "Basedonocrrunid",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basedonocrrunid"
           },
           "correctedText": {
             "title": "Correctedtext",
@@ -857,6 +869,9 @@
             "title": "Createdat",
             "type": "string"
           },
+          "recognitionSource": {
+            "$ref": "#/components/schemas/RecognitionSource"
+          },
           "revisionId": {
             "title": "Revisionid",
             "type": "string"
@@ -869,6 +884,7 @@
         "required": [
           "revisionId",
           "basedOnOcrRunId",
+          "recognitionSource",
           "revisionNumber",
           "correctedText",
           "correctionNote",
@@ -884,6 +900,15 @@
           "failed"
         ],
         "title": "PublicationStatus",
+        "type": "string"
+      },
+      "RecognitionSource": {
+        "enum": [
+          "ocr",
+          "ai_vision",
+          "teacher"
+        ],
+        "title": "RecognitionSource",
         "type": "string"
       },
       "RegionCandidateResponse": {
@@ -1158,10 +1183,17 @@
       "RevisionCreateRequest": {
         "properties": {
           "basedOnOcrRunId": {
-            "maxLength": 64,
-            "minLength": 1,
-            "title": "Basedonocrrunid",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basedonocrrunid"
           },
           "correctedText": {
             "maxLength": 50000,
@@ -1180,10 +1212,13 @@
               }
             ],
             "title": "Correctionnote"
+          },
+          "recognitionSource": {
+            "$ref": "#/components/schemas/RecognitionSource",
+            "default": "ocr"
           }
         },
         "required": [
-          "basedOnOcrRunId",
           "correctedText"
         ],
         "title": "RevisionCreateRequest",

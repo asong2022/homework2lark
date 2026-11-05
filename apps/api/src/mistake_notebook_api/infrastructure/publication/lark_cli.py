@@ -162,11 +162,37 @@ class LarkCliProblemPublisher:
             )
             reused_by_hash = page_record_id is not None
 
+        question_record_id, question_cells = self._find_one(
+            base_token=base_token,
+            table_id=questions_table_id,
+            stable_field=question_table.stable_field,
+            stable_value=request.problem_id,
+            projected_fields=(
+                question_table.stable_field,
+                question_table.attachment_field,
+                "题干文本",
+                "本地修订版本",
+                self._required_link_field(question_table),
+                *((question_table.title_field,) if question_table.title_field is not None else ()),
+            ),
+        )
+        content_values = self._content_values(request, question_cells)
+        existing_link = question_cells.get(self._required_link_field(question_table))
+        if _has_value(existing_link) and (
+            not isinstance(existing_link, list)
+            or len(existing_link) != 1
+            or not isinstance(existing_link[0], dict)
+            or existing_link[0].get("id") != page_record_id
+        ):
+            raise ProblemPublisherError("content_conflict")
+
         page_values: dict[str, JsonValue] = {}
-        if not reused_by_hash:
+        if page_record_id is None:
             page_values[page_table.stable_field] = request.source_asset_id
-            if page_table.hash_field is not None:
-                page_values[page_table.hash_field] = request.source_file_hash
+        if page_table.hash_field is not None and not _has_value(
+            page_cells.get(page_table.hash_field)
+        ):
+            page_values[page_table.hash_field] = request.source_file_hash
         if page_table.title_field is not None and not _has_value(
             page_cells.get(page_table.title_field)
         ):
@@ -177,7 +203,11 @@ class LarkCliProblemPublisher:
                 table_id=pages_table_id,
                 sequence_field=page_table.sequence_field,
             )
-        if page_table.image_name_field is not None and not reused_by_hash:
+        if (
+            page_table.image_name_field is not None
+            and not reused_by_hash
+            and not _has_value(page_cells.get(page_table.image_name_field))
+        ):
             page_values[page_table.image_name_field] = request.source_file_name
         if page_values:
             page_record_id = self._upsert(
@@ -200,23 +230,11 @@ class LarkCliProblemPublisher:
                 data=request.source_image_bytes,
             )
 
-        question_record_id, question_cells = self._find_one(
-            base_token=base_token,
-            table_id=questions_table_id,
-            stable_field=question_table.stable_field,
-            stable_value=request.problem_id,
-            projected_fields=(
-                question_table.stable_field,
-                question_table.attachment_field,
-                *((question_table.title_field,) if question_table.title_field is not None else ()),
-            ),
-        )
-        question_values: dict[str, JsonValue] = {
-            question_table.stable_field: request.problem_id,
-            self._required_link_field(question_table): [{"id": page_record_id}],
-            "题干文本": request.corrected_text,
-            "本地修订版本": request.revision_number,
-        }
+        question_values = content_values
+        if question_record_id is None:
+            question_values[question_table.stable_field] = request.problem_id
+        if not _has_value(existing_link):
+            question_values[self._required_link_field(question_table)] = [{"id": page_record_id}]
         if question_table.title_field is not None and not _has_value(
             question_cells.get(question_table.title_field)
         ):
@@ -229,12 +247,15 @@ class LarkCliProblemPublisher:
                 table_id=questions_table_id,
                 sequence_field=question_table.sequence_field,
             )
-        question_record_id = self._upsert(
-            base_token=base_token,
-            table_id=questions_table_id,
-            record_id=question_record_id,
-            fields=question_values,
-        )
+        if question_values:
+            question_record_id = self._upsert(
+                base_token=base_token,
+                table_id=questions_table_id,
+                record_id=question_record_id,
+                fields=question_values,
+            )
+        if question_record_id is None:
+            raise ProblemPublisherError("invalid_response")
         if not _has_value(question_cells.get(question_table.attachment_field)):
             self._upload_attachment(
                 base_token=base_token,
@@ -252,6 +273,45 @@ class LarkCliProblemPublisher:
             page_record_id=page_record_id,
             question_record_id=question_record_id,
         )
+
+    @staticmethod
+    def _content_values(
+        request: ProblemPublicationRequest,
+        cells: dict[str, JsonValue],
+    ) -> dict[str, JsonValue]:
+        text = cells.get("题干文本")
+        version = cells.get("本地修订版本")
+        if _has_value(version) and (
+            isinstance(version, bool)
+            or not isinstance(version, (int, float))
+            or version < 1
+            or version % 1 != 0
+        ):
+            raise ProblemPublisherError("content_conflict")
+        if not _has_value(text):
+            if _has_value(version) and version != request.revision_number:
+                raise ProblemPublisherError("content_conflict")
+            return {"题干文本": request.corrected_text, "本地修订版本": request.revision_number}
+        if (
+            isinstance(version, bool)
+            or not isinstance(version, (int, float))
+            or version < 1
+            or version % 1 != 0
+        ):
+            raise ProblemPublisherError("content_conflict")
+        if text == request.corrected_text and 1 <= version <= request.revision_number:
+            # Adopting the Base edit as a new local revision changes only the sync marker.
+            return (
+                {}
+                if version == request.revision_number
+                else {"本地修订版本": request.revision_number}
+            )
+        if any(
+            version == number and text == previous
+            for number, previous in request.previous_revisions
+        ):
+            return {"题干文本": request.corrected_text, "本地修订版本": request.revision_number}
+        raise ProblemPublisherError("content_conflict")
 
     def _resolve_base(self) -> tuple[str, str]:
         payload = self._call(

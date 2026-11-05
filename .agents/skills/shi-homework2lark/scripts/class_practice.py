@@ -238,6 +238,7 @@ def build_parser() -> argparse.ArgumentParser:
     build.add_argument("--student-number", action="append", default=[])
     build.add_argument("--image-scale-percent", type=int, default=100)
     build.add_argument("--output-dir", required=True)
+    build.add_argument("--event-store", help="本班私有再练JSONL，整班复用一次读取")
     return parser
 
 
@@ -249,7 +250,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             core.SubprocessRunner(),
             base_title=args.base_title,
         )
-        service = ClassPracticeService(personal_practice.PersonalPracticeService(gateway))
+        events = (
+            personal_practice.retry_evidence.load_events(Path(args.event_store))
+            if getattr(args, "event_store", None)
+            else ()
+        )
+        service = ClassPracticeService(
+            personal_practice.PersonalPracticeService(gateway, feedback_events=events)
+        )
         if args.command == "schema-check":
             result = service.schema_check()
         else:

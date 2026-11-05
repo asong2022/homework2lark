@@ -23,13 +23,13 @@ Feedback distinguishes:
 
 - `observedResponse`: what the child actually wrote/said/did;
 - `teacherJudgment`: the teacher's diagnosis or uncertainty;
-- `result`: correct / partial / incorrect / not_observed;
+- `result`: correct / partial / incorrect / uncertain / not_observed;
 - `mastery`: 未开始 / 练习中 / 需再练 / 已掌握;
 - `summary`: short teacher-facing Base summary.
 
 The anonymous `learning_feedback.py` payload still rejects student name, class and ID. Question-level `典型错例` and `错误表现` remain read-only grouped-evidence lookups, and anonymous retry events append locally without rewriting them.
 
-When the teacher deliberately identifies a student group, use the matching `错题记录` row instead: `对应学生` is a multi-select of exact roster names, while `再练反馈`, `掌握状态` and `最近再练时间` describe the current group result. Preview the full group and require confirmation before update. Do not create one row per student or an independent student table.
+When the teacher deliberately provides a whole-group result, the matching `错题记录` row may hold its current group state. A single identified student's retry event must never update a row shared by several students. Keep individual history locally, match both name and number against the class-scoped private roster, and pass the same event store into subsequent personal/class planning. Do not create one row per student or an independent student table.
 
 Example:
 
@@ -48,12 +48,13 @@ Example:
 Flow:
 
 ```text
-validate -> preview (read-only) -> teacher confirms
--> append local event idempotently -> update mastery/time or the matching group feedback -> read back
+observe -> locate exact manifest item -> append local event idempotently
+-> read individual evidence for next selection / variation
+-> optional authorized question/group aggregate update -> read back
 ```
 
 For a returned image/PDF or a whole class batch, follow [再练回收自动定位与反馈](retry-feedback.md). The Agent/`shi-ocr` observes the page code, visible number, real response and correction evidence; `retry_batch.py` maps them to the exact manifest `questionId/variantId`, prepares conservative mastery projections and appends stable local events idempotently. `learning_feedback.py` remains the one-off teacher-described compatibility path. If Base projection fails after a local append, retry only the same stable event's projection.
 
 ## Next Generation
 
-The next variant request may read the latest feedback. It should target the unresolved mathematical relation, not merely change numbers. AI-simulated evidence may inspire examples but cannot change mastery state without observed teacher feedback.
+Before the next variation, use `retry_evidence.py context` when an event store exists, and retain every active original-error cause in the fact card. Personal and class planning accept `--event-store` and actually use that student's latest actionable evidence; they do not just archive it. A later uncertain observation remains visible but does not erase the last valid result. Target the unresolved mathematical relation, not merely new numbers. AI-simulated evidence may inspire examples but cannot change mastery state. Use `summary` for honest event-level counts; unobserved work is not an error, and repeated attempts are not unique students.

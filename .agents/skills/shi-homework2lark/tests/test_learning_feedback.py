@@ -16,6 +16,9 @@ if str(SCRIPTS) not in sys.path:
 
 
 def load(name: str):
+    # Share dependency classes with other Skill tests in the same interpreter.
+    if name in sys.modules:
+        return sys.modules[name]
     path = SCRIPTS / f"{name}.py"
     spec = importlib.util.spec_from_file_location(name, path)
     if spec is None or spec.loader is None:
@@ -173,6 +176,24 @@ class LearningFeedbackTests(unittest.TestCase):
         self.assertEqual(len(lines), 1)
         self.assertEqual(self.gateway.record.fields["掌握状态"], ["已掌握"])
         self.assertEqual(self.gateway.record.fields["最近再练时间"], "2026-07-16 10:30:00")
+
+    def test_unknown_results_append_history_without_changing_mastery_or_time(self):
+        for result in ("uncertain", "not_observed"):
+            with self.subTest(result=result), tempfile.TemporaryDirectory(dir=Path.cwd()) as tmp:
+                self.gateway.record.fields["掌握状态"] = ["练习中"]
+                self.gateway.record.fields["最近再练时间"] = "2026-07-16 10:30:00"
+                before = copy.deepcopy(self.gateway.record.fields)
+                relative = os.path.relpath(Path(tmp) / "events.jsonl", Path.cwd())
+                recorded = self.service.record(
+                    "rec_1",
+                    payload(
+                        result=result, observedResponse="", occurredAt="2026-07-17T10:30:00+08:00"
+                    ),
+                    relative,
+                )
+                self.assertTrue(recorded["historyAppended"])
+                self.assertFalse(recorded["baseProjectionUpdated"])
+                self.assertEqual(self.gateway.record.fields, before)
 
     def test_rejects_identity_fields_and_missing_observed_response(self):
         with self.assertRaises(feedback.core.SkillError):

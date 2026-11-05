@@ -18,6 +18,11 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Protocol
 
+SCRIPT_DIRECTORY = Path(__file__).resolve().parent
+if str(SCRIPT_DIRECTORY) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIRECTORY))
+import runtime_service  # noqa: E402
+
 JSONValue = None | bool | int | float | str | list["JSONValue"] | dict[str, "JSONValue"]
 
 DEFAULT_BASE_TITLE = "小学数学错题学习库"
@@ -264,11 +269,13 @@ class OnboardingService:
         runner: CommandRunner | None = None,
         environ: Mapping[str, str] | None = None,
         which: Callable[[str], str | None] = shutil.which,
+        runtime_probe: Callable[[Path], dict] | None = None,
     ) -> None:
         self.skill_dir = skill_dir.resolve()
         self.runner = runner or SubprocessCommandRunner()
         self.environ = dict(os.environ if environ is None else environ)
         self.which = which
+        self.runtime_probe = runtime_probe or runtime_service.check
         self.schema_contract = _load_json(self.skill_dir / SCHEMA_FILE)
         self.views_contract = _load_json(self.skill_dir / VIEWS_FILE)
         self._validate_contract_privacy()
@@ -280,14 +287,13 @@ class OnboardingService:
         base_title: str,
     ) -> dict[str, JSONValue]:
         self._check_local_runtime(repo_root)
+        try:
+            runtime = self.runtime_probe(repo_root)
+        except runtime_service.RuntimeServiceError as exc:
+            raise OnboardingError(exc.code, exc.message, action=exc.action) from None
         title = _safe_title(base_title)
         configuration = {**_dotenv(repo_root / ".env"), **self.environ}
-        if not configuration.get("PADDLEOCR_ACCESS_TOKEN", "").strip():
-            raise OnboardingError(
-                "ocr_token_missing",
-                "还缺 PaddleOCR Token；填写一次后即可长期使用。",
-                action="configure_ocr",
-            )
+        ocr_ready = bool(configuration.get("PADDLEOCR_ACCESS_TOKEN", "").strip())
         self._check_lark_auth()
         candidates = self._resolve_candidates(title)
         if not candidates:
@@ -298,7 +304,16 @@ class OnboardingService:
             )
         candidate = self._unique_valid_candidate(candidates)
         self._verify_base(candidate)
-        return _ready("配置完整，可以开始发送作业图片、PDF 或 Word 收集错题。")
+        report = _ready(
+            "图片收题与飞书已就绪，可以开始发图片；PDF/Word 按能力报告准备，OCR 按需配置。"
+        )
+        report["capabilities"] = {
+            **runtime.get("capabilities", {}),
+            "ocr": "configured" if ocr_ready else "optional_unconfigured",
+            "aiVision": "ready",
+            "teacherText": "ready",
+        }
+        return report
 
     def configure_runtime(
         self,
@@ -309,18 +324,18 @@ class OnboardingService:
         enable_yescan: bool,
     ) -> dict[str, JSONValue]:
         self._require_repo(repo_root)
-        paddle_token = _safe_env_value(
-            payload.get("paddleocrAccessToken") or self.environ.get("PADDLEOCR_ACCESS_TOKEN"),
-            "PaddleOCR Token",
+        paddle_value = payload.get("paddleocrAccessToken") or self.environ.get(
+            "PADDLEOCR_ACCESS_TOKEN"
         )
         updates = {
             "OCR_PROVIDER": "paddleocr_vl_api",
-            "PADDLEOCR_ACCESS_TOKEN": paddle_token,
             "PADDLEOCR_VL_MODEL": "PaddleOCR-VL-1.6",
             "REGION_DETECTION_PROVIDER": "yescan" if enable_yescan else "manual",
             "PROBLEM_PUBLISHER": "lark_cli",
             "LARK_BASE_TITLE": _safe_title(base_title),
         }
+        if paddle_value:
+            updates["PADDLEOCR_ACCESS_TOKEN"] = _safe_env_value(paddle_value, "PaddleOCR Token")
         if enable_yescan:
             updates["YESCAN_API_KEY_ID"] = _safe_env_value(
                 payload.get("yescanApiKeyId") or self.environ.get("YESCAN_API_KEY_ID"),
@@ -337,7 +352,7 @@ class OnboardingService:
             "message": "本机配置已保存；密钥未写入输出或仓库。",
             "nextAction": "authorize_lark",
             "configured": {
-                "ocr": "PaddleOCR-VL-1.6",
+                "ocr": "PaddleOCR-VL-1.6" if paddle_value else "optional_unconfigured",
                 "questionSelection": "Yescan 自动候选" if enable_yescan else "Agent 对话框题",
                 "publisher": "飞书用户身份",
             },
@@ -1045,6 +1060,7 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
     for name in ("check", "verify"):
         subparsers.add_parser(name)
+    subparsers.add_parser("prepare")
     configure = subparsers.add_parser("configure-runtime")
     configure.add_argument("--stdin-json", action="store_true")
     configure.add_argument("--enable-yescan", action="store_true")
@@ -1078,6 +1094,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                 repo_root=repo_root,
                 base_title=args.base_title,
             )
+        elif args.command == "prepare":
+            try:
+                result = runtime_service.prepare(repo_root)
+            except runtime_service.RuntimeServiceError as exc:
+                raise OnboardingError(exc.code, exc.message, action=exc.action) from None
+            result = {**result, "status": "prepared", "nextAction": "check"}
         elif args.command == "configure-runtime":
             result = service.configure_runtime(
                 repo_root=repo_root,

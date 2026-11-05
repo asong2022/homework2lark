@@ -369,13 +369,23 @@ class IntakeService:
             "correctionNote",
             "basedOnOcrRunId",
             "questionNumber",
+            "recognitionSource",
         }
         if set(payload) - allowed:
             raise SkillError("invalid_payload", "修订输入包含未支持的字段。")
         record = self.gateway.get_problem(problem_id)
         region = _object(record.get("region"), "region")
+        source = payload.get("recognitionSource", "ocr")
+        if source not in ("ocr", "ai_vision", "teacher"):
+            raise SkillError(
+                "invalid_payload", "recognitionSource 必须是 ocr、ai_vision 或 teacher。"
+            )
         based_on = _optional_string(payload.get("basedOnOcrRunId"))
-        if based_on is None:
+        if based_on is None and source == "ocr":
+            if record.get("latestOcrRun") is None:
+                raise SkillError(
+                    "recognition_basis_missing", "尚无 OCR 结果；请明确选择 AI 看图或教师提供来源。"
+                )
             latest = _object(record.get("latestOcrRun"), "latestOcrRun")
             based_on = _string(latest.get("runId"), "runId")
         corrected_text = _nonempty_text(payload.get("correctedText"), "correctedText", 50_000)
@@ -389,6 +399,7 @@ class IntakeService:
             _string(region.get("regionId"), "regionId"),
             {
                 "basedOnOcrRunId": based_on,
+                "recognitionSource": source,
                 "correctedText": corrected_text,
                 "correctionNote": note,
             },
@@ -397,6 +408,7 @@ class IntakeService:
             "problemId": problem_id,
             "revisionId": _string(revision.get("revisionId"), "revisionId"),
             "revisionNumber": _positive_int(revision.get("revisionNumber"), "revisionNumber"),
+            "recognitionSource": revision.get("recognitionSource", source),
             "correctedText": _string(revision.get("correctedText"), "correctedText"),
             "correctionNote": _optional_string(revision.get("correctionNote")),
         }
@@ -503,7 +515,8 @@ def _project_problem(record: dict[str, JSONValue]) -> dict[str, JSONValue]:
             "bbox": _object(region.get("bbox"), "bbox"),
             "cropContentUrl": _string(region.get("cropContentUrl"), "cropContentUrl"),
         },
-        "ocr": _project_ocr(latest_ocr),
+        "ocr": _project_ocr(record.get("ocr") if "ocr" in record else latest_ocr),
+        "latestOcrRun": _project_ocr(latest_ocr),
         "humanRevision": _project_revision(revision),
     }
 
@@ -531,6 +544,8 @@ def _project_revision(value: JSONValue) -> JSONValue:
     return {
         "revisionId": revision.get("revisionId"),
         "revisionNumber": revision.get("revisionNumber"),
+        "recognitionSource": revision.get("recognitionSource", "ocr"),
+        "basedOnOcrRunId": revision.get("basedOnOcrRunId"),
         "correctedText": revision.get("correctedText"),
         "correctionNote": revision.get("correctionNote"),
     }

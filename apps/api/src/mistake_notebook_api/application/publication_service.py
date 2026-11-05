@@ -5,7 +5,7 @@ from dataclasses import replace
 
 from mistake_notebook_api.application.ports import UnitOfWorkFactory
 from mistake_notebook_api.domain.entities import ProblemPublication
-from mistake_notebook_api.domain.enums import PublicationStatus
+from mistake_notebook_api.domain.enums import OCRRunStatus, PublicationStatus, RecognitionSource
 from mistake_notebook_api.domain.errors import AppError, JsonValue
 from mistake_notebook_api.domain.identifiers import new_id
 from mistake_notebook_api.domain.publication import (
@@ -117,12 +117,31 @@ class ProblemPublicationService:
                     "当前人工修订不完整，请重新保存后再发布。",
                 )
             source = uow.assets.get(region.source_asset_id)
-            run = uow.problems.get_ocr_run(revision.based_on_ocr_run_id)
-            if source is None or run is None:
+            run = (
+                uow.problems.get_ocr_run(revision.based_on_ocr_run_id)
+                if revision.based_on_ocr_run_id
+                else None
+            )
+            if source is None or (
+                (
+                    revision.recognition_source is RecognitionSource.OCR
+                    or revision.based_on_ocr_run_id is not None
+                )
+                and (
+                    run is None
+                    or run.problem_region_id != region.id
+                    or run.status is not OCRRunStatus.SUCCEEDED
+                )
+            ):
                 raise AppError(
                     "problem_not_publishable",
-                    "题目来源或 OCR 依据不完整，暂时不能发布。",
+                    "题目来源或识别依据不完整，暂时不能发布。",
                 )
+            previous_revisions = tuple(
+                (item.revision_number, item.corrected_text)
+                for item in uow.problems.list_revisions(region.id)
+                if item.revision_number < revision.revision_number
+            )
 
         return ProblemPublicationRequest(
             source_asset_id=source.id,
@@ -138,7 +157,9 @@ class ProblemPublicationService:
             revision_number=revision.revision_number,
             corrected_text=revision.corrected_text,
             revision_created_at=revision.created_at,
-            ocr_provider=run.provider,
+            ocr_provider=run.provider if run is not None else None,
+            recognition_source=revision.recognition_source,
+            previous_revisions=previous_revisions,
         )
 
     def _finish_failed(self, publication: ProblemPublication, category: str) -> ProblemPublication:
@@ -166,6 +187,13 @@ class ProblemPublicationService:
     @staticmethod
     def _app_error(category: str, publication_id: str) -> AppError:
         details: dict[str, JsonValue] = {"publicationId": publication_id}
+        if category == "content_conflict":
+            return AppError(
+                "lark_content_conflict",
+                "飞书题干或来源关系已被修改，未覆盖；请先保留飞书修改并同步为本地新修订。",
+                False,
+                details,
+            )
         if category == "configuration_error":
             return AppError(
                 "lark_publisher_configuration_error",

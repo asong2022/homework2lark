@@ -19,6 +19,7 @@ from mistake_notebook_api.domain.entities import (
 from mistake_notebook_api.domain.enums import (
     OCRRunStatus,
     PublicationStatus,
+    RecognitionSource,
     RegionDetectionRunStatus,
     RegionSelectionSource,
 )
@@ -135,6 +136,7 @@ def _revision(model: ProblemRevisionModel) -> ProblemRevision:
         id=model.id,
         problem_region_id=model.problem_region_id,
         based_on_ocr_run_id=model.based_on_ocr_run_id,
+        recognition_source=RecognitionSource(model.recognition_source),
         revision_number=model.revision_number,
         corrected_text=model.corrected_text,
         correction_note=model.correction_note,

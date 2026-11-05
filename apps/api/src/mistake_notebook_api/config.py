@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import os
 from functools import lru_cache
 from pathlib import Path
 
@@ -50,3 +52,9 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+def runtime_identity(settings: Settings) -> str:
+    """Identify this local runtime without exposing paths or database credentials."""
+    value = f"recognition-v1\0{os.path.normcase(str(REPOSITORY_ROOT))}\0{settings.database_url}"
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()[:24]

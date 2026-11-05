@@ -110,6 +110,77 @@ class FakeGateway:
 
 
 class PersonalPracticeTests(unittest.TestCase):
+    def test_retry_date_uses_assignment_calendar_and_does_not_revive_stale_evidence(self):
+        for timestamp, expected in (
+            ("2026-11-05T00:30:00+08:00", "需再练"),
+            ("2026-11-04T16:30:00Z", "需再练"),
+            ("2026-11-04T15:30:00Z", "未开始"),
+        ):
+            with self.subTest(timestamp=timestamp):
+                event = personal_practice.retry_evidence.parse_event(
+                    {
+                        "schemaVersion": "retry-feedback-event-v1",
+                        "eventId": "retry_date",
+                        "question_id": "problem_one",
+                        "result": "incorrect",
+                        "observed_at": timestamp,
+                    }
+                )
+                bundle = personal_practice.replace(
+                    _bundle("problem_one", [_evidence("未开始", "概念理解", "2026-11-05")]),
+                    actionable_feedback=event,
+                )
+                selected = personal_practice.select_assets((bundle,), 1)[0].profile
+                self.assertEqual(selected.mastery, expected)
+                self.assertEqual(
+                    selected.bundle.actionable_feedback is not None, expected == "需再练"
+                )
+
+    def test_all_active_causes_and_only_this_students_feedback_reach_selection(self):
+        bundle = _bundle(
+            "problem_one",
+            [
+                _evidence("未开始", "概念理解", "2026-11-01"),
+                _evidence("未开始", "方法与策略", "2026-11-02"),
+            ],
+        )
+        raw = {
+            "schemaVersion": "retry-feedback-event-v1",
+            "eventId": "retry_private",
+            "question_id": "problem_one",
+            "student_name": "学生A",
+            "student_number": "01",
+            "result": "incorrect",
+            "observed_response": "仍把135°判断成锐角",
+            "teacher_judgment": "需要加入直角参照",
+            "mastery": "需再练",
+            "observed_at": "2026-11-04T12:00:00+08:00",
+        }
+        event = personal_practice.retry_evidence.parse_event(raw)
+        service = personal_practice.PersonalPracticeService(
+            FakeGateway(personal_practice.PersonalPracticeData((bundle,))), feedback_events=(event,)
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            roster = self._roster(root)
+            for number, folder in (("01", "a"), ("02", "b")):
+                service.plan(
+                    roster_path=roster,
+                    student_number=number,
+                    batch_code="20261105-01",
+                    question_count=1,
+                    output_dir=root / folder,
+                )
+            first = json.loads((root / "a" / "selection.json").read_text("utf-8"))["items"][0]
+            other = json.loads((root / "b" / "selection.json").read_text("utf-8"))["items"][0]
+            self.assertEqual(set(first["errorCategories"]), {"概念理解", "方法与策略"})
+            self.assertEqual(len(first["errorContexts"]), 2)
+            self.assertEqual(first["mastery"], "需再练")
+            self.assertEqual(first["latestFeedback"]["observedResponse"], raw["observed_response"])
+            self.assertEqual(first["latestFeedback"]["teacherJudgment"], raw["teacher_judgment"])
+            self.assertEqual(other["mastery"], "未开始")
+            self.assertIsNone(other["latestFeedback"])
+
     def _roster(self, root: Path, students=None) -> Path:
         path = root / "roster.json"
         path.write_text(

@@ -7,7 +7,7 @@ import sys
 import uuid
 from collections.abc import Mapping, Sequence
 from contextlib import suppress
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 from pathlib import Path
 from typing import Protocol
@@ -19,6 +19,7 @@ if str(SCRIPT_DIR) not in sys.path:
 import homework2lark as core  # noqa: E402
 import mistake_groups as group_contract  # noqa: E402
 import practice_sheet  # noqa: E402
+import retry_evidence  # noqa: E402
 import variant_catalog  # noqa: E402
 
 QUESTION_TABLE = "错题题目"
@@ -83,6 +84,9 @@ class MistakeEvidence:
     error_category: str
     assignment_date: date
     latest_retry_date: date | None = None
+    typical_response: str = ""
+    error_pattern: str = ""
+    error_cause: str = ""
 
 
 @dataclass(frozen=True)
@@ -90,6 +94,8 @@ class QuestionBundle:
     original: PracticeAsset
     variants: tuple[PracticeAsset, ...]
     evidence: tuple[MistakeEvidence, ...]
+    latest_feedback: retry_evidence.RetryEvidence | None = None
+    actionable_feedback: retry_evidence.RetryEvidence | None = None
 
 
 @dataclass(frozen=True)
@@ -106,6 +112,7 @@ class BundleProfile:
     error_category: str
     evidence_date: date
     latest_retry_date: date | None
+    error_categories: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -198,6 +205,17 @@ def _profile_bundle(
     eligible = [
         evidence for evidence in bundle.evidence if include_mastered or evidence.mastery != "已掌握"
     ]
+    personal = bundle.actionable_feedback
+    if (
+        personal is not None
+        and bundle.evidence
+        and personal.observation_date < max(item.assignment_date for item in bundle.evidence)
+    ):
+        personal = None
+    if personal is not None and personal.selection_mastery == "已掌握" and not include_mastered:
+        return None
+    if not eligible and personal is not None and personal.result in {"partial", "incorrect"}:
+        eligible = list(bundle.evidence)
     if not eligible:
         return None
     priority = max(MASTERY_PRIORITY[evidence.mastery] for evidence in eligible)
@@ -219,13 +237,21 @@ def _profile_bundle(
         current.assignment_date,
         current.latest_retry_date or current.assignment_date,
     )
+    mastery = current.mastery
+    retry_date = current.latest_retry_date
+    if personal is not None:
+        mastery = personal.selection_mastery or mastery
+        priority = MASTERY_PRIORITY[mastery]
+        retry_date = personal.observation_date
+        effective_date = max(effective_date, retry_date)
     return BundleProfile(
-        bundle=bundle,
-        mastery=current.mastery,
+        bundle=replace(bundle, actionable_feedback=personal),
+        mastery=mastery,
         priority=priority,
         error_category=current.error_category,
         evidence_date=effective_date,
-        latest_retry_date=current.latest_retry_date,
+        latest_retry_date=retry_date,
+        error_categories=tuple(sorted({item.error_category for item in eligible})),
     )
 
 
@@ -324,8 +350,14 @@ def _write_json(path: Path, value: object) -> None:
 
 
 class PersonalPracticeService:
-    def __init__(self, gateway: PersonalPracticeGateway) -> None:
+    def __init__(
+        self,
+        gateway: PersonalPracticeGateway,
+        *,
+        feedback_events: Sequence[retry_evidence.RetryEvidence] = (),
+    ) -> None:
         self.gateway = gateway
+        self.feedback_events = tuple(feedback_events)
 
     def schema_check(self) -> dict[str, core.JSONValue]:
         return self.gateway.validate_schema()
@@ -346,8 +378,21 @@ class PersonalPracticeService:
         roster = load_roster(roster_path)
         student = resolve_student(roster, student_number)
         data = self.gateway.load_for_student(student.name)
+        own_events = retry_evidence.for_student(
+            self.feedback_events, student.name, student.student_number
+        )
+        latest = retry_evidence.latest_by_question(own_events)
+        actionable = retry_evidence.latest_by_question(own_events, observable_only=True)
+        bundles = tuple(
+            replace(
+                bundle,
+                latest_feedback=latest.get(bundle.original.question_id),
+                actionable_feedback=actionable.get(bundle.original.question_id),
+            )
+            for bundle in data.bundles
+        )
         selected = select_assets(
-            data.bundles,
+            bundles,
             question_count,
             include_mastered=include_mastered,
         )
@@ -392,6 +437,25 @@ class PersonalPracticeService:
                         "mastery": selection.profile.mastery,
                         "evidenceDate": selection.profile.evidence_date.isoformat(),
                         "errorCategory": selection.profile.error_category,
+                        "errorCategories": list(selection.profile.error_categories),
+                        "errorContexts": [
+                            {
+                                "errorCategory": item.error_category,
+                                "groupTypicalResponse": item.typical_response,
+                                "errorPattern": item.error_pattern,
+                                "errorCause": item.error_cause,
+                                "mastery": item.mastery,
+                                "assignmentDate": item.assignment_date.isoformat(),
+                            }
+                            for item in selection.profile.bundle.evidence
+                            if include_mastered or item.mastery != "已掌握"
+                        ],
+                        "latestFeedback": selection.profile.bundle.latest_feedback.private()
+                        if selection.profile.bundle.latest_feedback
+                        else None,
+                        "feedbackBasis": selection.profile.bundle.actionable_feedback.private()
+                        if selection.profile.bundle.actionable_feedback
+                        else None,
                         "selection": selection.selection_kind,
                     }
                 )
@@ -419,6 +483,7 @@ class PersonalPracticeService:
                 "selectedQuestionCount": len(selected),
                 "includeMastered": include_mastered,
                 "skippedInvalidRecords": data.skipped_invalid_records,
+                "personalFeedbackEventCount": len(own_events),
                 "items": report_items,
             }
             _write_json(working / "manifest.json", manifest)
@@ -675,6 +740,9 @@ class LarkPersonalPracticeGateway:
             "错误分类",
             "掌握状态",
             "最近再练时间",
+            "典型错例",
+            "错误表现",
+            "错误原因",
         )
         records = self.groups.list_records(
             group_fields,
@@ -706,6 +774,9 @@ class LarkPersonalPracticeGateway:
                             group_contract._date_cell(record.fields.get("作业日期"))
                         ),
                         latest_retry_date=_optional_date(record.fields.get("最近再练时间")),
+                        typical_response=core._text(record.fields.get("典型错例")),
+                        error_pattern=core._text(record.fields.get("错误表现")),
+                        error_cause=core._text(record.fields.get("错误原因")),
                     )
                 )
             except core.SkillError:
@@ -799,6 +870,7 @@ def build_parser() -> argparse.ArgumentParser:
     plan.add_argument("--include-mastered", action="store_true")
     plan.add_argument("--image-scale-percent", type=int, default=100)
     plan.add_argument("--output-dir", required=True)
+    plan.add_argument("--event-store", help="本班私有再练JSONL；不指定则保持原有选题")
     return parser
 
 
@@ -810,7 +882,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             core.SubprocessRunner(),
             base_title=args.base_title,
         )
-        service = PersonalPracticeService(gateway)
+        events = (
+            retry_evidence.load_events(Path(args.event_store))
+            if getattr(args, "event_store", None)
+            else ()
+        )
+        service = PersonalPracticeService(gateway, feedback_events=events)
         if args.command == "schema-check":
             result = service.schema_check()
         else:

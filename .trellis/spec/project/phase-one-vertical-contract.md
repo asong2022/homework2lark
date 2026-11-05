@@ -2,7 +2,7 @@
 
 ## 1. Scope / Trigger
 
-This contract applies whenever a change crosses the product Skill, HTTP, database, local storage or OCR configuration. The current path is one image -> Agent-guided teacher-confirmed regions -> append-only OCR attempts -> immutable teacher-confirmed revision -> optional explicit Lark publication. The Agent Skill owns upload/framing orchestration; FastAPI owns persistence and evidence rules.
+This contract applies whenever a change crosses the product Skill, HTTP, database, local storage or OCR configuration. The current path is one image -> complete region -> AI vision / teacher text / optional append-only OCR -> immutable revision -> explicit Lark publication. The Agent owns orchestration; FastAPI owns persistence and evidence rules. See also `reliability-learning-loop-contract.md`.
 
 ## 2. Signatures
 
@@ -27,7 +27,7 @@ OCRProvider.recognize(OCRInput) -> OCRResult
 Current database lineage:
 
 ```text
-SourceAsset -> ProblemRegion -> OCRRun -> ProblemRevision
+SourceAsset -> ProblemRegion -> optional OCRRun -> ProblemRevision(recognition_source)
             -> ProblemAsset.current_revision_id -> ProblemPublication
 ```
 
@@ -38,7 +38,7 @@ SourceAsset -> ProblemRegion -> OCRRun -> ProblemRevision
 - Every OCR request appends one run. Every teacher save appends one revision and immediately updates `ProblemAsset.current_revision_id`.
 - `NormalizedProblemRecord.ocr` is the current revision's baseline, or the latest successful run when no revision exists. `latestOcrRun` is the newest attempt and may be failed.
 - The public record contains no review status, review event, reviewed timestamp or future-reuse boolean.
-- Publication requires a non-empty current revision plus valid source/region/crop/OCR lineage. It remains an explicit external mutation.
+- Publication requires a non-empty current revision plus valid source/region/crop and declared recognition lineage. AI/teacher revisions need no OCR; explicit OCR references remain validated. It remains an explicit external mutation.
 - `GET /assets/{assetId}/problems` returns stable bbox order with `no-store`; an existing empty page returns an empty collection.
 - `manual`, `chat`, and `single` intake commands stop after region persistence and public-ID handoff. They never call OCR, revision or publication implicitly.
 - The optional `single/chat` image-batch wrapper persists each item's state/session and retries only unconfirmed items; it adds no downstream call or HTTP endpoint and does not replace `manual + frame`.

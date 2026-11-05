@@ -40,7 +40,7 @@ data/                              SQLite 运行数据
 → 文档页面化
 → manual + frame / Yescan 候选 / 单题整图
 → FastAPI 保存 SourceAsset、ProblemRegion 和裁图
-→ 追加 OCRRun
+→ AI 看图/教师题干，或可选真实 OCRRun
 → 教师确认非空修订，成为 ProblemAsset 当前版本
 → 显式发布到飞书错题页面/错题题目
 → 整理错题记录

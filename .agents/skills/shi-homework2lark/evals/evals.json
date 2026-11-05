@@ -409,6 +409,54 @@
         "On retry returns no_change for successful items and calls the existing intake service only for the failed item",
         "Keeps absolute paths, question text, student identity and credentials out of persisted state and public output"
       ]
+    },
+    {
+      "id": 35,
+      "prompt": "首次安装，没有OCR Token。请直接看我发的单题图片，整理进飞书。",
+      "expected_output": "Prepares and verifies the matching local migrated runtime, uses honest ai_vision provenance with no OCR run, and publishes only within the already selected collection mode and authorized scope.",
+      "files": [],
+      "expectations": [
+        "Does not block image intake on missing PaddleOCR credentials or invent an OCR result",
+        "Checks migration head and matching runtime identity, not only HTTP 200 or configuration files",
+        "Uses recognitionSource=ai_vision with a null baseline for the revision",
+        "Reports PDF/Word input capabilities separately instead of claiming an unavailable renderer works"
+      ]
+    },
+    {
+      "id": 36,
+      "prompt": "我刚在Base把这道题的文字改过了，请同步本地的新版本，但保留我改的内容。",
+      "expected_output": "Reads remote content before mutation, preserves unknown teacher edits, adopts agreed Base content as an immutable new local revision and advances only the sync marker when texts match.",
+      "files": [],
+      "expectations": [
+        "Does not force overwrite or treat readable titles as stable keys",
+        "Handles lark_content_conflict as a content conflict rather than blind network retry",
+        "Preserves attachments and teacher metadata",
+        "Rechecks metadata cells immediately before applying a previously prepared plan"
+      ]
+    },
+    {
+      "id": 37,
+      "prompt": "同一道题有两个错误原因。01号上次再练还错，02号答对了。请从本班再练记录给他们各出个人练习。",
+      "expected_output": "Retains all active original error contexts, matches both private roster name and number, consumes each student's own latest actionable evidence, and avoids writing an individual's outcome onto a shared group.",
+      "files": [],
+      "expectations": [
+        "Passes the class-scoped --event-store into personal/class planning",
+        "Does not use S001 alone as a cross-batch identity or use anonymous feedback to personalize",
+        "Preserves all active error causes in selection context, not just a single category",
+        "Uses actual observed feedback to guide the next variation without inventing a new diagnosis"
+      ]
+    },
+    {
+      "id": 38,
+      "prompt": "统计这次再练：有4次正确、2次错误、1次部分正确、2次看不清、1次没拍到。",
+      "expected_output": "Reports ten attempts with seven observable results and accuracy 4/7; keeps uncertainty and unobserved separate, never counts them as wrong or equates attempts with unique students.",
+      "files": [],
+      "expectations": [
+        "Uses only correct+partial+incorrect as the denominator",
+        "Does not change mastery/time for uncertain or not_observed",
+        "Labels category summaries as selection targets rather than newly inferred causes",
+        "Does not sum overlapping category subtotals into a student headcount"
+      ]
     }
   ]
 }

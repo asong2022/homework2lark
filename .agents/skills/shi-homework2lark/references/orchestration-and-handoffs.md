@@ -32,7 +32,7 @@
 
 | 模式 | 起点 | 核心阶段 | 默认停点 |
 |---|---|---|---|
-| A 收集入库 | 图片/PDF/Word/单题图 | source → 对话选题/完整框区 → Agent OCR/质量门 → Base | `[homework/base]` 原题已发布 |
+| A 收集入库 | 图片/PDF/Word/单题图 | source → 对话选题/完整框区 → AI 看图/可选 OCR/教师题干 → 保存修订 → Base | `[homework/base]` 原题已发布 |
 | B 错情整理 | 空白模板 + 已批改稿，或教师描述 | source/questions → observed mistakes → grouped Base records | `[homework/mistakes]` 与 `[homework/base]` |
 | C 题生变式 | Base 原题 | fact card → generate/check → optional diagram → Base write | `[homework/variants]` |
 | D 精准练习 | Base 原题/错题记录/变式 | select → immutable manifest → Word | `[homework/practice]` |
@@ -65,6 +65,7 @@
 - 已创建 problemId：只列本地稳定 ID 或写入私有清单
 - 图文一体检查：通过 / 待补题图 / 待人工框选
 - OCR 状态：未运行 / 已完成 / 部分失败
+- 当前修订依据：ai_vision / teacher / ocr（真实运行）
 - 人工修订：未开始 / 部分完成 / 全部完成
 - Base 发布：未发布 / 部分发布 / 全部发布
 ```
@@ -128,6 +129,8 @@
 ```
 
 Word 不预估物理页，不插人工分页符；实际页面码由 Word `PAGE` 字段生成。
+
+首次使用由 `onboarding.py prepare` 准备迁移与匹配本仓库/数据库的本地 API，再由 `verify` 核对 Base 和能力；没有 OCR Token 不阻塞 AI 看图录题。PDF/Word 页面化依赖实际可用的渲染能力，不以安装了 Skill 代替验收。个人/整班选题应交接同一个班级私有事件文件；再练结果不能从单个学生扩散为整组状态。
 
 ### 4.7 再练反馈
 

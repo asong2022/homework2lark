@@ -57,7 +57,7 @@ Word 自然分页时，manifest 不预估哪道题在第几页；因此页面码
 
 - `incorrect / partial` → 默认 `需再练`；
 - `correct` → 默认 `练习中`，一次正确不能自动宣称 `已掌握`；
-- `uncertain / not_observed` → 不自动修改掌握状态，进入单一人工异常清单；
+- `uncertain / not_observed` → 保留未确定事实，不修改状态，也不算答错；只对无法继续定位的具体问题询问教师；
 - 只有教师明确给出 `teacherMastery`，且标记 `已掌握` 时同时给出教师判断，才能覆盖默认建议。
 
 真实作答、批改痕迹、结果、教师判断和掌握投影分别保存，不互相代替。
@@ -75,13 +75,28 @@ python -X utf8 <skill-root>/scripts/retry_batch.py commit `
 
 事件 ID 由批次、匿名实例、`Rxx`、原题/变式来源、观察事实和时间稳定生成。相同计划重跑不会重复追加。
 
-`validate` 会从不可变 `events` 重新计算全部 `baseProjections` 和人工处理计数；两者只要被单独修改、错位或遗漏，整个计划就会被拒绝。Base 当前状态只接受时间严格晚于 `最近再练时间` 的投影。补录的旧事件仍追加到本地历史，但不会把较新的掌握状态和时间覆盖回去。
+新计划版本为 `retry-feedback-plan-v2`；`validate` 会从不可变 `events` 重算投影和异常计数，拒绝被单独篡改的投影，并能校验旧 v1 计划后转换到安全的 v2 语义。事件 ID 与事件格式不变，旧历史不必重写。
 
-`commit` 后读取计划中的 `baseProjections`，使用 `lark-base` 在既有授权范围内更新当前投影并回读：
+`commit` 只追加本地事件，不自动写 Base。投影有明确作用域：
 
-- 实名个人练习：按 `questionId + studentName` 定位其相关 `错题记录`，更新组级 `再练反馈/掌握状态/最近再练时间`；
-- 匿名练习：只更新原题的 `掌握状态/最近再练时间`，完整摘要保留在本地事件；教师明确指定错误组时可更新组级反馈；
+- 实名个人练习：`targetScope=student_private`、`canUpdateBase=false`。该生结果只进入私有历史和个人下次选题，不能直接覆盖包含其他学生的组级状态；
+- 匿名练习：只有可观察结果的题目级投影可作为 Agent 的写入建议，仍须遵守原有授权和时间顺序；教师明确提供整组反馈后才可更新相应组级状态；
 - 不确定或无法唯一定位：不写 Base；
 - Base 失败：本地事件保留，用同一事件 ID 只重试投影。
 
 Base 是教师工作台当前状态，本地 JSONL 是不可覆盖的逐次历史。不得用反馈改写原题、原始典型错例或底层本地批改证据。
+
+## 下次选题、变式和统计
+
+个人/整班组题传入同一个本班 `--event-store`，即可消费已提交的真实反馈。生成变式前可先提取私有事实卡：
+
+```powershell
+python -X utf8 <skill-root>/scripts/retry_evidence.py context `
+  --event-store <本班私有再练事件.jsonl> --question-id <系统题目ID> `
+  --roster <私有班级名单.json> --student-number <学号> --output <新上下文.json>
+python -X utf8 <skill-root>/scripts/retry_evidence.py summary `
+  --event-store <本班私有再练事件.jsonl> --selection <selection.json或班级批次目录> `
+  --output <新统计.json>
+```
+
+`context` 保留最近观察及最近可观察结果，原题、学生真实作答、教师判断和 AI 推断分别呈现。`summary` 以一次作答事件为单位，正确率分母仅包括 `correct/partial/incorrect`；`uncertain/not_observed` 单独计数。多次练习不是多名学生。按错误分类的统计表示本次练习的目标分类，不冒充新一次错误诊断；一题针对多个原因时分类小计不能相加为总人数。没有身份的事件只参加匿名统计，不进入个人状态。

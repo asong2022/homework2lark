@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from alembic import command
 from alembic.config import Config
 from sqlalchemy import create_engine, inspect, text
@@ -281,4 +282,31 @@ def test_problem_asset_migration_preserves_existing_lineage_and_publication(
         "record_page",
         "record_question",
     )
+    engine = create_engine(database_url)
+    with engine.begin() as connection:
+        preserved = connection.execute(
+            text(
+                "SELECT recognition_source, based_on_ocr_run_id, corrected_text "
+                "FROM problem_revisions WHERE id = 'revision_preserved'"
+            )
+        ).one()
+        assert preserved == ("ocr", "ocr_preserved", "教师确认后的完整题目")
+        connection.execute(
+            text(
+                "INSERT INTO problem_revisions "
+                "(id, problem_region_id, based_on_ocr_run_id, recognition_source, revision_number, "
+                "corrected_text, created_at) VALUES "
+                "('revision_vision', 'region_preserved', NULL, 'ai_vision', 2, "
+                "'直接从原图整理的题目', '2026-11-05 08:00:00')"
+            )
+        )
+        assert connection.execute(text("PRAGMA foreign_key_check")).all() == []
+    engine.dispose()
+    with pytest.raises(RuntimeError, match="Non-OCR revisions exist"):
+        command.downgrade(config, "0005_problem_assets")
+    engine = create_engine(database_url)
+    with engine.connect() as connection:
+        assert connection.scalar(text("SELECT COUNT(*) FROM problem_revisions")) == 2
+        assert connection.scalar(text("SELECT COUNT(*) FROM ocr_runs")) == 1
+    engine.dispose()
     get_settings.cache_clear()

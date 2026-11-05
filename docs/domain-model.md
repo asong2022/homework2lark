@@ -78,13 +78,14 @@
 
 ### 2.6 ProblemRevision
 
-教师基于某次成功 OCRRun 保存的一次人工修订。
+教师/Agent 确认完整题目后保存的一次不可变修订，依据可以是真实 OCR、AI 看图或教师提供。
 
 | 字段 | 类型/约束 | 职责 |
 |---|---|---|
 | `id` | `revision_` UUID，PK | 修订标识 |
 | `problem_region_id` | FK | 所属区域 |
-| `based_on_ocr_run_id` | FK | 机器证据基线 |
+| `recognition_source` | ocr / ai_vision / teacher | 真实识别来源 |
+| `based_on_ocr_run_id` | nullable FK | OCR 来源必填；其他来源可空，显式提供时仍须有效 |
 | `revision_number` | 每区域从 1 递增 | 人工版本序号 |
 | `corrected_text` | 非空文本 | 教师确认后的完整题目内容 |
 | `correction_note` | 可空 | 修订说明 |
@@ -103,7 +104,7 @@
 | `current_revision_id` | FK，可空 | 最近保存且由教师确认的人工版本 |
 | `created_at`/`updated_at` | UTC | 生命周期时间 |
 
-保存有效修订后立即更新 `current_revision_id`。发布资格由当前修订、来源、裁图和 OCR 依据是否完整决定，不存储 `review_status`、`reviewed_at` 或派生复用布尔值。
+保存有效修订后立即更新 `current_revision_id`。发布资格由当前修订、来源、裁图和声明的识别依据决定，不强制 AI/教师修订调用 OCR，不存储 `review_status`、`reviewed_at` 或派生复用布尔值。
 
 ## 3. 实体关系
 
@@ -114,7 +115,7 @@ SourceAsset 1 ── N ProblemRegion
 ProblemRegion 1 ── N ProblemRegionCandidateSource N ── 1 RegionCandidate
 ProblemRegion 1 ── N OCRRun
 ProblemRegion 1 ── N ProblemRevision
-OCRRun 1 ── N ProblemRevision
+OCRRun 0..1 ── N ProblemRevision
 ProblemRegion 1 ── 1 ProblemAsset
 ProblemRevision 0..1 ← current ── ProblemAsset
 ProblemAsset 1 ── 0..1 ProblemPublication
@@ -144,7 +145,7 @@ running → succeeded (text or empty)
 ### 4.3 人工修订与发布
 
 ```text
-OCRRun（机器证据）
+AI 看图 / 教师提供 / 可选 OCRRun（机器证据）
 → 教师确认完整题目
 → 新增 ProblemRevision
 → 更新 ProblemAsset.current_revision_id

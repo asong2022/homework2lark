@@ -31,6 +31,7 @@ from mistake_notebook_api.domain.entities import (
 )
 from mistake_notebook_api.domain.enums import (
     OCRRunStatus,
+    RecognitionSource,
     RegionSelectionSource,
 )
 from mistake_notebook_api.domain.errors import AppError, JsonValue, OCRProviderError
@@ -427,9 +428,10 @@ class ProblemWorkflowService:
         self,
         *,
         region_id: str,
-        based_on_ocr_run_id: str,
+        based_on_ocr_run_id: str | None,
         corrected_text: str,
         correction_note: str | None,
+        recognition_source: RecognitionSource = RecognitionSource.OCR,
     ) -> ProblemRevision:
         if not corrected_text.strip():
             raise AppError("revision_invalid", "人工修订文本不能为空。")
@@ -439,8 +441,10 @@ class ProblemWorkflowService:
             region = uow.problems.get_region(region_id)
             if region is None:
                 raise AppError("region_not_found", "找不到这个题目区域。")
-            run = uow.problems.get_ocr_run(based_on_ocr_run_id)
+            run = uow.problems.get_ocr_run(based_on_ocr_run_id) if based_on_ocr_run_id else None
             if (
+                recognition_source is RecognitionSource.OCR or based_on_ocr_run_id is not None
+            ) and (
                 run is None
                 or run.problem_region_id != region_id
                 or run.status is not OCRRunStatus.SUCCEEDED
@@ -457,6 +461,7 @@ class ProblemWorkflowService:
                 corrected_text=corrected_text,
                 correction_note=correction_note.strip() if correction_note else None,
                 created_at=created_at,
+                recognition_source=recognition_source,
             )
             uow.problems.add_revision(revision)
             uow.problems.update_problem(
@@ -498,7 +503,7 @@ class ProblemWorkflowService:
                 (item for item in runs if item.id == current_revision.based_on_ocr_run_id),
                 None,
             )
-        if selected_run is None:
+        if current_revision is None:
             selected_run = next(
                 (item for item in reversed(runs) if item.status is OCRRunStatus.SUCCEEDED),
                 runs[-1] if runs else None,

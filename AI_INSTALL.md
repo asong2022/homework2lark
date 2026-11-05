@@ -9,11 +9,11 @@
 1. 完整仓库已克隆到教师本机；
 2. `.agents/skills/shi-homework2lark` 已安装到当前 Agent 可发现的用户 skills 根；
 3. API 的 Python 3.11/3.12 环境和数据库迁移已完成；
-4. PaddleOCR-VL-1.6 Token 已安全写入被 Git 忽略的 `.env`；
+4. 本地服务已迁移、启动并通过健康/身份检查；OCR 按需配置，不阻塞 AI 看图；
 5. `lark-cli` 已用教师自己的飞书用户身份授权；
 6. 内置空白模板已创建或幂等复用唯一正确的飞书 Base；
 7. `onboarding.py verify` 返回 `status=ready`；
-8. 告诉教师：“可以开始发作业图片、PDF 或 Word 了。”
+8. 告诉教师：“可以开始发作业图片了”，并按能力报告准确说明 PDF/Word 输入和练习纸生成是否可用，缺少的能力由 AI 补齐。
 
 夸克扫描王错题本是使用阶段的可选来源，不是首次安装完成条件。只有教师主动选择该来源时才读取 `references/quark-wrongbook.md` 并临时提供 `QK_UT/QK_KP`；不要把它们持久写入仓库配置。教师说“新增/收录今天或本次新增题”时直接运行 `collect-new`，不要再逐题询问；“查看/列出新增”才保持只读。
 
@@ -53,8 +53,9 @@ Hermes/其他 Agent 把仓库中的 `.agents/skills/shi-homework2lark` 整目录
 在仓库根目录执行：
 
 ```powershell
-uv sync --directory apps/api --all-groups
-uv run --directory apps/api alembic upgrade head
+uv sync --directory apps/api --no-dev --extra documents --inexact
+python -X utf8 .agents/skills/shi-homework2lark/scripts/onboarding.py --repo-root . configure-runtime
+python -X utf8 .agents/skills/shi-homework2lark/scripts/onboarding.py --repo-root . prepare
 ```
 
 不要默认安装本地 PaddlePaddle。官方托管 PaddleOCR-VL-1.6 不需要本地模型和 GPU。
@@ -78,7 +79,9 @@ python -X utf8 .agents/skills/shi-homework2lark/scripts/onboarding.py --repo-roo
 一次只处理返回的 `nextAction`，不要一次询问多项：
 
 - `install_runtime`：补齐上述运行时；
-- `configure_ocr`：只询问 PaddleOCR / AI Studio Token；
+- `prepare_runtime`：执行 `onboarding.py --repo-root . prepare`，准备迁移及后台服务，不让教师手工启动；
+- `inspect_runtime`：只检查对应的本地服务，不按端口盲目终止其他程序；
+- OCR 是可选能力；教师明确需要时才询问 PaddleOCR / AI Studio Token；
 - `authorize_lark`：运行 `lark-cli auth login`，让教师完成一次用户授权；
 - `init_base`：运行内置模板初始化；
 - `disambiguate_base`：让教师给同名 Base 改名，不得取第一个；
@@ -125,12 +128,12 @@ python -X utf8 .agents/skills/shi-homework2lark/scripts/onboarding.py --repo-roo
 python -X utf8 .agents/skills/shi-homework2lark/scripts/onboarding.py --repo-root . verify
 ```
 
-必须看到 `status=ready`。然后：
+必须看到 `status=ready`，其中图片 API 与数据库真正可用。`capabilities.ocr=optional_unconfigured` 不阻塞；`pdf/word=requires_agent_renderer` 表示需由 Agent 准备/验证页面转换能力，不能承诺这些格式已可用。`practiceWord` 单独表示练习纸生成依赖。然后：
 
-- 需要收题时启动 API：
+- 新对话收题前探测服务；未启动时由 AI 执行：
 
   ```powershell
-  uv run --directory apps/api uvicorn --app-dir src mistake_notebook_api.main:app --port 8000
+  python -X utf8 .agents/skills/shi-homework2lark/scripts/onboarding.py --repo-root . prepare
   ```
 
 - 第一次收题读取 `collection-modes.md`，让教师选择 1/2/3，不能由 AI 自动决定。

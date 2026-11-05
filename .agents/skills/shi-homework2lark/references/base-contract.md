@@ -42,9 +42,11 @@ Catalog enrichment never writes `典型错例`, `错误表现`, or `错误原因
 
 `错题来源` is restricted to `教材 / 作业本 / 试卷 / 其他`; `年级` is restricted to `一年级 / 二年级 / 三年级 / 四年级 / 五年级 / 六年级`. `题型` is restricted to `选择题 / 填空题 / 判断题 / 计算题 / 解答题 / 操作题 / 应用题 / 开放题 / 其他`. `核心素养` is restricted to `数感 / 量感 / 符号意识 / 运算能力 / 几何直观 / 空间观念 / 推理意识 / 数据意识 / 模型意识 / 应用意识 / 创新意识`. The Skill must not create new select options as a side effect of enrichment. Question-side `时间`, `年级`, `页码`, `错题来源` and all downstream `核心素养` fields are calculated lookups and must never be included in a downstream patch. The public template omits generic `备注` columns; essential teacher facts belong in the specific teaching field they describe.
 
-`preview` is read-only and exposes field names rather than cell contents or remote IDs. `apply` rejects the entire plan when any proposed field differs from a non-empty Base value. Empty values are filled and equal values are idempotent. A normal successful enrichment is immediately usable and does not create another review state. There is no broad overwrite flag. The Agent must independently solve before proposing `标准答案`, and may leave semantically inapplicable fields empty.
+`preview` is read-only and exposes field names rather than cell contents or remote IDs. `apply` rejects the entire plan when any proposed field differs from a non-empty Base value, then re-reads touched cells immediately before each write. A change since preview stops with `metadata_changed_before_write`; a completed page write is reported if the later question write cannot proceed. Empty values are filled and equal values are idempotent. No cross-table transaction or broad overwrite flag is claimed. The Agent must independently solve before proposing `标准答案`, and may leave semantically inapplicable fields empty.
 
 The teacher-confirmed current revision remains the content gate before Base publication. The publisher rejects a problem without a valid current revision before any Base write, then projects its stable problem ID and revision number. There is no local or Base review status and no reviewed timestamp. Eligibility depends on actual content completeness and the single `需人工处理` exception flag. The redundant Base fields `审核状态`, `是否待复核`, `AI整理状态`, and `举一反三状态` are not part of the schema.
+
+Before any page/attachment mutation, republishing reads the existing question's text, revision marker and page relation. Matching current content is a no-op; matching a known earlier local revision permits safe advancement. Unknown Base edits or a conflicting page relation return HTTP 409 `lark_content_conflict` without overwriting the teacher. Read the Base edit, discuss only real conflicts, and save adopted text as a new immutable local revision. When the Base text then equals that new revision, republishing advances only its revision marker. Other teacher metadata and existing attachments remain untouched. This is a read-before-write conflict check, not a remote atomic compare-and-swap.
 
 ## Variant Catalog
 
@@ -77,7 +79,7 @@ The old `错题题目.变式题1～5` groups were verified against the independe
 - `掌握状态` (select): `未开始 / 练习中 / 需再练 / 已掌握`;
 - `最近再练时间` (datetime).
 
-Repeated retry events remain append-only local JSONL entries keyed by `系统题目ID` and optional variant reference. Question-level Base only keeps compact mastery/time projection; teacher-confirmed student-specific feedback updates the matching `错题记录.再练反馈` group instead. A Base current projection advances only when the incoming observation time is strictly newer; older or equal events remain in local history without regressing the current mastery/time. There is no independent student table and no duplicate question-level feedback summary.
+Repeated retry events remain append-only local JSONL entries keyed by `系统题目ID` and optional variant reference. Individual feedback stays private and feeds that student's next selection; it must not overwrite a shared group row. Only an explicitly scoped question/group aggregate may update its matching Base projection. A projection advances only for an observable, strictly newer result; uncertain, unobserved, older or equal events remain history without changing mastery/time. There is no independent student table and no duplicate question-level feedback summary.
 
 ## Grouped Student Mistake Records
 

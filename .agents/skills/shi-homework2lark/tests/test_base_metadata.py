@@ -219,6 +219,25 @@ class BaseMetadataServiceTest(unittest.TestCase):
         self.assertEqual(len(gateway.page_patches), 1)
         self.assertEqual(len(gateway.question_patches), 1)
 
+    def test_teacher_change_after_plan_blocks_all_writes(self) -> None:
+        class ChangingGateway(MemoryMetadataGateway):
+            loads = 0
+
+            def load(self, problem_id):
+                self.loads += 1
+                if self.loads == 2:
+                    self.question.fields["标准答案"] = "教师刚刚填写的答案"
+                return super().load(problem_id)
+
+        gateway = ChangingGateway()
+        with self.assertRaises(base_metadata.intake.SkillError) as captured:
+            base_metadata.BaseMetadataService(gateway).apply(payload())
+
+        self.assertEqual(captured.exception.code, "metadata_changed_before_write")
+        self.assertEqual(gateway.page_patches, [])
+        self.assertEqual(gateway.question_patches, [])
+        self.assertEqual(gateway.question.fields["标准答案"], "教师刚刚填写的答案")
+
     def test_nonempty_metadata_cannot_be_silently_changed(self) -> None:
         gateway = MemoryMetadataGateway()
         gateway.page.fields.update(payload()["page"])

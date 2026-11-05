@@ -19,7 +19,7 @@ if str(SCRIPT_DIR) not in sys.path:
 
 import homework2lark as core  # noqa: E402
 
-RESULTS = frozenset(("correct", "partial", "incorrect", "not_observed"))
+RESULTS = frozenset(("correct", "partial", "incorrect", "uncertain", "not_observed"))
 MASTERY_OPTIONS = frozenset(("未开始", "练习中", "需再练", "已掌握"))
 FEEDBACK_FIELD_TYPES = {
     "掌握状态": "select",
@@ -62,7 +62,9 @@ class FeedbackService:
             "summary": event.summary,
             "mastery": event.mastery,
             "occurredAt": event.occurred_at,
-            "baseFields": list(FEEDBACK_FIELD_TYPES),
+            "baseFields": list(FEEDBACK_FIELD_TYPES)
+            if event.result in {"correct", "partial", "incorrect"}
+            else [],
             "willAppendLocalHistory": True,
             "willOverwriteTypicalStudentError": False,
         }
@@ -74,6 +76,16 @@ class FeedbackService:
         self._validate_target(before, event)
         relative_store, resolved_store = validate_event_store(event_store)
         appended = append_event_once(resolved_store, event)
+        if event.result in {"uncertain", "not_observed"}:
+            return {
+                "eventId": event.event_id,
+                "questionId": event.question_id,
+                "localHistory": relative_store,
+                "historyAppended": appended,
+                "baseProjectionUpdated": False,
+                "projectionSkippedReason": event.result,
+                "mastery": core._select(before.fields.get("掌握状态")),
+            }
         event_time = parse_datetime(event.occurred_at)
         current_time = parse_base_datetime(before.fields.get("最近再练时间"))
         if current_time is not None and event_time <= current_time:
@@ -159,6 +171,8 @@ def _guard_mastery_against_result(result: str, mastery: str, teacher_judgment: s
         raise core.SkillError(
             "invalid_feedback", "标记已掌握时必须提供教师判断；一次正确不能自动宣称已掌握。"
         )
+    if result in {"uncertain", "not_observed"}:
+        return
     default = CONSERVATIVE_MASTERY.get(result)
     if mastery != default and not teacher_judgment:
         raise core.SkillError(
@@ -201,7 +215,7 @@ def validate_feedback_payload(raw: core.JSONValue) -> FeedbackEvent:
         raise core.SkillError("invalid_feedback", "observedResponse 必须是不超过 10000 字的文本。")
     if not isinstance(teacher, str) or len(teacher) > 5_000:
         raise core.SkillError("invalid_feedback", "teacherJudgment 必须是不超过 5000 字的文本。")
-    if result != "not_observed" and not observed.strip():
+    if result not in {"not_observed", "uncertain"} and not observed.strip():
         raise core.SkillError("invalid_feedback", "有作答结论时必须填写真实 observedResponse。")
     mastery = core._require_nonempty_text(obj.get("mastery"), "mastery", maximum=20)
     if mastery not in MASTERY_OPTIONS:

@@ -9,7 +9,7 @@
 | `problemId` | string | `ProblemAsset.id`，稳定公开 ID |
 | `source` | object | 原始页面及内容地址 |
 | `region` | object | 题目区域、裁图地址及框选来源 |
-| `ocr` | object/null | 当前人工修订所依据的 OCR；尚无修订时为最近一次成功 OCR |
+| `ocr` | object/null | 当前修订明确引用的真实 OCR；AI/教师修订可空，即使历史有 OCR 也不冒充其依据；尚无修订时为最近一次成功 OCR |
 | `latestOcrRun` | object/null | 最近一次 OCR 尝试，可能失败 |
 | `humanRevision` | object/null | 当前教师确认修订 |
 | `lineage` | object | 当前来源、区域、OCR 和修订 ID |
@@ -25,7 +25,8 @@
 2. 每次保存教师修订都新增 `ProblemRevision`，版本号在同一区域内递增。
 3. 新修订保存成功后立即成为 `ProblemAsset.current_revision_id`。
 4. `ocr` 跟随当前修订的 `basedOnOcrRunId`，所以后续失败 OCR 不会改变当前题目依据。
-5. 没有非空当前修订时禁止发布；存在当前修订且来源、裁图、OCR 依据完整时可以发布。
+5. `humanRevision.recognitionSource` 为 `ocr/ai_vision/teacher`，`basedOnOcrRunId` 可空；OCR 来源必须有成功依据，AI/教师来源无需先调用 OCR。
+6. 没有非空当前修订时禁止发布；来源、裁图及声明的识别依据完整时可显式发布。
 
 ## 精简示例
 
@@ -72,6 +73,7 @@
   "latestOcrRun": {"runId": "ocr_example", "status": "succeeded"},
   "humanRevision": {
     "revisionId": "revision_example",
+    "recognitionSource": "ocr",
     "basedOnOcrRunId": "ocr_example",
     "revisionNumber": 1,
     "correctedText": "教师确认后的完整题目",

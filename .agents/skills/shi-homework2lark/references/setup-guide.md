@@ -8,7 +8,7 @@
 
 - 完整仓库已在本机，API 的 Python 3.11/3.12 环境可用；
 - `shi-homework2lark` 已安装到当前 Agent 可发现的 skills 根；
-- 官方托管 `PaddleOCR-VL-1.6` 已配置；
+- 本地迁移与 API 健康已验证；AI 看图/教师题干可用，PaddleOCR Token 按需配置；
 - `lark-cli` 以教师自己的飞书用户身份登录；
 - 飞书中存在唯一、结构正确的四表空白错题库；
 - `onboarding.py verify` 返回 `status=ready`。
@@ -38,7 +38,9 @@ python -X utf8 .agents/skills/shi-homework2lark/scripts/onboarding.py --repo-roo
 | `nextAction` | AI 动作 |
 |---|---|
 | `clone_repository` | 克隆完整仓库并重新定位 `--repo-root` |
-| `install_runtime` | 安装 uv、lark-cli 和 API 依赖；执行 `uv sync --directory apps/api --all-groups` 与 `uv run --directory apps/api alembic upgrade head` |
+| `install_runtime` | 安装 uv、lark-cli 和 API 依赖；执行 `uv sync --directory apps/api --no-dev --extra documents --inexact` |
+| `prepare_runtime` | 由 AI 执行 `onboarding.py --repo-root . prepare`，完成迁移、隐藏后台启动与健康/身份探测 |
+| `inspect_runtime` | 让 AI 检查已有对应服务，不按端口盲目终止其他程序 |
 | `configure_ocr` | 只询问 PaddleOCR/AI Studio Token，再走安全配置命令 |
 | `authorize_lark` | 安装 `@larksuite/cli` 后执行 `lark-cli auth login`，让教师完成一次用户授权 |
 | `init_base` | 用内置空白模板创建 Base |
@@ -46,9 +48,9 @@ python -X utf8 .agents/skills/shi-homework2lark/scripts/onboarding.py --repo-roo
 | `repair_base_schema` | 停止写入，依据内置 JSON 契约修复；不得覆盖已有非空教学数据 |
 | `start_using` | 进入收题三选一，不再讲安装步骤 |
 
-### 3. 安全配置 OCR
+### 3. 配置本地运行时，OCR 可选
 
-Token 只能通过进程环境或标准输入进入脚本，不能放进命令行参数、聊天回显、日志或仓库。AI 可在自己的安全执行环境临时设置 `PADDLEOCR_ACCESS_TOKEN`，随后运行：
+没有 Token 也可运行下面的配置命令，直接用 AI 看图/教师提供题干。教师需要 OCR 时，Token 只能通过进程环境或 stdin 进入，不能放进命令行参数、聊天回显、日志或仓库：
 
 ```powershell
 python -X utf8 .agents/skills/shi-homework2lark/scripts/onboarding.py --repo-root . configure-runtime
@@ -90,13 +92,13 @@ python -X utf8 .agents/skills/shi-homework2lark/scripts/onboarding.py --repo-roo
 python -X utf8 .agents/skills/shi-homework2lark/scripts/onboarding.py --repo-root . verify
 ```
 
-返回 `status=ready` 后，首次收题按 `collection-modes.md` 让教师选择 1/2/3。需要 API 时启动：
+`verify` 只读检查迁移、服务身份、飞书与 Base，不自动改数据。服务未就绪时由 AI 先执行，再重跑 verify：
 
 ```powershell
-uv run --directory apps/api uvicorn --app-dir src mistake_notebook_api.main:app --port 8000
+python -X utf8 .agents/skills/shi-homework2lark/scripts/onboarding.py --repo-root . prepare
 ```
 
-不要要求普通教师处理坐标、运行测试、查看 OpenAPI、理解数据库迁移或手工创建字段。
+`ready` 表示图片收题与飞书可用，不代表所有格式：检查 `capabilities.pdf/word`，需要时由 Agent 补页面渲染能力或请求转 PDF；`practiceWord` 检查练习纸生成模块。首次收题仍让教师选择 1/2/3。不要要求教师处理坐标、启动服务、运行测试或配置数据库。
 
 已经裁好的单题图片走 `single`；教师明确选择自动候选时走 `chat`。这两类输入一次有 1～20 张时使用 `batch-intake.md` 的可续跑入口。整页人工框题仍走 `manual + frame`，不要求为了批量处理而配置 Yescan。
 

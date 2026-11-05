@@ -62,6 +62,7 @@ ERROR_STATUS_CODES: dict[str, int] = {
     "lark_publisher_configuration_error": 503,
     "lark_publisher_unavailable": 503,
     "lark_publisher_invalid_response": 502,
+    "lark_content_conflict": 409,
     "storage_unavailable": 500,
     "route_not_found": 404,
     "method_not_allowed": 405,

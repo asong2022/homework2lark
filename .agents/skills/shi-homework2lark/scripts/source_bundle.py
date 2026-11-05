@@ -33,25 +33,28 @@ def plan_source(path: Path) -> dict[str, JSONValue]:
         source_type = "image"
         route = "image_intake"
         steps = ["single_or_whole_page_decision", "manual_or_chat_or_single"]
-        third_party = ["yescan_when_chat_selected", "paddleocr_vl_after_region_saved"]
+        third_party = ["yescan_when_requested", "paddleocr_vl_when_requested"]
     elif suffix in PDF_SUFFIXES:
         source_type = "pdf"
-        route = "mineru_plus_pdf_page_render"
-        steps = ["privacy_notice", "mineru_structure", "render_selected_pages", "validate_bundle"]
-        third_party = ["mineru", "yescan_when_chat_selected", "paddleocr_vl_after_region_saved"]
+        route = "local_pdf_render_plus_optional_parser"
+        steps = ["render_selected_pages", "optional_structure_extraction", "validate_bundle"]
+        third_party = [
+            "mineru_when_requested",
+            "yescan_when_requested",
+            "paddleocr_vl_when_requested",
+        ]
     elif suffix in WORD_SUFFIXES:
         source_type = "word"
         route = "doc_render_plus_optional_mineru"
         steps = [
-            "privacy_notice",
             "render_word_to_pdf_pages",
-            "optional_mineru_structure",
+            "optional_structure_extraction",
             "validate_bundle",
         ]
         third_party = [
-            "mineru_when_used",
-            "yescan_when_chat_selected",
-            "paddleocr_vl_after_region_saved",
+            "mineru_when_requested",
+            "yescan_when_requested",
+            "paddleocr_vl_when_requested",
         ]
     else:
         raise SourceError(

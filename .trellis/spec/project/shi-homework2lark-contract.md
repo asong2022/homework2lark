@@ -18,7 +18,7 @@ Quark Scan King wrongbook is an optional pre-`single` source, not a fourth regio
 
 For one blank template plus many corrected copies, the blank page is the unique printed-question source. The Agent may call Yescan AI Agent `scene=question-ocr` once per blank page, confirms the complete questions, then locally registers corrected pages to those regions. It does not repeat printed-stem OCR for every student copy.
 
-All three image modes use the FastAPI domain workflow for `SourceAsset -> ProblemRegion -> OCRRun -> ProblemRevision -> ProblemAsset.current_revision_id -> publication`. The Skill never writes those tables directly. PDF/Word first use MinerU plus PDF/doc page rendering; extracted text assists reading but never replaces visual page evidence.
+All three image modes use `SourceAsset -> ProblemRegion -> optional OCRRun -> ProblemRevision(recognition_source) -> ProblemAsset.current_revision_id -> publication`. The Skill never writes those tables directly. PDF/Word first require available local/Agent page rendering; optional MinerU/OCR text never replaces visual evidence. Runtime/readiness and retry contracts are detailed in `reliability-learning-loop-contract.md`.
 
 ### 2. Signatures
 
@@ -58,9 +58,9 @@ Backend operations remain the existing typed HTTP API; the Skill is a client/orc
 - After `frame`, `select`, or `single` creates regions, the command returns saved crops and public problem IDs, then stops. It must not call OCR, revision, publication, or Base operations implicitly.
 - Reopening an existing manual session is local manifest reuse. Repeating a confirmed frame request must not be described as idempotent unless the API returns the existing public problem; the Agent first reads the source-scoped problem collection and avoids duplicate creation.
 - `get` and `ocr` return curated fields. Provider raw response, storage keys, absolute paths, image Base64, attachment URLs, remote record IDs, CLI stderr, and credentials never appear in normal output or manifests.
-- The Agent may propose corrected text and teaching metadata only after inspecting the crop and OCR. The teacher must see the evidence and proposed value before mutation.
+- The Agent inspects the crop and any available OCR before proposing corrected text. AI/teacher revisions declare their source explicitly without a fake OCR basis; missing credentials do not block that path. Existing scoped instructions govern content confirmation without a second review state.
 - Revision and publication are distinct durable transitions. Saving a teacher-confirmed non-empty revision immediately selects it as current; explicit Base publication may follow under the same scoped request, and a later failure never rolls back earlier evidence.
-- Publishing uses `POST /api/v1/problems/{problemId}/publications/lark`. It requires a server-confirmed current non-empty revision and complete source/crop/OCR lineage. Questions are idempotent by hidden system ID; pages first use `系统页面ID` and then exact `源文件哈希`, so repeated uploads of the same bytes reuse one page row.
+- Publishing requires a current non-empty revision, source/crop and valid declared recognition lineage. Republish compares remote text/version/relation before any mutation, preserving unknown teacher edits with `lark_content_conflict`; adoption is a new local revision. Hidden question keys and exact page ID/hash retain idempotency.
 - Approved metadata keys are limited to:
   - page: `页面名称`, `时间`, `年级`, `页码`, `单元`, `课题名`, `错题来源`, `页面主知识点`;
   - question: `题号`, `题目名称`, `分区标题`, `题型`, `核心素养`, `对应知识点`, `图表说明`, `标准答案`, `答案备注`, `设计意图`.
@@ -524,7 +524,7 @@ Default target count is six and the accepted range is `1..12`.
 5. Select at most one original from every source question first.
 6. If capacity remains, round-robin through complete, available variants of those same source questions.
 7. Never pad with an unrelated question. If fewer eligible assets exist, return the smaller truthful count; if none exist, fail.
-8. One question with several mistake rows remains one source candidate. Its highest-priority eligible mastery and newest matching evidence determine ordering.
+8. One question with several mistake rows remains one source candidate while every active error category/cause/typical response remains in the private selection context. Its priority uses eligible mastery and newest matching evidence. With `--event-store`, both personal and class commands consume that student's latest actionable retry, matched by private roster number and name; uncertain/unobserved do not change state, and an individual outcome never updates a shared group.
 
 Only teacher-confirmed originals with a positive local revision, complete text/visual assets and `需人工处理=false` are eligible. A variant is eligible when it has one unique source relation, a non-empty stem and any declared image has been read back successfully; answer analysis remains optional. Invalid records are skipped and counted in the private selection report.
 

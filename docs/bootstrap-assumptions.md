@@ -41,6 +41,7 @@
 ## 5. OCR 假设
 
 - 业务层只依赖统一 `OCRProvider` 协议。
+- OCR 不是必经步骤；AI 看图或教师题干可创建来源明确、无 OCR 基线的修订，不伪造运行。没有 Token 不阻塞基础图片收题。
 - 默认 OCR 使用 `PaddleOCRVLAPIProvider`：调用 PaddleOCR/AI Studio 官方托管 Job API，模型为 `PaddleOCR-VL-1.6`，无需本机安装 PaddlePaddle、GPU 或 VLM 权重。
 - 自动化测试在测试目录注入 stub/transport，不把伪造 OCR 暴露为生产 Provider；真实云端冒烟必须显式提供授权、Token 和样本。
 - 托管 Provider 只把教师已确认的题目裁图发往云端；Token 仅从被 Git 忽略的 `.env` 读取，Job 状态和 JSONL 原始结果作为私有机器证据保存。

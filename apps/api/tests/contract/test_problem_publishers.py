@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Sequence
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -42,6 +43,8 @@ class ScriptedRunner:
         page_hash: str = "hash_1",
         sequence_values: dict[str, list[JsonValue]] | None = None,
         title_candidates: str = "legacy",
+        remote_text: str = "24 支铅笔平均分给 6 人，每人多少支？",
+        remote_revision: JsonValue = 2,
     ) -> None:
         self.schema = schema
         self.existing = existing
@@ -51,6 +54,8 @@ class ScriptedRunner:
         self.page_hash = page_hash
         self.sequence_values = sequence_values or {}
         self.title_candidates = title_candidates
+        self.remote_text = remote_text
+        self.remote_revision = remote_revision
         self.calls: list[tuple[str, ...]] = []
 
     def run(self, args: Sequence[str], *, cwd: Path) -> dict[str, JsonValue]:
@@ -141,6 +146,12 @@ class ScriptedRunner:
                     if field in ("原始页面图片", "图片题目")
                     else self.page_hash
                     if field == "源文件哈希"
+                    else self.remote_text
+                    if field == "题干文本"
+                    else self.remote_revision
+                    if field == "本地修订版本"
+                    else [{"id": "rec_page", "text": "页面"}]
+                    if field in ("所属错题页面", "页面唯一ID") and table_id == "tbl_questions"
                     else "stable-id"
                 )
                 for field in projected
@@ -275,9 +286,86 @@ def test_lark_cli_publisher_reuses_records_and_skips_existing_attachments(
     publisher.publish(_request())
 
     commands = [call[1] for call in runner.calls]
-    assert commands.count("+record-upsert") == 2
+    assert commands.count("+record-upsert") == 1
     assert "+record-upload-attachment" not in commands
     assert all("--record-id" in call for call in runner.calls if call[1] == "+record-upsert")
+
+
+@pytest.mark.parametrize(
+    ("remote_text", "remote_revision"),
+    [("教师在飞书中修改的题干", 2), ("旧的本地题干", 99), ("旧的本地题干", True)],
+)
+def test_teacher_edits_are_rejected_before_any_remote_mutation(
+    tmp_path: Path, remote_text: str, remote_revision: JsonValue
+) -> None:
+    runner = ScriptedRunner(
+        schema="target",
+        existing=True,
+        remote_text=remote_text,
+        remote_revision=remote_revision,
+    )
+    publisher = LarkCliProblemPublisher(
+        runner=runner, base_title="错题库", working_directory=tmp_path
+    )
+
+    with pytest.raises(ProblemPublisherError) as captured:
+        publisher.publish(replace(_request(), previous_revisions=((1, "旧的本地题干"),)))
+
+    assert captured.value.category == "content_conflict"
+    assert not any(
+        call[1] in {"+record-upsert", "+record-upload-attachment"} for call in runner.calls
+    )
+
+
+def test_verified_older_local_revision_can_advance_without_overwriting_teacher_fields(
+    tmp_path: Path,
+) -> None:
+    runner = ScriptedRunner(
+        schema="target", existing=True, remote_text="旧的本地题干", remote_revision=1
+    )
+    publisher = LarkCliProblemPublisher(
+        runner=runner, base_title="错题库", working_directory=tmp_path
+    )
+
+    publisher.publish(replace(_request(), previous_revisions=((1, "旧的本地题干"),)))
+
+    writes = [
+        call for call in runner.calls if call[1] == "+record-upsert" and "tbl_questions" in call
+    ]
+    assert len(writes) == 1
+    assert json.loads(writes[0][writes[0].index("--json") + 1]) == {
+        "题干文本": _request().corrected_text,
+        "本地修订版本": 2,
+    }
+
+
+def test_unchanged_target_publication_does_not_write_existing_content(tmp_path: Path) -> None:
+    runner = ScriptedRunner(schema="target", existing=True)
+    publisher = LarkCliProblemPublisher(
+        runner=runner, base_title="错题库", working_directory=tmp_path
+    )
+
+    publisher.publish(_request())
+
+    assert not any(
+        call[1] in {"+record-upsert", "+record-upload-attachment"} for call in runner.calls
+    )
+
+
+def test_adopting_base_text_as_a_new_revision_only_advances_the_sync_marker(tmp_path: Path) -> None:
+    request = replace(_request(), corrected_text="飞书中已经修正的题干", revision_number=3)
+    runner = ScriptedRunner(
+        schema="target", existing=True, remote_text=request.corrected_text, remote_revision=2
+    )
+    publisher = LarkCliProblemPublisher(
+        runner=runner, base_title="错题库", working_directory=tmp_path
+    )
+
+    publisher.publish(request)
+
+    writes = [call for call in runner.calls if call[1] == "+record-upsert"]
+    assert len(writes) == 1
+    assert json.loads(writes[0][writes[0].index("--json") + 1]) == {"本地修订版本": 3}
 
 
 def test_lark_cli_publisher_preserves_existing_target_titles(tmp_path: Path) -> None:

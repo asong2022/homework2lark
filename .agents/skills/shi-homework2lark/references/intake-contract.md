@@ -82,17 +82,20 @@ Revision input contains only:
 ```json
 {
   "questionNumber": "12",
+  "recognitionSource": "ai_vision",
   "correctedText": "教师确认后的完整题目",
   "correctionNote": "可选说明",
-  "basedOnOcrRunId": "ocr_xxx"
+  "basedOnOcrRunId": null
 }
 ```
 
 `questionNumber` is an optional local normalization hint and is not sent to FastAPI. When present, `save-revision` removes a matching outer prefix such as `12.`, `12、` or `第12题：` from `correctedText`; it never removes a different number or a content-leading quantity such as `24支铅笔`. The same value is written separately through question metadata field `题号`. Agents should provide it whenever the source has a visible outer question number.
 
-`basedOnOcrRunId` may be omitted only when the current normalized record has a latest OCR run. Every save appends a ProblemRevision. It never edits `OCRRun.text`.
+`recognitionSource` is `ai_vision`, `teacher`, or `ocr`. AI/teacher revisions may omit `basedOnOcrRunId` and never create an OCRRun. Old callers default to `ocr`: a missing basis is filled only from a real latest OCR run. Any supplied OCR ID must be succeeded and belong to this region. Every save appends a ProblemRevision and never edits OCR evidence.
 
-Saving the revision makes it the current version immediately. There is no separate review command or review-status transition. Publication remains a separate external write and the API rejects a problem without a valid current revision, source, crop or OCR basis.
+Saving the revision makes it current immediately without another review command. Publication requires valid revision/source/crop plus the declared recognition provenance; only an OCR revision requires an OCR basis. Do not call OCR merely to pass a gate when the Agent can reliably read the source.
+
+Publication preflights Base text/version before any mutation. Unknown remote edits return `lark_content_conflict`; preserve them. To adopt a teacher's Base correction, read the exact remote text, append a matching local revision with its true source, then publish; only the sync version changes when text already matches. Never force-overwrite teacher edits.
 
 For the Quark source, “新增/收录/加入飞书今天或本次新增题” is explicit scope authorization for every current pending item. The Agent runs `collect-new` and does not ask for an item-by-item selection again. “查看/列出/有多少新增” runs only `sync/status`; a partial explicit range continues to use selected `import`. `collect-new` requires an existing baseline, lists the remote catalog once, durably discovers unseen IDs before downloads, and imports pending items one at a time through `single`.
 

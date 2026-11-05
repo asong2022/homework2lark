@@ -33,8 +33,11 @@ class SourceBundleTests(unittest.TestCase):
             word = source_bundle.plan_source(files["word"])
         self.assertTrue(image["directFastApiUpload"])
         self.assertFalse(pdf["directFastApiUpload"])
-        self.assertEqual(pdf["route"], "mineru_plus_pdf_page_render")
+        self.assertEqual(pdf["route"], "local_pdf_render_plus_optional_parser")
         self.assertEqual(word["route"], "doc_render_plus_optional_mineru")
+        for plan in (image, pdf, word):
+            self.assertTrue(all("when_requested" in item for item in plan["possibleThirdParties"]))
+            self.assertNotIn("mineru_structure", plan["steps"])
 
     def test_validate_requires_visual_pages_and_privacy_notice(self):
         with tempfile.TemporaryDirectory(dir=Path.cwd()) as tmp:

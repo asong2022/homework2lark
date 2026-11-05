@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-import importlib.util
+import importlib
 import sys
 import tempfile
 import unittest
@@ -9,13 +9,10 @@ from collections.abc import Sequence
 from pathlib import Path
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
-MODULE_PATH = SKILL_ROOT / "scripts" / "homework2lark.py"
-SPEC = importlib.util.spec_from_file_location("homework2lark", MODULE_PATH)
-if SPEC is None or SPEC.loader is None:
-    raise RuntimeError("Unable to load homework2lark module")
-homework2lark = importlib.util.module_from_spec(SPEC)
-sys.modules[SPEC.name] = homework2lark
-SPEC.loader.exec_module(homework2lark)
+SCRIPTS = SKILL_ROOT / "scripts"
+if str(SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS))
+homework2lark = importlib.import_module("homework2lark")
 
 
 class MemoryGateway:

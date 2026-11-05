@@ -6,6 +6,7 @@ from datetime import datetime
 from mistake_notebook_api.domain.enums import (
     OCRRunStatus,
     PublicationStatus,
+    RecognitionSource,
     RegionDetectionRunStatus,
     RegionSelectionSource,
 )
@@ -97,11 +98,12 @@ class OCRRun:
 class ProblemRevision:
     id: str
     problem_region_id: str
-    based_on_ocr_run_id: str
+    based_on_ocr_run_id: str | None
     revision_number: int
     corrected_text: str
     correction_note: str | None
     created_at: datetime
+    recognition_source: RecognitionSource = RecognitionSource.OCR
 
 
 @dataclass(frozen=True, slots=True)

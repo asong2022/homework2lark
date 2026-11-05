@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Protocol
 
+from mistake_notebook_api.domain.enums import RecognitionSource
+
 
 @dataclass(frozen=True, slots=True)
 class ProblemPublicationRequest:
@@ -20,7 +22,9 @@ class ProblemPublicationRequest:
     revision_number: int
     corrected_text: str
     revision_created_at: datetime
-    ocr_provider: str
+    ocr_provider: str | None
+    previous_revisions: tuple[tuple[int, str], ...] = ()
+    recognition_source: RecognitionSource = RecognitionSource.OCR
 
 
 @dataclass(frozen=True, slots=True)

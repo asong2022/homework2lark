@@ -22,7 +22,7 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: uv sync --directory apps/api --group dev
+        run: uv sync --locked --directory apps/api --group dev --extra documents
 
       - name: Backend checks
         run: |
@@ -33,7 +33,7 @@ jobs:
 
       - name: Skill checks
         run: |
-          uv run --directory apps/api --with python-docx python -m unittest discover -s ../../.agents/skills/shi-homework2lark/tests -p 'test_*.py'
+          uv run --directory apps/api --extra documents python -m unittest discover -s ../../.agents/skills/shi-homework2lark/tests -p 'test_*.py'
           uv run --directory apps/api ruff check ../../.agents/skills/shi-homework2lark/scripts ../../.agents/skills/shi-homework2lark/tests
           uv run --directory apps/api ruff format --check ../../.agents/skills/shi-homework2lark/scripts ../../.agents/skills/shi-homework2lark/tests
 

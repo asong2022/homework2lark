@@ -236,6 +236,7 @@ def create_revision(
         .create_revision(
             region_id=region_id,
             based_on_ocr_run_id=payload.based_on_ocr_run_id,
+            recognition_source=payload.recognition_source,
             corrected_text=payload.corrected_text,
             correction_note=payload.correction_note,
         )
@@ -273,9 +274,12 @@ def health(request: Request) -> HealthResponse:
     runtime = _runtime(request)
     with runtime.engine.connect() as connection:
         connection.execute(text("SELECT 1"))
+    from mistake_notebook_api.config import runtime_identity
+
     return HealthResponse(
         status="ok",
         database="ok",
         ocr_provider=runtime.ocr_provider.name,
         region_detection_provider=runtime.region_detection_provider.name,
+        runtime_id=runtime_identity(runtime.settings),
     )

@@ -4,7 +4,7 @@
 
 个人精准练习不是另建一套学生数据库，而是从现有 `错题记录.对应学生` 反查某名学生真正出现过的错题，再从这些原题及其可用变式中选择合适题量。飞书 Base 继续保存教师可维护的题目、错误分组和变式；姓名与学号对应关系只存在于教师私有的本地班级名单和本次练习 manifest。
 
-当前能力既可一次生成一名学生，也可按完整名单或指定学号子集批量生成。学生账号、自动批改、自动掌握判定和批改扫描回写仍不是当前能力。
+当前能力既可一次生成一名学生，也可按完整名单或指定学号子集批量生成。批改回收经过 AI/教师观察后，可追加私有再练事件并用于下次选题；程序不自行看图、不自动批改，也不由一次正确推断已掌握。
 
 ## 私有班级名单
 
@@ -33,7 +33,8 @@
 4. 第一轮每道来源原题最多选一次，保证先回到学生真正错过的题。
 5. 仍有题量时，才在这些来源题的可用变式之间轮换补足；不读取异常变式，不用无关题凑数。
 6. 可用题少于目标题量时，按实际数量生成并明确报告；可用题为零时停止。
-7. 一道题的多个同类/不同类错误记录只形成一个来源题候选，最需要再练的状态决定其优先级。
+7. 一道题的多个同类/不同类错误记录只形成一个来源题候选，但私有选题说明保留所有仍有效的错误原因、典型作答和错误表现，不以一个标签覆盖其余原因。
+8. 传入 `--event-store` 时，用本班私有名单的学号和姓名双重匹配反馈。只使用该生不早于当前作业证据的有效结果调整优先级；一次正确建议继续练习，错误或部分正确优先再练。不确定、未观察到的结果保留为上下文，不改变状态。
 
 这套规则是保守的默认值。教师可在对话中指定题量或明确要求纳入已掌握题；Agent 不根据一次正确作答自动改写掌握状态。
 
@@ -51,6 +52,7 @@ python -X utf8 <skill-root>/scripts/personal_practice.py schema-check
 python -X utf8 <skill-root>/scripts/personal_practice.py plan `
   --roster <私有班级名单.json> `
   --student-number <学号> `
+  --event-store <本班私有再练事件.jsonl> `
   --batch-code 20260715-01 `
   --question-count 6 `
   --image-scale-percent 70 `
@@ -60,7 +62,7 @@ python -X utf8 <skill-root>/scripts/personal_practice.py plan `
 输出目录必须是新目录，工具不会覆盖旧快照。其中：
 
 - `manifest.json`：正式 Word 的不可变输入，含姓名、学号、匿名实例码和精确题目来源。
-- `selection.json`：私有选题说明，记录每题来源、掌握状态、证据日期、错误分类和选择原因。
+- `selection.json`：私有选题说明，记录每题来源、状态、证据日期、全部有效错误分类与真实作答上下文，以及最近反馈和实际采用的反馈依据。
 - `images/`：本次实际使用的题干图片。
 
 再生成 Word：
@@ -79,6 +81,7 @@ python -X utf8 <skill-root>/scripts/practice_sheet.py `
 python -X utf8 <skill-root>/scripts/class_practice.py schema-check
 python -X utf8 <skill-root>/scripts/class_practice.py build `
   --roster <私有班级名单.json> `
+  --event-store <本班私有再练事件.jsonl> `
   --batch-code 20260715-01 `
   --question-count 6 `
   --image-scale-percent 70 `
@@ -86,6 +89,8 @@ python -X utf8 <skill-root>/scripts/class_practice.py build `
 ```
 
 默认遍历整份名单。只生成部分学生时可重复传入 `--student-number <学号>`；`Sxxx` 仍由完整名单顺序决定。例如只生成名单中的 03 号，仍使用 `S003`。
+
+`--event-store` 可省略，省略时仅按 Base 证据选题。事件文件属于特定班级/学年，不跨班混用；`S001` 只是单批次名单位置，绝不是跨批次学生身份。实名事件须同时匹配名单学号和姓名，匿名事件不能改变个人选题。
 
 批次目录包含：
 

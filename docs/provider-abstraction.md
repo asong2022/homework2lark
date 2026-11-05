@@ -84,6 +84,8 @@ class OCRBlock:
 
 ## 6. PaddleOCRProvider
 
+OCR 是可选的文字证据路径，不是录题前置条件。AI 直接看图或教师提供题干时，保存修订使用 `recognitionSource=ai_vision/teacher` 和空 OCR 引用；只有实际调用接口才追加 `OCRRun`。没有 Token 时引导工具仍可将 AI 看图录题判定为可用，不以测试替身或伪造文本替代真实 OCR。
+
 ### 6.1 实现方式
 
 - 使用 PaddleOCR 3.x 本地推理接口：`PaddleOCR(...).predict(image)`。

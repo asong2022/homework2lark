@@ -185,6 +185,32 @@ class IntakeServiceTest(unittest.TestCase):
         self.assertNotIn("rawResponse", str(manifest))
         self.assertEqual([call[0] for call in gateway.calls], ["health", "upload"])
 
+    def test_vision_and_teacher_revision_do_not_require_or_run_ocr(self):
+        class NoOcrGateway(FakeGateway):
+            def get_problem(self, problem_id):
+                record = super().get_problem(problem_id)
+                record["latestOcrRun"] = None
+                return record
+
+        for source in ("ai_vision", "teacher"):
+            gateway = NoOcrGateway()
+            result = intake.IntakeService(gateway).save_revision(
+                "problem_1", {"correctedText": "来自原图的完整题干", "recognitionSource": source}
+            )
+            self.assertEqual(result["recognitionSource"], source)
+            payload = next(call[1] for call in gateway.calls if call[0] == "create_revision")
+            self.assertIsNone(payload["basedOnOcrRunId"])
+            self.assertNotIn("run_ocr", [call[0] for call in gateway.calls])
+
+    def test_current_non_ocr_revision_is_not_projected_as_latest_ocr(self):
+        record = FakeGateway().get_problem("problem_1")
+        record["ocr"] = None
+        record["humanRevision"] = {"recognitionSource": "teacher", "correctedText": "教师提供"}
+        projected = intake._project_problem(record)
+        self.assertIsNone(projected["ocr"])
+        self.assertIsNotNone(projected["latestOcrRun"])
+        self.assertEqual(projected["humanRevision"]["recognitionSource"], "teacher")
+
     def test_parser_keeps_manual_chat_single_and_rejects_retired_web(self):
         for mode in ("manual", "chat", "single"):
             args = intake.build_parser().parse_args(

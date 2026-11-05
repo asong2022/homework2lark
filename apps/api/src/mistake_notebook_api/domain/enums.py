@@ -3,6 +3,12 @@ from __future__ import annotations
 from enum import StrEnum
 
 
+class RecognitionSource(StrEnum):
+    OCR = "ocr"
+    AI_VISION = "ai_vision"
+    TEACHER = "teacher"
+
+
 class OCRRunStatus(StrEnum):
     RUNNING = "running"
     SUCCEEDED = "succeeded"

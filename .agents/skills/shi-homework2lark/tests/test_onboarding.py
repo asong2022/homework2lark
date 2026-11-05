@@ -175,6 +175,16 @@ def _service(runner: FakeRunner, *, environment: dict[str, str] | None = None):
         runner=runner,
         environ=environment or {},
         which=lambda _: "available",
+        runtime_probe=lambda _: {
+            "status": "ready",
+            "api": "ready",
+            "database": "current",
+            "capabilities": {
+                "imageIntake": "ready",
+                "pdf": "requires_agent_renderer",
+                "word": "requires_agent_renderer",
+            },
+        },
     )
 
 
@@ -188,9 +198,26 @@ class OnboardingStateTests(unittest.TestCase):
             self.assertEqual(captured.exception.action, "clone_repository")
 
             _repo(root, token="")
-            with self.assertRaises(onboarding.OnboardingError) as captured:
-                service.check(repo_root=root, base_title="小学数学错题学习库")
-            self.assertEqual(captured.exception.action, "configure_ocr")
+            report = service.check(repo_root=root, base_title="小学数学错题学习库")
+            self.assertEqual(report["status"], "ready")
+            self.assertEqual(report["capabilities"]["ocr"], "optional_unconfigured")
+            self.assertEqual(report["capabilities"]["word"], "requires_agent_renderer")
+
+    def test_pending_migration_or_api_failure_cannot_report_ready(self) -> None:
+        for code in ("database_migration_pending", "api_not_ready"):
+
+            def fail(_, code=code):
+                raise onboarding.runtime_service.RuntimeServiceError(code, "需要准备本地服务")
+
+            with tempfile.TemporaryDirectory() as temporary:
+                root = _repo(Path(temporary))
+                runner = FakeRunner()
+                service = _service(runner)
+                service.runtime_probe = fail
+                with self.assertRaises(onboarding.OnboardingError) as captured:
+                    service.check(repo_root=root, base_title="小学数学错题学习库")
+                self.assertEqual(captured.exception.code, code)
+                self.assertFalse(any(call[0] == "lark-cli" for call in runner.calls))
 
     def test_check_reports_lark_auth_then_missing_base(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -236,6 +263,15 @@ class OnboardingStateTests(unittest.TestCase):
 
 
 class RuntimeConfigurationTests(unittest.TestCase):
+    def test_runtime_can_be_configured_without_an_ocr_token(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = _repo(Path(temporary), token="")
+            report = _service(FakeRunner()).configure_runtime(
+                repo_root=root, base_title="错题库", payload={}, enable_yescan=False
+            )
+            self.assertEqual(report["configured"]["ocr"], "optional_unconfigured")
+            self.assertIn("PADDLEOCR_ACCESS_TOKEN=", (root / ".env").read_text("utf-8"))
+
     def test_onboarding_parser_no_longer_exposes_web_dependencies(self) -> None:
         with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
             onboarding.build_parser().parse_args(["check", "--with-web"])

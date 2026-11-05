@@ -45,7 +45,7 @@ class BundleManifestTests(unittest.TestCase):
             },
         )
         self.assertNotIn("version", top_level_keys)
-        self.assertIn('version: "3.2.0"', frontmatter)
+        self.assertIn('version: "3.3.0"', frontmatter)
 
     def test_bundle_declares_one_entry_and_five_stages(self) -> None:
         manifest = doctor.load_bundle(SKILL_ROOT)
@@ -90,6 +90,8 @@ class BundleManifestTests(unittest.TestCase):
         manifest = doctor.load_bundle(SKILL_ROOT)
         required_files = set(manifest["resources"]["requiredFiles"])
         self.assertIn("scripts/intake_batch.py", required_files)
+        self.assertIn("scripts/runtime_service.py", required_files)
+        self.assertIn("scripts/retry_evidence.py", required_files)
         self.assertIn("references/batch-intake.md", required_files)
         self.assertIn("references/question-asset-contract.md", required_files)
         self.assertIn("references/practice-sheet-template.md", required_files)
@@ -106,7 +108,7 @@ class BundleManifestTests(unittest.TestCase):
 
         evals = json.loads((SKILL_ROOT / "evals" / "evals.json").read_text(encoding="utf-8"))
         eval_ids = {item["id"] for item in evals["evals"]}
-        self.assertTrue({4, 31, 32, 33, 34}.issubset(eval_ids))
+        self.assertTrue({4, 31, 32, 33, 34, 35, 36, 37, 38}.issubset(eval_ids))
 
     def test_published_skill_has_no_removed_web_entrypoint(self) -> None:
         forbidden = ("--web-url", "mode web", "npm run dev:web", "Web intake")

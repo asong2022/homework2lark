@@ -101,10 +101,10 @@ ProblemRegion
 ## 5. 人工修订流程
 
 ```text
-OCRRun(succeeded)
-→ Teacher edits text
+AI vision / teacher text / optional OCRRun(succeeded)
+→ Teacher/Agent confirms text
 → POST /api/v1/regions/{regionId}/revisions
-→ validate run belongs to region + correctedText non-empty
+→ validate recognitionSource + correctedText non-empty + any declared OCR belongs to region
 → calculate next revisionNumber
 → create ProblemRevision
 → ProblemAsset.current_revision_id = new revisionId
@@ -117,14 +117,16 @@ OCRRun(succeeded)
 ## 6. 当前修订门
 
 ```text
-SourceAsset + ProblemRegion + successful OCRRun
+SourceAsset + ProblemRegion + honest recognition source
 → Teacher confirms complete corrected content
 → POST /api/v1/regions/{regionId}/revisions
 → current revision becomes available immediately
-→ publication may proceed when source/crop/OCR lineage is complete
+→ publication may proceed when source/crop and declared recognition lineage are complete
 ```
 
 没有有效当前修订时发布返回 `problem_not_publishable`。教师确认仍是内容质量门，但它通过保存修订表达，不再生成状态字段、审核时间或状态事件。
+
+`recognitionSource=ai_vision/teacher` 时 OCR 引用可空；`ocr` 路径仍必须引用同区域成功运行。历史 OCR 不会自动成为后续 AI/教师修订的依据，不生成占位 OCRRun。
 
 ## 7. 读取流程
 
@@ -153,6 +155,8 @@ ProblemAsset(current revision present)
 → page exact lookup 系统页面ID, then 源文件哈希
 → one physical source page = one 错题页面 row; multiple questions link to it
 → question exact lookup 系统题目ID
+→ compare remote text/revision/page relation before any page or attachment mutation
+→ unknown teacher edits: 409 lark_content_conflict; retain both versions
 → keep existing readable 页面名称/题目名称, or create a safe 待整理… title for later AI enrichment
 → patch only publisher-owned fields
 → upload only missing source/crop attachments
@@ -161,6 +165,8 @@ ProblemAsset(current revision present)
 ```
 
 发布失败不改变当前修订、原图、裁图或 OCR。`lark-cli` 重试必须先按系统页面 ID 查找，未找到时再按源文件 SHA-256 查找；唯一哈希匹配直接复用页面，多条匹配安全失败。附件上传是追加语义，单元格已有不可变附件时跳过，避免重复。
+
+已有题干只有与本地当前或历史修订精确匹配时才能安全同步。采纳 Base 手改后追加本地修订，若远端正文已相同则只推进同步版本。目录元数据也在写前重读，避免覆盖预览后教师刚填的值；跨表写入不是原子事务，部分完成要如实报告。
 
 Base 是教师与 Agent 的整理、筛选、变式和组卷中转核心，但不保存 OCR raw 或本地修订历史的唯一副本。教师常用视图显示可读的 `页面名称`/`题目名称`，稳定键保存在隐藏的 `系统页面ID`、`源文件哈希`、`系统题目ID`。`错题页面.页码` 与 `错题页面.错题来源` 是唯一事实来源，`错题题目` 的同名字段通过 `所属错题页面` 查找引用。`题干文本` 包含文字选项，`题干图片` 保存非文本视觉，`图片题目` 保留完整裁图。发布端只更新本地证据拥有的字段，不清空教师在 Base 补充的单元、课题、题型、知识点、答案或已有变式。
 
@@ -284,10 +290,13 @@ AI 不得根据材料替用户选模式。匿名方式不做身份映射；实�
 → retry_batch.py 映射 pageCode + 题号 → Rxx → questionId/variantId
 → 只读反馈计划与异常隔离
 → append-only 本地事件
-→ 已授权的 Base 当前投影与回读
+→ 本班私有事件按姓名+学号匹配，影响下一次个人/整班选题与变式事实卡
+→ 只有明确的题目/整组反馈才允许授权的 Base 当前投影与回读
 ```
 
 `correct` 默认投影为“练习中”，`partial/incorrect` 为“需再练”，`uncertain/not_observed` 不自动改变掌握状态。
+
+`retry_batch.py` v2 投影对实名个人标记 `student_private/canUpdateBase=false`，不会把一名学生的结果覆盖到多人错误组。`retry_evidence.py summary` 只以可观察作答作为正确率分母，未观察和不确定分别计数；分类统计是本次练习的目标分类，不冒充新错因诊断。个人候选保留该原题全部有效错因，不用一个标签代表全部学习问题。
 
 ### 匿名再练反馈
 
@@ -297,9 +306,9 @@ Teacher describes observed retry response + teacher judgment
 → validate + preview, no mutation
 → teacher explicitly confirms
 → append deterministic event ID to local JSONL (no student identity)
-→ patch Base 掌握状态 / 最近再练时间，或实名错误组的再练反馈
+→ observable question-level result may patch Base 掌握状态 / 最近再练时间
 → read back feedback fields and verify all other fields unchanged
-→ later variant generation may use the latest unresolved relation
+→ later selection/variation reads the private feedback context
 ```
 
 本地 JSONL 保存完整重复再练事件；Base 只保留当前状态和组级教师摘要。分组级 `典型错例` 和题目级只读 lookup 不被再练反馈覆盖。相同事件重试不会追加第二行；若本地追加成功而 Base 暂时失败，可按同一 event ID 重试投影。

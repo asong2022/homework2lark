@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import os
 import sys
@@ -60,6 +61,7 @@ class FieldPlan:
     patch: dict[str, JSONValue]
     unchanged: tuple[str, ...]
     conflicts: tuple[str, ...]
+    expected: dict[str, JSONValue]
 
 
 @dataclass(frozen=True)
@@ -126,12 +128,17 @@ class BaseMetadataService:
         if not plan.has_changes:
             return plan.public(applied=True)
 
+        self._check_expected(plan, self.gateway.load(plan.problem_id))
         page_written = False
         try:
             if plan.page.patch:
                 self.gateway.patch_page(plan.page_record_id, plan.page.patch)
                 page_written = True
             if plan.question.patch:
+                if page_written:
+                    self._check_expected(
+                        plan, self.gateway.load(plan.problem_id), question_only=True
+                    )
                 self.gateway.patch_question(plan.question_record_id, plan.question.patch)
         except (intake.SkillError, homework2lark.SkillError):
             if page_written:
@@ -147,6 +154,25 @@ class BaseMetadataService:
         _verify_patch(readback.page.fields, plan.page.patch)
         _verify_patch(readback.question.fields, plan.question.patch)
         return plan.public(applied=True)
+
+    @staticmethod
+    def _check_expected(
+        plan: EnrichmentPlan, rows: EnrichmentRows, *, question_only: bool = False
+    ) -> None:
+        changed = rows.question.record_id != plan.question_record_id
+        changed = changed or rows.page.record_id != plan.page_record_id
+        checks = [(plan.question, rows.question.fields)]
+        if not question_only:
+            checks.append((plan.page, rows.page.fields))
+        if changed or any(
+            values.get(name) != expected
+            for field_plan, values in checks
+            for name, expected in field_plan.expected.items()
+        ):
+            raise intake.SkillError(
+                "metadata_changed_before_write",
+                "飞书字段在写入前发生变化，已保留教师修改；请重新读取后整理。",
+            )
 
 
 @dataclass(frozen=True)
@@ -417,6 +443,7 @@ def _plan_fields(current: dict[str, JSONValue], proposed: dict[str, JSONValue]) 
         patch=patch,
         unchanged=tuple(sorted(unchanged)),
         conflicts=tuple(sorted(conflicts)),
+        expected={name: copy.deepcopy(current.get(name)) for name in patch},
     )
 
 

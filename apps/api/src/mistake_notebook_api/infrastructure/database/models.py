@@ -253,6 +253,14 @@ class ProblemRevisionModel(Base):
         ),
         CheckConstraint("revision_number >= 1", name="revision_number_positive"),
         CheckConstraint("length(trim(corrected_text)) > 0", name="corrected_text_non_empty"),
+        CheckConstraint(
+            "recognition_source IN ('ocr', 'ai_vision', 'teacher')",
+            name="recognition_source_valid",
+        ),
+        CheckConstraint(
+            "recognition_source != 'ocr' OR based_on_ocr_run_id IS NOT NULL",
+            name="recognition_ocr_basis",
+        ),
     )
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
@@ -262,7 +270,10 @@ class ProblemRevisionModel(Base):
         nullable=False,
         index=True,
     )
-    based_on_ocr_run_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    based_on_ocr_run_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    recognition_source: Mapped[str] = mapped_column(
+        String(32), nullable=False, server_default="ocr"
+    )
     revision_number: Mapped[int] = mapped_column(Integer, nullable=False)
     corrected_text: Mapped[str] = mapped_column(Text, nullable=False)
     correction_note: Mapped[str | None] = mapped_column(Text)

@@ -122,3 +122,20 @@ def test_publisher_failure_is_persisted_without_changing_revision(
     assert record["publication"]["status"] == "failed"
     assert record["publication"]["errorCode"] == "unavailable"
     assert record["publication"]["retryable"] is True
+
+
+def test_base_content_conflict_keeps_local_revision_and_is_not_retryable(
+    client: TestClient, runtime: Runtime
+) -> None:
+    problem = _save_revision(client, _create_problem(client))
+    runtime.problem_publisher = RecordingPublisher(failure="content_conflict")
+
+    response = client.post(f"/api/v1/problems/{problem['problemId']}/publications/lark")
+
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "lark_content_conflict"
+    assert response.json()["error"]["retryable"] is False
+    assert (
+        client.get(f"/api/v1/problems/{problem['problemId']}").json()["humanRevision"]
+        == problem["humanRevision"]
+    )

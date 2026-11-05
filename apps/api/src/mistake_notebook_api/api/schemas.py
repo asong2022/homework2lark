@@ -24,6 +24,7 @@ from mistake_notebook_api.domain.enums import (
     OCRBlockType,
     OCRRunStatus,
     PublicationStatus,
+    RecognitionSource,
     RegionDetectionRunStatus,
     RegionSelectionSource,
 )
@@ -81,7 +82,8 @@ class BatchRegionCreateRequest(ApiModel):
 
 
 class RevisionCreateRequest(ApiModel):
-    based_on_ocr_run_id: str = Field(min_length=1, max_length=64)
+    based_on_ocr_run_id: str | None = Field(default=None, min_length=1, max_length=64)
+    recognition_source: RecognitionSource = RecognitionSource.OCR
     corrected_text: str = Field(min_length=1, max_length=50_000)
     correction_note: str | None = Field(default=None, max_length=2_000)
 
@@ -325,7 +327,8 @@ class OCRRunResponse(ApiModel):
 
 class ProblemRevisionResponse(ApiModel):
     revision_id: str
-    based_on_ocr_run_id: str
+    based_on_ocr_run_id: str | None
+    recognition_source: RecognitionSource
     revision_number: int
     corrected_text: str
     correction_note: str | None
@@ -336,6 +339,7 @@ class ProblemRevisionResponse(ApiModel):
         return cls(
             revision_id=revision.id,
             based_on_ocr_run_id=revision.based_on_ocr_run_id,
+            recognition_source=revision.recognition_source,
             revision_number=revision.revision_number,
             corrected_text=revision.corrected_text,
             correction_note=revision.correction_note,
@@ -485,3 +489,4 @@ class HealthResponse(ApiModel):
     database: Literal["ok"]
     ocr_provider: str
     region_detection_provider: str
+    runtime_id: str
